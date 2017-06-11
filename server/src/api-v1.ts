@@ -143,11 +143,11 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
         if (inv.hasResult()) {
           let auths = inv.result().auths as Classes.R_AuthenticationPK[];
           if (auths.length === 1) {
-            challenge = await SecureHash.randomBytesSafe();
+            challenge = await SecurePK.challenge();
             session.auth = { type: 'pk', id: auths[0].id(), challenge: challenge };
           }
         }
-        res.send(200, challenge || SecureHash.randomBytesUnsafe());
+        res.send(200, challenge || SecurePK.fakeChallenge());
       }
     }
     else if (session.auth) {

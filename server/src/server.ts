@@ -2,13 +2,13 @@ import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, 
 import {SqliteDBConnectorFactory, SqlDataSource} from '@openmicrostep/aspects.sql';
 import {ObiDataSource, OuiDB, StdDefinition, ObiDefinition} from '@openmicrostep/aspects.obi';
 import {Parser, Reporter} from '@openmicrostep/msbuildsystem.shared';
-import {ExpressTransport} from '@openmicrostep/aspects.express';
 import * as express from 'express';
 import {repositoryV2Definition} from './repository-v2-def';
 import {api_v1} from './api-v1';
 import {api_v2} from './api-v2';
-import {controlCenterCreator} from './classes';
-
+import {api_aspect} from './api-aspect';
+import {controlCenterCreator, printClassesMd} from './classes';
+import './bcoding';
 var sqlite3 = require('sqlite3').verbose();
 require('source-map-support').install();
 
@@ -39,30 +39,34 @@ async function boot() {
   await ouiDb.injectObis(obis_v2);
   await ouiDb.loadSystemObis();
 
+  if (0) printClassesMd(ouiDb);
+
   const creator = controlCenterCreator(ouiDb);
   let {cc, db, classes} = creator();
   let p = new classes.R_Person();
   let a = new classes.R_AuthenticationPWD();
-  a["login"] = "repository";
-  a["hashed password"] = "1:1000<d3fjmT9+psw=>D6AE70DA5152A6C7CCB1CEFE989CE0790DDC89FD26D96A0B116578E378452C3B59E4A7155CEC53166ED01B7D874568CC9F5F8BE4EEF38E531D5289988CBE0555";
-  p["r_authentication"] = new Set([a]);
+  a._login = "repository";
+  a._hashed_password = "1:1000<d3fjmT9+psw=>D6AE70DA5152A6C7CCB1CEFE989CE0790DDC89FD26D96A0B116578E378452C3B59E4A7155CEC53166ED01B7D874568CC9F5F8BE4EEF38E531D5289988CBE0555";
+  p._first_name = "Admin";
+  p._last_name = "Admin";
+  p._r_authentication = new Set([a]);
   let invs = await db.farPromise("safeSave", [a, p]);
   if (invs.hasDiagnostics())
     return Promise.reject(invs.diagnostics());
   let invq = await db.farPromise("safeQuery", {
     name: "p",
-    where: { $instanceOf: classes.R_AuthenticationPWD, login: "repository" },
+    where: { $instanceOf: classes.R_AuthenticationPWD, _login: "repository" },
   });
   if (invq.hasDiagnostics())
     return Promise.reject(invq.diagnostics());
   console.info(invq.result());
 
-  if (0) {
   const app = express();
   app.use('/api/v1', api_v1(creator));
   app.use('/api/v2', api_v2(creator));
+  app.use('/', api_aspect(creator));
   app.listen(8080);
-  }
+trace = true;
 }
 
 boot().catch(err => {

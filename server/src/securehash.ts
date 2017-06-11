@@ -1,12 +1,36 @@
 import * as crypto from 'crypto';
 
+export function randomBytesUnsafe(size = SecureHash.defaultSaltBytes): string {
+  let buffer = new Buffer(SecureHash.defaultSaltBytes);
+  for (let i = 0; i < buffer.length; i++)
+    buffer[i] = Math.floor(Math.random() * 256); // [0-255[ of bad quality random bytes
+  return buffer.toString('base64');
+}
+
+export function randomBytesSafe(size = SecureHash.defaultSaltBytes): Promise<string> {
+  return new Promise((resolve, reject) => {
+    crypto.randomBytes(size, (err, buf) => {
+      if(err) return reject(err);
+      resolve(buf.toString('base64'));
+    });
+  });
+}
+
 export namespace SecurePK {
   export let defaultHardness = 2000;
+
+  export function fakeChallenge() {
+    return randomBytesUnsafe();
+  }
+
+  export function challenge() {
+    return randomBytesUnsafe();
+  }
 
   export function isChallengeResponseValid(challenge: string, signature: string, publicKey: string) {
     var verify = crypto.createVerify('RSA-SHA1');
     verify.update(challenge);
-    return verify.verify(publicKey, signature);
+    return verify.verify(publicKey, signature, 'base64');
   }
 
   export async function generatePasswordRequest() : Promise<string> {
@@ -22,22 +46,6 @@ export namespace SecureHash {
   export let defaultAlgorithm = 1;
   export let defaultHardness = 1000;
   export let defaultSaltBytes = 32;
-
-  export function randomBytesUnsafe(size = SecureHash.defaultSaltBytes): string {
-    let buffer = new Buffer(SecureHash.defaultSaltBytes);
-    for (let i = 0; i < buffer.length; i++)
-      buffer[i] = Math.floor(Math.random() * 256); // [0-255[ of bad quality random bytes
-    return buffer.toString('base64');
-  }
-
-  export function randomBytesSafe(size = SecureHash.defaultSaltBytes): Promise<string> {
-    return new Promise((resolve, reject) => {
-      crypto.randomBytes(size, (err, buf) => {
-        if(err) return reject(err);
-        resolve(buf.toString('base64'));
-      });
-    });
-  }
 
   export function fakeChallenge() {
     // random bytes, defaultAlgorithm, defaultHardness fast could be detected with statistics to find out if a challenge is a real one or a fake one

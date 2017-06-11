@@ -1,5 +1,107 @@
 import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, InvocationState, DataSourceQuery, ImmutableSet} from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, StdDefinition, ObiDefinition} from '@openmicrostep/aspects.obi';
+import {cache, All} from '../../shared/src/classes';
+export * from '../../shared/src/classes';
+
+function cachedClasses<T extends object>(classes: { [K in keyof T]: VersionedObjectConstructor }) : (cc: ControlCenter) => T {
+  class Cache {
+    constructor (public __cc: ControlCenter) {}
+  }
+  Object.keys(classes).forEach(k => {
+    let c = classes[k];
+    Object.defineProperty(Cache.prototype, k, {
+      get: function(this: Cache) {
+        let cstor = this.__cc.cache().createAspect(this.__cc, c.definition.name, c);
+        Object.defineProperty(this, k, { value: cstor });
+        return cstor;
+      }
+    });
+  });
+  return (cc: ControlCenter) => new Cache(cc) as any;
+}
+
+function reverse(map: { [s: string]: string }) : { [s: string]: string } {
+  let ret = {};
+  for (let k in map)
+    ret[map[k]] = k;
+  return ret;
+}
+const mapClasses = {
+  R_Internal_Right   : "R_Internal Right"   ,
+  R_Element          : "R_Element"          ,
+  R_Person           : "R_Person"           ,
+  R_AuthenticationPK : "R_AuthenticationPK" ,
+  R_AuthenticationPWD: "R_AuthenticationPWD",
+  R_Service          : "R_Service"          ,
+  Parameter          : "Parameter"          ,
+  R_Application      : "R_Application"      ,
+  R_License          : "R_License"          ,
+  R_Software_Context : "R_Software Context" ,
+  R_Use_Profile      : "R_Use Profile"      ,
+  R_Device_Profile   : "R_Device Profile"   ,
+  R_Device           : "R_Device"           ,
+  R_Right            : "R_Right"            ,
+  R_Authorization    : "R_Authorization"    ,
+}
+const mapClassesR = reverse(mapClasses);
+const mapAttributes = { 
+  _version: 'version',
+  _string: 'string',
+  _r_operation: 'r_operation',
+  _r_who: 'r_who',
+  _system_name: 'system name',
+  _order: 'order',
+  _disabled: 'disabled',
+  _urn: 'urn',
+  _r_authentication: 'r_authentication',
+  _r_matricule: 'r_matricule',
+  _first_name: 'first name',
+  _middle_name: 'middle name',
+  _last_name: 'last name',
+  _login: 'login',
+  _public_key: 'public key',
+  _private_key: 'private key',
+  _ciphered_private_key: 'ciphered private key',
+  _hashed_password: 'hashed password',
+  _must_change_password: 'must change password',
+  _label: 'label',
+  _r_parent_service: 'r_parent service',
+  _r_administrator: 'r_administrator',
+  _r_member: 'r_member',
+  _parameter: 'parameter',
+  _r_sub_license: 'r_sub-license',
+  _r_software_context: 'r_software context',
+  _r_sub_use_profile: 'r_sub-use profile',
+  _r_sub_device_profile: 'r_sub-device profile',
+  _r_use_profile: 'r_use profile',
+  _r_device_profile: 'r_device profile',
+  _r_license_number: 'r_license number',
+  _r_parent_context: 'r_parent context',
+  _r_license_needed: 'r_license needed',
+  _r_device: 'r_device',
+  _r_serial_number: 'r_serial number',
+  _r_out_of_order: 'r_out of order',
+  _r_action: 'r_action',
+  _r_application: 'r_application',
+  _r_authenticable: 'r_authenticable',
+  _r_sub_right: 'r_sub-right'
+};
+
+export type Context = { cc: ControlCenter, db: DataSource.Aspects.server, classes: All };
+export type CreateContext = () => Context;
+export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
+  return function createControlCenter() {
+    let cc = new ControlCenter();
+    let DB = ObiDataSource.installAspect(cc, "server");
+    let db = new DB(ouiDb, {
+      aspectAttribute_to_ObiCar: (c: string, a: string) => mapAttributes[a] || a,
+      aspectClassname_to_ObiEntity: (c) => mapClasses[c] || c,
+      obiEntity_to_aspectClassname: (c) => mapClassesR[c] || c,
+    });
+    let c = cache(cc);
+    return { cc: cc, db: db, classes: c };
+  }
+}
 
 function getOne(def: ObiDefinition, attribute: ObiDefinition, defaultValue?: string | number | ObiDefinition) {
   let set = def.attributes.get(attribute);
@@ -43,12 +145,13 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
     let atype: Aspect.Type;
     if (type.system_name === "SID" || type.system_name === "ID") {
       let domain_entities = car.attributes.get(car_domain_entity);
-      if (!domain_entities)
+      let class_names = domain_entities && [...domain_entities].map((v: ObiDefinition) => v.system_name!);
+      if (!class_names)
         atype = { is: "type", type: "class", name: "VersionedObject" };
-      else if (domain_entities.size === 1)
-        atype = { is: "type", type: "class", name: (domain_entities.values().next().value as ObiDefinition).system_name! };
+      else if (class_names.length === 1)
+        atype = { is: "type", type: "class", name: class_names[0] };
       else
-        atype = { is: "type", type: "class", name: "VersionedObject" }; // TODO: check multiple domain entities
+        atype = { is: "type", type: "or", types: class_names.map<Aspect.Type>(n => ({ is: "type", type: "class", name: n })) }; // TODO: check multiple domain entities
     }
     else 
       atype = db.config.mapTypes[type.system_name!];
@@ -79,188 +182,35 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
   }
 }
 
-function printClasses(ouiDb: OuiDB) {
+export function printClassesMd(ouiDb: OuiDB) {
+  let map = { '_version': 'version' };
   for (let k of ouiDb.systemObiByName.keys()) {
     if (k.startsWith("R_")) {
       let c = systemObiImpl(ouiDb, k);
-      let s = `interface ${k.replace(' ', '_')} extends VersionedObject {\n`;
+      let s = `## class ${k.replace(/ /g, '_')}\n`;
+      s += `### attributes\n`;
       if (c.definition.attributes) {
         for (let a of c.definition.attributes) {
-          s += `  "${a.name}": ${typeToTsType(a.type)};\n`;
+          if (a.name === "entity") continue;
+          let n = '_' + a.name.replace(/[ -]/g, '_');
+          map[n] = a.name;
+          s += `#### \`${n}\`: ${typeToMdType(a.type)}\n`;
         }
       }
-      s += `}`;
+      s+= `### aspect obi\n`;
       console.info(s);
     }
   }
+  console.info(map);
 }
-
-function typeToTsType(type: Aspect.Type) {
+function typeToMdType(type: Aspect.Type) {
   let t = "any";
   switch(type.type) {
     case 'primitive': t = type.name; break;
-    case 'class': t = type.name.replace(' ', '_'); break;
-    case 'set': t = `Set<${typeToTsType(type.itemType)}>`; break;
-    case 'array': t = `${typeToTsType(type.itemType)}[]`; break;
+    case 'class': t = type.name.replace(/ /g, '_'); break;
+    case 'set': t = `<0,*,${typeToMdType(type.itemType)}>`; break;
+    case 'array': t = `[0,*,${typeToMdType(type.itemType)}]`; break;
+    case 'or': t = type.types.map(t => typeToMdType(t)).join(' | '); break;
   }
   return t;
 }
-
-function cachedClasses<T extends object>(classes: { [K in keyof T]: { aspect: string, impl: VersionedObjectConstructor }}) : (cc: ControlCenter) => T {
-  class Cache {
-    constructor (public __cc: ControlCenter) {}
-  }
-  Object.keys(classes).forEach(k => {
-    let c = classes[k];
-    Object.defineProperty(Cache.prototype, k, {
-      get: function(this: Cache) {
-        let cstor = this.__cc.cache().createAspect(this.__cc, c.aspect, c.impl);
-        Object.defineProperty(this, k, { value: cstor });
-        return cstor;
-      }
-    });
-  });
-  return (cc: ControlCenter) => new Cache(cc) as any;
-}
-
-export type Context = { cc: ControlCenter, db: DataSource.Aspects.server, classes: All };
-export type CreateContext = () => Context;
-export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
-  return function createControlCenter() {
-    const cache = cachedClasses<All>({
-      R_AuthenticationPK : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_AuthenticationPK" ) },
-      R_AuthenticationPWD: { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_AuthenticationPWD") },
-      R_Person           : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Person"           ) },
-      R_Service          : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Service"          ) },
-      R_Application      : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Application"      ) },
-      R_Use_Profile      : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Use Profile"      ) },
-      R_Device_Profile   : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Device Profile"   ) },
-      R_License          : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_License"          ) },
-      R_Software_Context : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Software Context" ) },
-      R_Device           : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Device"           ) },
-      R_Authorization    : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Authorization"    ) },
-      R_Right            : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Right"            ) },
-      R_Element          : { aspect: 'obi', impl: systemObiImpl(ouiDb, "R_Element"          ) },
-    });
-
-    let cc = new ControlCenter();
-    let DB = ObiDataSource.installAspect(cc, "server");
-    let db = new DB(ouiDb, {
-      aspectAttribute_to_ObiCar: (classname: string, attribute: string) => attribute === '_version' ? 'version' : attribute,
-    });
-    let c = cache(cc);
-    return { cc: cc, db: db, classes: c };
-  }
-}
-export type All = {
-  R_AuthenticationPK : { new(): R_AuthenticationPK  },
-  R_AuthenticationPWD: { new(): R_AuthenticationPWD },
-  R_Person           : { new(): R_Person            },
-  R_Service          : { new(): R_Service           },
-  R_Application      : { new(): R_Application       },
-  R_Use_Profile      : { new(): R_Use_Profile       },
-  R_Device_Profile   : { new(): R_Device_Profile    },
-  R_License          : { new(): R_License           },
-  R_Software_Context : { new(): R_Software_Context  },
-  R_Device           : { new(): R_Device            },
-  R_Authorization    : { new(): R_Authorization     },
-  R_Right            : { new(): R_Right             },
-  R_Element          : { new(): R_Element           },
-};
-export interface R_AuthenticationPK extends VersionedObject {
-  "login": string;
-  "public key": string;
-  "private key": string;
-  "ciphered private key": string;
-}
-
-export interface R_AuthenticationPWD extends VersionedObject {
-  "login": string;
-  "hashed password": string;
-  "must change password": boolean;
-}
-
-export interface R_Person extends VersionedObject {
-  "urn": string;
-  "disabled": boolean;
-  "r_authentication": ImmutableSet<R_AuthenticationPK | R_AuthenticationPWD>;
-  "r_matricule": string;
-  "first name": string;
-  "middle name": string;
-  "last name": string;
-}
-
-export interface R_Service extends VersionedObject {
-  "urn": string;
-  "label": string;
-  "disabled": boolean;
-
-  "r_parent service": R_Service;
-  "r_administrator": Set<R_Person>;
-  "r_member": Set<R_Person>;
-}
-
-export interface R_Application extends VersionedObject {
-  "urn": string;
-  "label": string;
-  "disabled": boolean;
-
-  "r_authentication": Set<R_AuthenticationPK | R_AuthenticationPWD>;
-  //"parameter": Set<Parameter>;
-  "r_sub-license": Set<R_License>;
-  "r_software context": R_Software_Context;
-  "r_sub-use profile": Set<R_Use_Profile>;
-  "r_sub-device profile": Set<R_Device_Profile>;
-}
-export interface R_Use_Profile extends VersionedObject {
-  "label": string;
-}
-export interface R_Device_Profile extends VersionedObject {
-  "label": string;
-  "r_device": Set<R_Device>;
-}
-export interface R_License extends VersionedObject {
-  "label": string;
-  "r_software context": R_Software_Context;
-  "r_use profile": R_Use_Profile;
-  "r_device profile": R_Device_Profile;
-  "r_license number": string;
-}
-
-export interface R_Software_Context extends VersionedObject {
-  "label": string;
-  "disabled": boolean;
-  "urn": string;
-  "r_parent context": R_Software_Context;
-  "r_license needed": boolean;
-}
-
-export interface R_Device extends VersionedObject {
-  "urn": string;
-  "label": string;
-  "disabled": boolean;
-
-  "r_serial number": string;
-  "r_out of order": boolean;
-}
-export interface R_Authorization extends VersionedObject {
-  "label": string;
-  "disabled": boolean;
-  "urn": string;
-  "r_authenticable": Set<R_Person | R_Application>;
-  "r_sub-right": Set<R_Right>;
-}
-export interface R_Right extends VersionedObject {
-  "label": string;
-  "r_action": R_Element;
-  "r_application": R_Application;
-  "r_software context": R_Software_Context;
-  "r_use profile": R_Use_Profile;
-  "r_device profile": R_Device_Profile;
-}
-
-export interface R_Element extends VersionedObject {
-  "system name": string;
-  "order": number;
-}
-

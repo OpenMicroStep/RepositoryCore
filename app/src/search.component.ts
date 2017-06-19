@@ -7,6 +7,7 @@ import { AspectComponent } from './aspect/aspect.component';
   selector: 'search-list',
   template:
   `
+<div style="position: relative;">
   <div class="input-group input-group-lg">
     <span class="input-group-addon" id="sizing-addon1"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></span>
     <input type="text" class="form-control" placeholder="Rechercher" aria-describedby="sizing-addon1" [(ngModel)]="search">
@@ -21,7 +22,8 @@ import { AspectComponent } from './aspect/aspect.component';
       <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
     </li>
   </ul>
-  <button class="btn btn-success" type="submit" (click)="create()">Create</button>
+  <button class="btn btn-success" style="position: absolute;bottom: 15px;right: 20px;" type="submit" (click)="create()">Create</button>
+</div>
 `
 })
 export class SearchListComponent extends AspectComponent {

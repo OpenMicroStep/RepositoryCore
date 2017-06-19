@@ -10,30 +10,32 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
   selector: 'software-context-ti',
   template: `
 <li class="list-group-item">
-  <span *ngIf="this._r_child_contexts.length" class="glyphicon glyphicon" 
-    [class.glyphicon-menu-right]="!this._expanded" 
-    [class.glyphicon-menu-down]="this._expanded"
-    (click)="this._expanded = !this._expanded"></span>
-  {{this._item._label}}
-  <div *ngIf="this.allowFastValue()" class="btn-group" role="group">
-    <div class="btn-group" role="group" [class.open]="this._fastIsOpen">
-      <button type="button" class="btn btn-default dropdown-toggle" (click)="this._fastIsOpen = !this._fastIsOpen;">
-        {{this.fastValue()._system_name}}
-        <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu" (click)="this._fastIsOpen = false">
-        <li (click)="this.setFastValue(this._UndefinedRight)">
-          <a href="#">{{this._UndefinedRight._system_name}}</a>
-        </li>
-        <li role="separator" class="divider"></li>
-        <li *ngFor="let item of this._auth._actions" (click)="this.setFastValue(item)">
-          <a href="#">{{item._system_name}}</a>
-        </li>
-      </ul>
+  <div style="display: flex;align-items: center;justify-content: center;">
+    <span *ngIf="this._r_child_contexts.length" class="glyphicon glyphicon" 
+      [class.glyphicon-menu-right]="!this._expanded"
+      [class.glyphicon-menu-down]="this._expanded"
+      (click)="this._expanded = !this._expanded"></span>
+    <span style="flex: 1;margin: 5px;">{{this._item._label}}</span>
+    <div *ngIf="this.allowFastValue()" class="btn-group" role="group">
+      <div class="btn-group" role="group" [class.open]="this._fastIsOpen">
+        <button type="button" class="btn btn-default dropdown-toggle" (click)="this._fastIsOpen = !this._fastIsOpen;">
+          {{this.fastValue()._system_name}}
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" (click)="this._fastIsOpen = false">
+          <li (click)="this.setFastValue(this._UndefinedRight)">
+            <a href="#">{{this._UndefinedRight._system_name}}</a>
+          </li>
+          <li role="separator" class="divider"></li>
+          <li *ngFor="let item of this._auth._actions" (click)="this.setFastValue(item)">
+            <a href="#">{{item._system_name}}</a>
+          </li>
+        </ul>
+      </div>
+      <button type="button" class="btn btn-default"  (click)="this._advanced = !this._advanced;">Advanced</button>
     </div>
-    <button type="button" class="btn btn-default"  (click)="this._advanced = !this._advanced;">Advanced</button>
   </div>
-  <ul *ngIf="!this.allowFastValue() || this._advanced" class="list-group">
+  <ul *ngIf="!this.allowFastValue() || this._advanced" class="list-group" style="margin: 0; margin-top: 5px">
     <li class="list-group-item form-inline" *ngFor="let right of this.rights()">
       <vo-input-text   label="Label"            [object]="right" attribute="_label"></vo-input-text>
       <vo-input-select label="Action"           [object]="right" attribute="_r_action"           [items]="this._auth._actions">
@@ -57,7 +59,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
       <button class="btn btn-success" type="submit" (click)="this.createRight()">Add right</button>
     </li>
   </ul>
-  <ul *ngIf="this._expanded !== undefined && this._r_child_contexts.length" [class.hidden]="!this._expanded"  class="list-group">
+  <ul *ngIf="this._expanded !== undefined && this._r_child_contexts.length" [class.hidden]="!this._expanded"  class="list-group" style="margin: 0; margin-top: 5px">
     <software-context-ti *ngFor="let child of this._r_child_contexts" [item]="child" [app]="this._app" [auth]="this._auth"></software-context-ti>
   </ul>
 </li>

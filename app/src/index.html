@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <!-- <link href="node_modules/@angular/material/prebuilt-themes/indigo-pink.css" rel="stylesheet"> -->
 
     <!-- Polyfill(s) for older browsers -->
     <script src="node_modules/core-js/client/shim.min.js"></script>
@@ -18,6 +17,25 @@
   </head>
 
   <body>
-    <my-app>Loading...</my-app>
+    <my-app>
+      <div style="height: 100%; display: flex; align-items: center; justify-content: center;">
+        <form class="jumbotron" style="padding: 50px 100px; border-radius: 10px;">
+          <div class="form-group text-center">
+            <img class="navbar-logo" alt="Logo Logitud" src="images/logo_logitud_@2x.png">
+          </div>
+          <div class="form-group">
+            <label class="control-label">Login</label>
+            <input class="form-control" type="text" name="login" disabled>
+          </div>
+          <div class="form-group">
+            <label class="control-label">Password</label>
+            <input class="form-control" type="password" name="password" disabled>
+          </div>
+          <div class="form-group">
+            <button class="btn btn-primary" type="submit" disabled>Loading...</button>
+          </div>
+        </form>
+      </div>
+    </my-app>
   </body>
 </html>

@@ -8,6 +8,7 @@ module.exports =  {
         { is: 'file', name: 'index.html', tags: ['copy'] },
         { is: 'file', name: 'styles.css', tags: ['copy'] },
         { is: 'file', name: 'systemjs.config.js', tags: ['copy'] },
+        { is: 'file', name: 'images/*.png', tags: ['copy'] },
       ]},
       { is: 'group', name: 'server', path: 'server/src/', elements: [
         { is: 'file', name: 'server.ts', tags: ['tsc']},
@@ -22,7 +23,7 @@ module.exports =  {
       environments: ["=::openms.aspects.angular::"],
       components: ["=::openms.aspects.angular.dev::"],
       files: ["=files:app ? tsc", "=files:shared ? tsc"],
-      copyFiles: [{ is: "group", elements: ["=files:app ? copy"], dest: "" }],
+      copyFiles: [{ is: "group", elements: ["=files:app ? copy"], dest: "", expand: true }],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
       npmPackage: { is: "component",
         dependencies: { is: "component",

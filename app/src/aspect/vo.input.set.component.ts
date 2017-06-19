@@ -36,6 +36,8 @@ export class VOInputSetComponent<T> extends VOInputComponent<Set<T>> {
     let s = new Set(this.value || []);
     s.delete(item);
     this.value = s;
+    if (item instanceof VersionedObject) // TODO: this is not modular...
+      item.manager().delete();
   }
 }
 export namespace VOInputSetComponent {

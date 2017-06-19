@@ -42,7 +42,11 @@ module.exports =  {
           "sqlite3": "^3.1.8",
           "@openmicrostep/msbuildsystem.shared": "^0.5.6",
           "express-session": "^1.15.0",
-        }
+          "ldapjs": "^1.0.1",
+        },
+        devDependencies: { is: "component",
+          "@types/ldapjs": "^1.0.0"
+        },
       },
     }
   }

@@ -14,14 +14,6 @@ import { AspectComponent } from '../aspect/aspect.component';
   <div><vo-input-text     label="Serial Number" [object]="this.object" attribute="_r_serial_number" ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Disabled"      [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div><vo-input-checkbox label="Out of order"  [object]="this.object" attribute="_r_out_of_order"  ></vo-input-checkbox></div>
-  <div>
-    <vo-input-set label="Authentification" [object]="this.object" attribute="_r_authentication" [domains]="this._r_authentication_domains">
-       <ng-template let-item="$implicit">
-        <authentication-pwd *ngIf="isAuthPWD(item)" [object]="item"></authentication-pwd>
-        <authentication-pk  *ngIf="isAuthPK(item)"  [object]="item"></authentication-pk >
-      </ng-template>
-    </vo-input-set>
-  </div>
   <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
 </form>
@@ -32,7 +24,7 @@ export class DeviceComponent extends VOComponent<R_Device.Aspects.obi> {
     super(ctx.dataSource);
   }
 
-  scope() { 
+  scope() {
     return ["_label", "_disabled", "_r_out_of_order", "_urn", "_r_serial_number"];
   }
 }

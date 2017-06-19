@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Application, R_AuthenticationPK, R_AuthenticationPWD } from '../main';
-import { Notification, Invocation, VersionedObject } from '@openmicrostep/aspects';
+import { Notification, Invocation, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent } from '../aspect/vo.component';
@@ -68,11 +68,11 @@ export class ApplicationComponent extends VOComponent<R_Application.Aspects.obi>
   isAuthPK(item) { return item instanceof this.ctx.R_AuthenticationPK; }
 
   scope() { 
-    return ["_label", "_urn", "_r_authentication", "_parameter", "_r_software_context", "_r_sub_use_profile", "_r_sub_device_profile"];
+    return ["_label", "_urn", "_r_authentication", "_login", "_parameter", "_r_software_context", "_r_sub_use_profile", "_r_sub_device_profile"];
   }
 
   objectsToSave(): VersionedObject[] {
-    return [this.object!, ...this.object!._r_authentication, ...this.object!._parameter, this.object!._r_software_context!, ...this.object!._r_sub_use_profile, ...this.object!._r_sub_device_profile];
+    return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication", "_parameter", "_r_sub_use_profile", "_r_sub_device_profile"]);
   }
 }
 

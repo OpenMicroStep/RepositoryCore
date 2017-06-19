@@ -7,8 +7,8 @@ import {repositoryV2Definition} from './repository-v2-def';
 import {api_v1} from './api-v1';
 import {api_v2} from './api-v2';
 import {api_aspect} from './api-aspect';
+import {api_xnet} from '../../xnet/src/api-xnet';
 import {controlCenterCreator, printClassesMd} from './classes';
-import './bcoding';
 var sqlite3 = require('sqlite3').verbose();
 require('source-map-support').install();
 
@@ -43,30 +43,74 @@ async function boot() {
 
   const creator = controlCenterCreator(ouiDb);
   let {cc, db, classes} = creator();
+
+  trace = true;
   let p = new classes.R_Person();
-  let a = new classes.R_AuthenticationPWD();
-  a._login = "repository";
-  a._hashed_password = "1:1000<d3fjmT9+psw=>D6AE70DA5152A6C7CCB1CEFE989CE0790DDC89FD26D96A0B116578E378452C3B59E4A7155CEC53166ED01B7D874568CC9F5F8BE4EEF38E531D5289988CBE0555";
   p._first_name = "Admin";
   p._last_name = "Admin";
+  let a = new classes.R_AuthenticationPWD();
+  a._mlogin = "admin";
+  a._password = "admin";
   p._r_authentication = new Set([a]);
-  let invs = await db.farPromise("safeSave", [a, p]);
+
+  let plms1 = new classes.R_Application();
+  plms1._urn = "planitech-1";
+  plms1._label = "Planitech #1";
+  let sc_1_0 = new classes.R_Software_Context();
+  plms1._r_software_context = sc_1_0;
+  sc_1_0._label = "Planitech #1 v4.3 Root";
+  sc_1_0._urn = "plms-1-v4.3-root";
+  sc_1_0._r_parent_context = undefined;
+  let sc_1_1 = new classes.R_Software_Context();
+  sc_1_1._label = "Planitech #1 v4.3 Agents";
+  sc_1_1._urn = "plms-1-v4.3-agents";
+  sc_1_1._r_parent_context = sc_1_0;
+  let sc_1_2 = new classes.R_Software_Context();
+  sc_1_2._label = "Planitech #1 v4.3 Cities";
+  sc_1_2._urn = "plms-1-v4.3-cities";
+  sc_1_2._r_parent_context = sc_1_0;
+  let sc_1_3 = new classes.R_Software_Context();
+  sc_1_3._label = "Planitech #1 v4.3 Sub Cities";
+  sc_1_3._urn = "plms-1-v4.3-sub-cities";
+  sc_1_3._r_parent_context = sc_1_2;
+  let sc_1_4 = new classes.R_Software_Context();
+  sc_1_4._label = "Planitech #1 v4.3 A1";
+  sc_1_4._urn = "plms-1-v4.3-sub-a1";
+  sc_1_4._r_parent_context = sc_1_3;
+  let sc_1_5 = new classes.R_Software_Context();
+  sc_1_5._label = "Planitech #1 v4.3 A2";
+  sc_1_5._urn = "plms-1-v4.3-sub-a2";
+  sc_1_5._r_parent_context = sc_1_3;
+
+  let plms2 = new classes.R_Application();
+  plms2._urn = "planitech-2";
+  plms2._label = "Planitech #2";
+  let sc_2_0 = new classes.R_Software_Context();
+  plms2._r_software_context = sc_2_0;
+  sc_2_0._label = "Planitech #2 v4.3 Root";
+  sc_2_0._urn = "plms-2-v4.3-root";
+  sc_2_0._r_parent_context = undefined;
+
+  let invs = await db.farPromise("safeSave", [
+    a, p, 
+    plms1, sc_1_0, sc_1_1, sc_1_2, sc_1_3, sc_1_4, sc_1_5,
+    plms2, sc_2_0,
+  ]);
   if (invs.hasDiagnostics())
     return Promise.reject(invs.diagnostics());
   let invq = await db.farPromise("safeQuery", {
     name: "p",
-    where: { $instanceOf: classes.R_AuthenticationPWD, _login: "repository" },
+    where: { $instanceOf: classes.R_AuthenticationPWD, _mlogin: "repository" },
   });
   if (invq.hasDiagnostics())
     return Promise.reject(invq.diagnostics());
   console.info(invq.result());
 
   const app = express();
-  app.use('/api/v1', api_v1(creator));
-  app.use('/api/v2', api_v2(creator));
+  //app.use('/api/v1', api_v1(creator));
+  //app.use('/api/v2', api_v2(creator));
   app.use('/', api_aspect(creator));
   app.listen(8080);
-trace = true;
 }
 
 boot().catch(err => {

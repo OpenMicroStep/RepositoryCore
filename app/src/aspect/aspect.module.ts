@@ -1,7 +1,7 @@
 import { NgModule, ANALYZE_FOR_ENTRY_COMPONENTS, InjectionToken }      from '@angular/core';
 import { CommonModule }       from '@angular/common';
 import { FormsModule }        from '@angular/forms';
-import { MaterialModule }        from '@angular/material';
+import { MdCheckboxModule, MdButtonModule, MdInputModule }        from '@angular/material';
 import { AspectComponent }  from './aspect.component';
 import './vo.input.component';
 import { VOInputTextComponent }  from './vo.input.text.component';
@@ -11,7 +11,7 @@ import { VOInputSelectComponent }  from './vo.input.select.component';
 import { VOComponent }  from './vo.component';
 
 @NgModule({
-  imports:      [ CommonModule, FormsModule, MaterialModule ],
+  imports:      [ CommonModule, FormsModule ],
   declarations: [ VOInputTextComponent, VOInputCheckboxComponent, VOInputSetComponent, VOInputSelectComponent ],
   exports:      [ VOInputTextComponent, VOInputCheckboxComponent, VOInputSetComponent, VOInputSelectComponent ],
 })

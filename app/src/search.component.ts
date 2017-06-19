@@ -48,6 +48,7 @@ export class SearchListComponent extends AspectComponent {
   ngAfterViewInit() {
     super.ngAfterViewInit();
     this.ctx.controlCenter.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
+    this.ctx.dataSource.farEvent('query', { id: this.query, text: "" }, 'onItems', this);
   }
 
   onItems(notification: Notification<Invocation<{ items: VersionedObject[] }>>) {

@@ -48,6 +48,12 @@ unique: 1
 _end:
 
 Car
+_id: 322
+system name: mlogin
+type: STR
+_end:
+
+Car
 _id: 323
 system name: hashed password
 type: STR
@@ -152,6 +158,12 @@ pattern:  // ENT-R_Person-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
+  _end:
+pattern:  // ENT-R_Person-login
+  Gab
+  _id: 10143
+  characteristic: login
+  cardinality: multi
   _end:
 pattern:  // ENT-R_Person-authentication
   Gab
@@ -308,6 +320,12 @@ pattern:  // ENT-R_Application-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
+  _end:
+pattern:  // ENT-R_Person-login
+  Gab
+  _id: 10943
+  characteristic: login
+  cardinality: multi
   _end:
 pattern:  // ENT-R_Application-authentication
   Gab
@@ -624,7 +642,7 @@ system name: R_AuthenticationPWD
 pattern:
   Gab
   _id: 13710
-  characteristic: login
+  characteristic: mlogin
   cardinality: one
   mandatory: 1
   r_internal right: 
@@ -683,7 +701,7 @@ system name: R_AuthenticationPK
 pattern:
   Gab
   _id: 13810
-  characteristic: login
+  characteristic: mlogin
   cardinality: one
   mandatory: 1
   r_internal right: 
@@ -722,14 +740,161 @@ pattern:
   _end:
 _end:
 
+ENT
+_id: 13901
+system name: R_AuthenticationLDAP
+pattern:
+  Gab
+  _id: 13910
+  characteristic: mlogin
+  cardinality: one
+  mandatory: 1
+  r_internal right: 
+    R_Internal Right
+    _id: 13920
+    r_operation: read
+    r_who: authentication
+    _end:
+  r_internal right: 
+    R_Internal Right
+    _id: 13930
+    r_operation: read
+    r_operation: modify
+    r_operation: add
+    r_operation: remove
+    r_who: black
+    _end:
+  _end:
+pattern:
+  Gab
+  _id: 13940
+  characteristic: ldap_dn
+  cardinality: one
+  mandatory: 1
+  r_internal right: 
+    R_Internal Right
+    _id: 13950
+    r_operation: read
+    r_who: nobody
+    _end:
+  r_internal right: 
+    R_Internal Right
+    _id: 13960
+    r_operation: modify
+    r_who: logged
+    _end:
+  r_internal right: 
+    R_Internal Right
+    _id: 13970
+    r_operation: modify
+    r_operation: add
+    r_operation: remove
+    r_who: black
+    _end:
+  _end:
+_end:
+
+ENT
+_id: 14001
+system name: R_LDAPConfiguration
+pattern:
+  Gab
+  _id: 14010
+  characteristic: ldap_url
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14020
+  characteristic: ldap_dn
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14030
+  characteristic: ldap_password
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14040
+  characteristic: ldap_user_base
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14050
+  characteristic: ldap_user_filter
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14080
+  characteristic: ldap_attribute_map
+  cardinality: multi
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14090
+  characteristic: ldap_group_map
+  cardinality: multi
+  mandatory: 1
+  _end:
+_end:
+
+ENT
+_id: 14101
+system name: R_LDAPAttribute
+pattern:
+  Gab
+  _id: 14110
+  characteristic: ldap_attribute_name
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14120
+  characteristic: ldap_to_attribute_name
+  cardinality: one
+  mandatory: 1
+  _end:
+_end:
+
+ENT
+_id: 14201
+system name: R_LDAPGroup
+pattern:
+  Gab
+  _id: 14210
+  characteristic: ldap_dn
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
+  _id: 14220
+  characteristic: ldap_group
+  cardinality: one
+  mandatory: 1
+  _end:
+_end:
+
 Car
 _id: 10020
 system name: r_authentication
 type: SID
 domain entity: R_AuthenticationPK
 domain entity: R_AuthenticationPWD
-//domain entity: R_AuthenticationLDAP
+domain entity: R_AuthenticationLDAP
 _end:
+
 Car
 _id: 10022
 system name: r_internal right
@@ -885,6 +1050,69 @@ Car
 _id: 13603
 system name: r_license number
 type: STR
+_end:
+
+Car
+_id: 14701
+system name: ldap_url
+type: STR
+_end:
+
+Car
+_id: 14702
+system name: ldap_dn
+type: STR
+_end:
+
+Car
+_id: 14703
+system name: ldap_password
+type: STR
+_end:
+
+Car
+_id: 14704
+system name: ldap_user_base
+type: STR
+_end:
+
+Car
+_id: 14705
+system name: ldap_user_filter
+type: STR
+_end:
+
+Car
+_id: 14708
+system name: ldap_attribute_map
+type: SID
+domain entity: R_LDAPAttribute
+_end:
+
+Car
+_id: 14709
+system name: ldap_group_map
+type: SID
+domain entity: R_LDAPGroup
+_end:
+
+Car
+_id: 14710
+system name: ldap_attribute_name
+type: STR
+_end:
+
+Car
+_id: 14711
+system name: ldap_to_attribute_name
+type: STR
+_end:
+
+Car
+_id: 14712
+system name: ldap_group
+type: ID
+domain entity: R_Authorization
 _end:
 
 Lst

@@ -27,6 +27,10 @@ export abstract class VOComponent<T extends VersionedObject> extends AspectCompo
   }
 
   @Input() set object(object: T | undefined) {
+    this.setObject(object);
+  }
+
+  setObject(object: T | undefined) {
     if (this._object === object)
       return;
     this._object = undefined;

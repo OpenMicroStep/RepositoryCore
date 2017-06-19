@@ -53,6 +53,15 @@ export namespace SecureHash {
     return `${SecureHash.defaultAlgorithm}:${SecureHash.defaultHardness}<${randomBytesUnsafe()}>${SecureHash.defaultAlgorithm}:${SecureHash.defaultHardness}<${randomBytesUnsafe()}>`;
   }
 
+  export async function isValid(password: string, hashedPassword: string) {
+    let matches = hashedPassword.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>(.+)$/);
+    if (matches) {
+      let hp = await computeHash(password, +matches[1], +matches[2], matches[3]);
+      return matches[4] === hp;
+    }
+    return false;
+  }
+
   export async function challenge(hashedPassword: string) {
     let matches = hashedPassword.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>(.+)$/);
     if (matches) {
@@ -100,7 +109,7 @@ export namespace SecureHash {
     let algorithm = defaultAlgorithm;
     let hardness = defaultHardness;
     let salt = await randomBytesSafe(SecureHash.defaultSaltBytes);
-    let hash = computeHash(password, algorithm, hardness, salt);
+    let hash = await computeHash(password, algorithm, hardness, salt);
     return `${algorithm}:${hardness}<${salt}>${hash}`;
   }
 

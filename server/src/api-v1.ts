@@ -337,28 +337,29 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       "rights=": {
         $out: "=r",
         "r=": { $elementOf: { $instanceOf: classes.R_Right } },
-        "p=": "=device_profiles",
+        "p=": { $elementOf: "=device_profiles" },
         "=r.r_device profile": { $eq: "=p" }
       },
-      "actions=": { $in: "=rights:r_action" },
-      "use_profiles=": { $in: "=rights:r_use profile" },
+      "actions=": "=rights:r_action",
+      "use_profiles=": "=rights:r_use profile",
       "authorizations=": {
         $out: "=a",
         "a=": { $elementOf: { $instanceOf: classes.R_Authorization } },
-        "r=": "=rights",
+        "r=": { $elementOf: "=rights" },
         "=a.disabled": false,
         "=a.r_sub-right": { $has: "=r" }
       },
       "applications=": {
         $out: "=A",
         "A=": { $elementOf: { $instanceOf: classes.R_Application } },
-        "a=": "=authorizations",
-        "=a.r_authenticable": { $has: "=A" }
+        "a=": { $elementOf: "=authorizations" },
+        "=a.r_authenticable": { $has: "=A" },
+        "=A": { $in: "=a.r_authenticable" }, //
       },
       "persons=": {
         $out: "=A",
         "A=": { $elementOf: { $instanceOf: classes.R_Person } },
-        "a=": "=authorizations",
+        "a=": { $elementOf: "=authorizations" },
         "=a.r_authenticable": { $has: "=A" }
       },
       results: [

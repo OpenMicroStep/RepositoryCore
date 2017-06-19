@@ -1,7 +1,9 @@
-import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, InvocationState, DataSourceQuery, ImmutableSet} from '@openmicrostep/aspects';
+import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, InvocationState, DataSourceQuery, ImmutableSet, SafeValidator, Invocation} from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, StdDefinition, ObiDefinition} from '@openmicrostep/aspects.obi';
-import {cache, All} from '../../shared/src/classes';
+import {cache, All, R_AuthenticationPWD, R_AuthenticationLDAP, R_Person, Session} from '../../shared/src/classes';
+import {SecureHash, SecurePK} from './securehash';
 export * from '../../shared/src/classes';
+import {authLdap} from './ldap';
 
 function cachedClasses<T extends object>(classes: { [K in keyof T]: VersionedObjectConstructor }) : (cc: ControlCenter) => T {
   class Cache {
@@ -46,7 +48,6 @@ const mapClasses = {
 const mapClassesR = reverse(mapClasses);
 const mapAttributes = { 
   _version: 'version',
-  _string: 'string',
   _r_operation: 'r_operation',
   _r_who: 'r_who',
   _system_name: 'system name',
@@ -59,11 +60,13 @@ const mapAttributes = {
   _middle_name: 'middle name',
   _last_name: 'last name',
   _login: 'login',
+  _mlogin: 'mlogin',
   _public_key: 'public key',
   _private_key: 'private key',
   _ciphered_private_key: 'ciphered private key',
   _hashed_password: 'hashed password',
   _must_change_password: 'must change password',
+  _ldap_dn: 'ldap_dn',
   _label: 'label',
   _r_parent_service: 'r_parent service',
   _r_administrator: 'r_administrator',
@@ -84,24 +87,92 @@ const mapAttributes = {
   _r_action: 'r_action',
   _r_application: 'r_application',
   _r_authenticable: 'r_authenticable',
-  _r_sub_right: 'r_sub-right'
+  _r_sub_right: 'r_sub-right',
+  _ldap_url: 'ldap_url',
+  _ldap_password: 'ldap_password',
+  _ldap_user_base: 'ldap_user_base',
+  _ldap_user_filter: 'ldap_user_filter',
+  _ldap_attribute_map: 'ldap_attribute_map',
+  _ldap_group_map: 'ldap_group_map',
+  _ldap_attribute_name: 'ldap_attribute_name',
+  _ldap_to_attribute_name: 'ldap_to_attribute_name',
+  _ldap_group: 'ldap_group' 
 };
 
-export type Context = { cc: ControlCenter, db: DataSource.Aspects.server, classes: All };
+export type Context = { cc: ControlCenter, session: Session, db: DataSource.Aspects.server, classes: All };
 export type CreateContext = () => Context;
 export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
+  let safeValidators = new Map<string, SafeValidator>();
+  safeValidators.set("R_AuthenticationPWD", {
+    preSaveAttributes: ["_hashed_password"],
+    filterObject(object) {
+      let m =  object.manager();
+      let hpwd = m.hasAttributeValue("_hashed_password");
+      m.unload(["_password", "_hashed_password"]);
+      (m.versionAttributes() as any).set("_password", ""); // TODO: fix this workaround FAST (virtual attribute on all datasource ?)
+    },
+    async preSavePerObject(reporter, set, object) {
+      let m = object.manager();
+      if (m.hasChanges(["_password"])) {
+        let hashed_password = await SecureHash.hashedPassword(m.attributeValue("_password"));
+        m.setAttributeValue("_hashed_password", hashed_password);
+        m.unload(["_password"]);
+      }
+    }
+  } as SafeValidator<R_AuthenticationPWD>);
+
   return function createControlCenter() {
     let cc = new ControlCenter();
+    let c = cache(cc);
     let DB = ObiDataSource.installAspect(cc, "server");
+    let S = Session.installAspect(cc, "server");
+    let session = new S();
     let db = new DB(ouiDb, {
       aspectAttribute_to_ObiCar: (c: string, a: string) => mapAttributes[a] || a,
       aspectClassname_to_ObiEntity: (c) => mapClasses[c] || c,
       obiEntity_to_aspectClassname: (c) => mapClassesR[c] || c,
     });
-    let c = cache(cc);
-    return { cc: cc, db: db, classes: c };
+    db.setSafeValidators(safeValidators);
+    session.manager().setId("session");
+    db.manager().setId("odb");
+    let cmp = {};
+    cc.registerComponent(cmp);
+    cc.registerObjects(cmp, [db, session]);
+    return { cc: cc, session: session, db: db, classes: c };
   }
 }
+
+Session.category('client', {
+  async loginByPassword(q) {
+    let db = this.controlCenter().registeredObject('odb') as DataSource.Aspects.server;
+    let inv = await db.farPromise('rawQuery', { results: [
+      { name: 'bypwd' , where: { $instanceOf: "R_AuthenticationPWD" , _mlogin: q.login }, scope: ['_mlogin', '_hashed_password'] },
+      { name: 'bypk'  , where: { $instanceOf: "R_AuthenticationPK"  , _mlogin: q.login }, scope: ['_mlogin', '_public_key'     ] },
+      { name: 'byldap', where: { $instanceOf: "R_AuthenticationLDAP", _mlogin: q.login }, scope: ['_mlogin', '_ldap_dn'        ] },
+    ]});
+    let ok = false;
+    if (inv.hasResult()) {
+      let r = inv.result();
+      let auths = [...r.bypwd, ...r.bypk, ...r.byldap]; // TODO: $union
+      if (auths.length === 1) {
+        let a = auths[0];
+        let inv = await db.farPromise('rawQuery', { name: 'p', where: { $instanceOf: "R_Person" , _r_authentication: { $has: a } } });
+        if (inv.hasResult() && inv.result().p.length === 1) {
+          let p = inv.result().p[0] as R_Person;
+          if (a instanceof R_AuthenticationPWD)
+            ok = await SecureHash.isValid(q.password, a._hashed_password!)
+          else if (a instanceof R_AuthenticationLDAP)
+            ok = await authLdap(db, q.login, q.password, p, a);
+        }
+        else
+         console.error(inv.diagnostics());
+      }
+    }
+    else
+      console.error(inv.diagnostics());
+    return new Invocation<boolean>(ok ? [] : [{ type: "error", msg: `bad login/password` }], true, ok);
+  }
+})
 
 function getOne(def: ObiDefinition, attribute: ObiDefinition, defaultValue?: string | number | ObiDefinition) {
   let set = def.attributes.get(attribute);
@@ -165,7 +236,8 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
     });
   });
   return class ObiVersionedObject extends VersionedObject {
-    static definition = {
+    static definition: Aspect.Definition = {
+      is: "class",
       name: obi.system_name!,
       version: 0,
       attributes: attributes,

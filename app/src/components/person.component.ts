@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD } from '../main';
-import { Notification, Invocation, VersionedObject } from '@openmicrostep/aspects';
+import { Notification, Invocation, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent } from '../aspect/vo.component';
@@ -17,8 +17,9 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
   <div>
     <vo-input-set label="Authentification" [object]="this.object" attribute="_r_authentication" [domains]="this._r_authentication_domains">
        <ng-template let-item="$implicit">
-        <authentication-pwd *ngIf="isAuthPWD(item)" [object]="item"></authentication-pwd>
-        <authentication-pk  *ngIf="isAuthPK(item)"  [object]="item"></authentication-pk >
+        <authentication-pwd  *ngIf="isAuthPWD(item)"  [object]="item"></authentication-pwd >
+        <authentication-pk   *ngIf="isAuthPK(item)"   [object]="item"></authentication-pk  >
+        <authentication-ldap *ngIf="isAuthLDAP(item)" [object]="item"></authentication-ldap>
       </ng-template>
     </vo-input-set>
   </div>
@@ -40,17 +41,22 @@ export class PersonComponent extends VOComponent<R_Person.Aspects.obi> {
       label: "by public key",
       create: () => new ctx.R_AuthenticationPK()
     });
+    this._r_authentication_domains.push({
+      label: "by ldap",
+      create: () => new ctx.R_AuthenticationLDAP()
+    });
   }
 
   isAuthPWD(item) { return item instanceof this.ctx.R_AuthenticationPWD; }
   isAuthPK(item) { return item instanceof this.ctx.R_AuthenticationPK; }
+  isAuthLDAP(item) { return item instanceof this.ctx.R_AuthenticationLDAP; }
 
   scope() { 
-    return ["_first_name", "_middle_name", "_last_name", "_disabled", "_r_authentication"];
+    return ["_first_name", "_middle_name", "_last_name", "_disabled", "_r_authentication", "_login"];
   }
 
   objectsToSave(): VersionedObject[] {
-    return [this.object!, ...this.object!._r_authentication];
+    return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication"]);
   }
 }
 

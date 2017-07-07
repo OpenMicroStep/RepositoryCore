@@ -29,7 +29,13 @@ import { PersonComponent } from '../components/person.component';
       <vo-input-set label="Group Map" [object]="object" attribute="_ldap_group_map" [domains]="this._ldap_group_map_domains">
         <ng-template let-item="$implicit">
           <div><vo-input-text   label="LDAP DN"       [object]="item" attribute="_ldap_dn"   ></vo-input-text  ></div>
-          <div><vo-input-select label="Authorization" [object]="item" attribute="_ldap_group"></vo-input-select></div>
+          <div>
+            <vo-input-select label="Authorization" [object]="item" attribute="_ldap_group" query="authorizations">
+              <ng-template let-item="$implicit">
+                <authorization-li [item]="item"></authorization-li>
+              </ng-template>
+            </vo-input-select>
+          </div>
         </ng-template>
       </vo-input-set>
     </div>

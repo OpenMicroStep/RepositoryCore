@@ -22,84 +22,26 @@ function cachedClasses<T extends object>(classes: { [K in keyof T]: VersionedObj
   return (cc: ControlCenter) => new Cache(cc) as any;
 }
 
-function reverse(map: { [s: string]: string }) : { [s: string]: string } {
-  let ret = {};
-  for (let k in map)
-    ret[map[k]] = k;
-  return ret;
+const mapClasses = {}
+const mapClassesR = {};
+const mapAttributes = {};
+export function buildMaps(ouiDb: OuiDB) {
+  let car_pattern = systemObiByName(ouiDb, "pattern");
+  mapAttributes['_version'] = 'version';
+  for (let obi of ouiDb.systemObiByName.values()) {
+    if (obi.is.system_name === "ENT") {
+      let n = obi.system_name.replace(/[ -]/g, '_');
+      mapClasses[n] = obi.system_name;
+      mapClassesR[obi.system_name] = n;
+    }
+    if (obi.is.system_name === "Car") {
+      let n = '_' + obi.system_name.replace(/[ -]/g, '_');
+      mapAttributes[n] = obi.system_name;
+    }
+  }
 }
-const mapClasses = {
-  R_Internal_Right   : "R_Internal Right"   ,
-  R_Element          : "R_Element"          ,
-  R_Person           : "R_Person"           ,
-  R_AuthenticationPK : "R_AuthenticationPK" ,
-  R_AuthenticationPWD: "R_AuthenticationPWD",
-  R_Service          : "R_Service"          ,
-  Parameter          : "Parameter"          ,
-  R_Application      : "R_Application"      ,
-  R_License          : "R_License"          ,
-  R_Software_Context : "R_Software Context" ,
-  R_Use_Profile      : "R_Use Profile"      ,
-  R_Device_Profile   : "R_Device Profile"   ,
-  R_Device           : "R_Device"           ,
-  R_Right            : "R_Right"            ,
-  R_Authorization    : "R_Authorization"    ,
-}
-const mapClassesR = reverse(mapClasses);
-const mapAttributes = { 
-  _version: 'version',
-  _r_operation: 'r_operation',
-  _r_who: 'r_who',
-  _system_name: 'system name',
-  _order: 'order',
-  _disabled: 'disabled',
-  _urn: 'urn',
-  _r_authentication: 'r_authentication',
-  _r_matricule: 'r_matricule',
-  _first_name: 'first name',
-  _middle_name: 'middle name',
-  _last_name: 'last name',
-  _login: 'login',
-  _mlogin: 'mlogin',
-  _public_key: 'public key',
-  _private_key: 'private key',
-  _ciphered_private_key: 'ciphered private key',
-  _hashed_password: 'hashed password',
-  _must_change_password: 'must change password',
-  _ldap_dn: 'ldap_dn',
-  _label: 'label',
-  _r_parent_service: 'r_parent service',
-  _r_administrator: 'r_administrator',
-  _r_member: 'r_member',
-  _parameter: 'parameter',
-  _r_sub_license: 'r_sub-license',
-  _r_software_context: 'r_software context',
-  _r_sub_use_profile: 'r_sub-use profile',
-  _r_sub_device_profile: 'r_sub-device profile',
-  _r_use_profile: 'r_use profile',
-  _r_device_profile: 'r_device profile',
-  _r_license_number: 'r_license number',
-  _r_parent_context: 'r_parent context',
-  _r_license_needed: 'r_license needed',
-  _r_device: 'r_device',
-  _r_serial_number: 'r_serial number',
-  _r_out_of_order: 'r_out of order',
-  _r_action: 'r_action',
-  _r_application: 'r_application',
-  _r_authenticable: 'r_authenticable',
-  _r_sub_right: 'r_sub-right',
-  _ldap_url: 'ldap_url',
-  _ldap_password: 'ldap_password',
-  _ldap_user_base: 'ldap_user_base',
-  _ldap_user_filter: 'ldap_user_filter',
-  _ldap_attribute_map: 'ldap_attribute_map',
-  _ldap_group_map: 'ldap_group_map',
-  _ldap_attribute_name: 'ldap_attribute_name',
-  _ldap_to_attribute_name: 'ldap_to_attribute_name',
-  _ldap_group: 'ldap_group' 
-};
 
-export type Context = { cc: ControlCenter, session: Session, db: DataSource.Aspects.server, classes: All };
+export type Context = { cc: ControlCenter, session: Session.Aspects.server, db: DataSource.Aspects.server, classes: All };
 export type CreateContext = () => Context;
 export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
   let safeValidators = new Map<string, SafeValidator>();
@@ -128,7 +70,7 @@ export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
     let S = Session.installAspect(cc, "server");
     let session = new S();
     let db = new DB(ouiDb, {
-      aspectAttribute_to_ObiCar: (c: string, a: string) => mapAttributes[a] || a,
+      aspectAttribute_to_ObiCar: (a: string) => mapAttributes[a] || a,
       aspectClassname_to_ObiEntity: (c) => mapClasses[c] || c,
       obiEntity_to_aspectClassname: (c) => mapClassesR[c] || c,
     });
@@ -142,7 +84,22 @@ export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
   }
 }
 
+Session.category('server', {
+  setData(data) {
+    this._data = data;
+  },
+  data() {
+    return this._data;
+  }
+} as Session.ImplCategories.server<Session & { _data: any }>);
+
 Session.category('client', {
+  isAuthenticated() {
+    return !!this.data().isAuthenticated;
+  },
+  logout() {
+    this.data().isAuthenticated = false;
+  },
   async loginByPassword(q) {
     let db = this.controlCenter().registeredObject('odb') as DataSource.Aspects.server;
     let inv = await db.farPromise('rawQuery', { results: [
@@ -156,23 +113,34 @@ Session.category('client', {
       let auths = [...r.bypwd, ...r.bypk, ...r.byldap]; // TODO: $union
       if (auths.length === 1) {
         let a = auths[0];
-        let inv = await db.farPromise('rawQuery', { name: 'p', where: { $instanceOf: "R_Person" , _r_authentication: { $has: a } } });
+        let inv = await db.farPromise('rawQuery', { name: 'p', where: { $instanceOf: "R_Person" , _r_authentication: { $has: a } }, scope: ['_disabled'] });
         if (inv.hasResult() && inv.result().p.length === 1) {
           let p = inv.result().p[0] as R_Person;
-          if (a instanceof R_AuthenticationPWD)
+          if (p._disabled)
+            ok = false;
+          else if (a instanceof R_AuthenticationPWD)
             ok = await SecureHash.isValid(q.password, a._hashed_password!)
-          else if (a instanceof R_AuthenticationLDAP)
+          else if (a instanceof R_AuthenticationLDAP) {
+            let cmp = {};
+            this.controlCenter().registerComponent(cmp);
+            this.controlCenter().registerObjects(cmp, [p, a]);
             ok = await authLdap(db, q.login, q.password, p, a);
+            this.controlCenter().unregisterComponent(cmp);
+          }
         }
         else
-         console.error(inv.diagnostics());
+          console.error(inv.diagnostics());
+      }
+      else {
+        ok = await authLdap(db, q.login, q.password, undefined, undefined);
       }
     }
     else
       console.error(inv.diagnostics());
+    this.data().isAuthenticated = ok;
     return new Invocation<boolean>(ok ? [] : [{ type: "error", msg: `bad login/password` }], true, ok);
   }
-})
+} as Session.ImplCategories.client<Session.Aspects.server>)
 
 function getOne(def: ObiDefinition, attribute: ObiDefinition, defaultValue?: string | number | ObiDefinition) {
   let set = def.attributes.get(attribute);

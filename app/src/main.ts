@@ -27,6 +27,9 @@ import { AppComponent }  from './app.component';
 import { ApplicationComponent, ApplicationListItemComponent }  from './components/application.component';
 import { PersonComponent, PersonListItemComponent }  from './components/person.component';
 import { DeviceComponent, DeviceListItemComponent }  from './components/device.component';
+import { ServiceComponent, ServiceListItemComponent }  from './components/service.component';
+import { AppTreeComponent, AppTreeListItemComponent }  from './components/apptree.component';
+import { DeviceTreeComponent, DeviceTreeListItemComponent }  from './components/devicetree.component';
 import { SoftwareContextComponent, SoftwareContextListItemComponent }  from './components/software-context.component';
 import { AuthorizationComponent, AuthorizationListItemComponent, SoftwareContextTreeItemComponent }  from './components/authorization.component';
 // Sub objects
@@ -43,6 +46,7 @@ import { ManageApplicationsComponent }  from './layout/manage-applications.compo
 import { ManageAuthorizationsComponent }  from './layout/manage-authorizations.component';
 import { ManageSettingsComponent }  from './layout/manage-settings.component';
 
+import { AdminTreeComponent, AdminTreeItemComponent }  from './tree.component';
 import { SearchListComponent }  from './search.component';
 
 
@@ -54,15 +58,17 @@ controlCenter.installTransport(xhr);
     AuthenticationPWDComponent
   ])],
   declarations: [ AppComponent, 
-    SearchListComponent, 
+    SearchListComponent, AdminTreeComponent, AdminTreeItemComponent,
     ManagePersonsComponent, ManageDevicesComponent, ManageApplicationsComponent, ManageAuthorizationsComponent, ManageSettingsComponent,
 
     PersonComponent, PersonListItemComponent,
     ApplicationComponent, ApplicationListItemComponent,
     DeviceComponent, DeviceListItemComponent,
+    AppTreeComponent, AppTreeListItemComponent,
+    DeviceTreeComponent, DeviceTreeListItemComponent,
+    ServiceComponent, ServiceListItemComponent,
     AuthorizationComponent, AuthorizationListItemComponent,
-    SoftwareContextTreeItemComponent,
-
+    SoftwareContextTreeItemComponent, SoftwareContextListItemComponent,
     DeviceProfileComponent,
     UseProfileComponent,
     ParameterComponent,

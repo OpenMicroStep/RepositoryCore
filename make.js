@@ -16,6 +16,10 @@ module.exports =  {
       { is: 'group', name: 'shared', path: 'shared/src/', elements: [
         { is: 'file', name: 'interfaces.md', tags: ['interface']},
       ]},
+      { is: 'group', name: 'xnet', path: 'xnet/src/', elements: [
+        { is: 'file', name: 'plist.js', tags: ['copy'] },
+        { is: 'file', name: 'villes.plist', tags: ['copy'] },
+      ]},
   ]},
   "targets=": { is: 'group',
     "repository app=":  {
@@ -37,6 +41,7 @@ module.exports =  {
       components: ["=::openms.aspects.node.dev::", "=::aspects obi::"],
       targets: ["aspects obi"],
       files: ["=files:server ? tsc", "=files:shared ? tsc"],
+      copyFiles: [{ is: "group", elements: ["=files:xnet ? copy"], dest: "xnet/src", expand: true }],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
       npmPackage: { is: "component",
         dependencies: { is: "component",

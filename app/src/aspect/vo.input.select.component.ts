@@ -1,6 +1,54 @@
-import { Component, Input, ContentChild, Type, OnInit, TemplateRef, HostListener } from '@angular/core';
+import { Component, Input, ContentChild, Type, OnInit, TemplateRef, HostListener, Output, EventEmitter } from '@angular/core';
 import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Invocation } from '@openmicrostep/aspects';
 import { VOInputComponent } from './vo.input.component';
+import { AspectComponent } from './aspect.component';
+
+@Component({
+  selector: 'input-select',
+  template:
+  `
+<span class="dropdown" [class.open]="this._isOpen">
+  <button class="btn btn-default" type="button" (click)="this._isOpen = !this._isOpen;">
+    <ng-template [ngIf]="this.value">
+      <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.value }"></ng-container>
+    </ng-template>
+    <ng-template [ngIf]="!this.value">
+      &nbsp;
+    </ng-template>
+    <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu">
+    <li *ngFor="let item of this._items" (click)="this.value = item; this._isOpen = false;">
+      <a href="#"><ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container></a>
+    </li>
+  </ul>
+</span>
+`
+})
+export class InputSelectComponent extends AspectComponent {
+  _items: any[] = [];
+  _isOpen = false;
+  @ContentChild(TemplateRef) template: any;
+
+  @Input() set items(items: IterableIterator<VersionedObject>) {
+    this._items = [...items];
+  }
+  
+  _value: VersionedObject | undefined = undefined;
+  @Input() get value(): VersionedObject | undefined {
+    return this._value;
+  }
+  @Output() valueChange = new EventEmitter();
+  set value(newValue: VersionedObject | undefined) {
+    if (this._value === newValue) return;
+    this._value = this._controlCenter.swapObject(this, this._value, newValue);
+    this.valueChange.emit(this._value);
+  }
+
+  constructor(controlCenter: ControlCenter) {
+    super(controlCenter)
+  }
+}
 
 @Component({
   selector: 'vo-input-select',
@@ -8,22 +56,11 @@ import { VOInputComponent } from './vo.input.component';
   `
   <div class="form-group has-feedback" [ngClass]="this.class()">
     <label class="control-label">{{this.label}}</label>
-    <div class="dropdown" [ngClass]="{ open: this._isOpen }">
-      <button class="btn btn-default" type="button" (click)="this._isOpen = !this._isOpen;">
-        <ng-template [ngIf]="this.value">
-          <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.value }"></ng-container>
-        </ng-template>
-        <ng-template [ngIf]="!this.value">
-          &nbsp;
-        </ng-template>
-        <span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu">
-        <li *ngFor="let item of this._items" (click)="this.value = item; this._isOpen = false;">
-          <a href="#"><ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container></a>
-        </li>
-      </ul>
-    </div>
+    <input-select [(value)]="this.value" [items]="this._items">
+      <ng-template let-item="$implicit">
+        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
+      </ng-template>
+    </input-select>
   </div>
 `
 })

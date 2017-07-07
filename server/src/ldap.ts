@@ -43,12 +43,11 @@ async function findLdapUser(cfg: R_LDAPConfiguration, login: string, dn: string 
     let adminClient = ldap.createClient(link);
     await new Promise<void>((resolve, reject) => adminClient.bind(cfg._ldap_dn!, cfg._ldap_password!, (err) => err ? reject(err) : resolve()));
     let attributes = [...cfg._ldap_attribute_map].map(a => a._ldap_attribute_name!);
-    attributes.push('dn');
     let users = await new Promise<{ dn: string, [s: string]: string }[]>((resolve, reject) => {
       adminClient.search(cfg._ldap_user_base!, {
         scope: "sub",
         attributes: attributes,
-        filter: cfg._ldap_user_filter!.replace(/$login/g, login),
+        filter: cfg._ldap_user_filter!.replace(/\$login/g, login),
       }, function (err, ldapResult) {
         if (err) return reject(err);
         let res: any[] = [];
@@ -70,14 +69,17 @@ async function bindLdapUser(
 ) : Promise<boolean> {
   let link = { url: cfg._ldap_url! };
   let userClient = ldap.createClient(link);
-  let ok = await new Promise<boolean>((resolve, reject) => userClient.bind(user!.dn, password, (err) => resolve(!!err)));
+  let ok = await new Promise<boolean>((resolve, reject) => userClient.bind(user!.dn, password, (err) => {
+    resolve(!err);
+  }));
   if (ok) {
     let save: VersionedObject[] = [];
     if (!auth) {
       if (!person) {
         person = db.controlCenter().create<R_Person>(R_Person, []);
+        let user_object = user.object;
         for (let a of cfg._ldap_attribute_map)
-          person[a._ldap_to_attribute_name!] = user[a._ldap_attribute_name!];
+          person[a._ldap_to_attribute_name!] = user_object[a._ldap_attribute_name!];
         save.push(person);
       }
       let a = db.controlCenter().create<R_AuthenticationLDAP>(R_AuthenticationLDAP, []);
@@ -89,12 +91,9 @@ async function bindLdapUser(
     }
     if (person) { // update groups
       let map = [...cfg._ldap_group_map];
-      let filters = map.map(g => new AndFilter({ filters: [
-        new EqualityFilter({ attribute: 'dn', value: g._ldap_dn! }),
-        new EqualityFilter({ attribute: 'member', value: user.dn }),
-      ]}));
+      let filters = map.map(g => new EqualityFilter({ attribute: 'member', value: user.dn }));
       let f = new OrFilter({ filters: filters });
-      let groups = await new Promise<{ dn: string, [s: string]: string }[]>((resolve, reject) => {
+      let ldap_groups = await new Promise<{ dn: string, [s: string]: string }[]>((resolve, reject) => {
         userClient.search(cfg._ldap_user_base!, {
           scope: "sub",
           attributes: ['dn'],
@@ -108,12 +107,13 @@ async function bindLdapUser(
           });
         });
       });
-      for (let group of groups) {
-        let auth = map.find(g => g._ldap_dn === group.dn);
-        if (auth && auth._ldap_group && !auth._ldap_group._r_authenticable.has(person)) {
-          auth._ldap_group._r_authenticable = new Set(auth._ldap_group._r_authenticable).add(person);
-          save.push(auth._ldap_group);
-        }
+      for (let group of map) {
+        let ldap_group = ldap_groups.find(g => group._ldap_dn === g.dn);
+        let auth = group._ldap_group!;
+        let _r_authenticable = new Set(auth._r_authenticable);
+        _r_authenticable[ldap_group ? 'add' : 'delete'](person);
+        auth._r_authenticable = _r_authenticable;
+        save.push(auth);
       }
     }
     if (save.length) {
@@ -129,7 +129,7 @@ export async function authLdap(
   db: DataSource.Aspects.server, login: string, password: string, 
   person: R_Person | undefined, auth: R_AuthenticationLDAP | undefined
 ) : Promise<boolean> {
-  if (!(/^[a-zA-Z0-9_-]$/.test(login)))
+  if (!(/^[a-zA-Z0-9_-]+$/.test(login)))
     return Promise.reject(`login is too complex for ldap api`);
 
   let inv = await db.farPromise('rawQuery', { results: [

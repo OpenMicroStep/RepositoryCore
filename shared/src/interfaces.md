@@ -1,7 +1,11 @@
 ## class Session
 ### category server
+#### setData(data: any): void
+#### data(): any
 ### farCategory client
+#### isAuthenticated(): boolean
 #### loginByPassword(q: { login: string, password: string }): boolean
+#### logout(): void
 ### aspect server
 #### categories: server client
 ### aspect client
@@ -29,6 +33,9 @@
 #### `_first_name`: string
 #### `_middle_name`: string
 #### `_last_name`: string
+#### `_mail`: string
+#### `_r_services`: <0,*,R_Service>
+_relation_: `_r_member`
 ### aspect obi
 
 ## class R_AuthenticationPK
@@ -59,8 +66,38 @@
 #### `_disabled`: boolean
 #### `_urn`: string
 #### `_r_parent_service`: R_Service
+_relation_: `_r_child_services`
+#### `_r_child_services`: <0,*,R_Service>
+_relation_: `_r_parent_service`
 #### `_r_administrator`: <0,*,R_Person>
 #### `_r_member`: <0,*,R_Person>
+_relation_: `_r_services`
+### aspect obi
+
+## class R_AppTree
+### attributes
+#### `_label`: string
+#### `_disabled`: boolean
+#### `_urn`: string
+#### `_r_parent_apptree`: R_AppTree
+_relation_: `_r_child_apptrees`
+#### `_r_child_apptrees`: <0,*,R_AppTree>
+_relation_: `_r_parent_apptree`
+#### `_r_administrator`: <0,*,R_Person>
+#### `_r_application`: <0,*,R_Application>
+### aspect obi
+
+## class R_DeviceTree
+### attributes
+#### `_label`: string
+#### `_disabled`: boolean
+#### `_urn`: string
+#### `_r_parent_devicetree`: R_DeviceTree
+_relation_: `_r_child_devicetrees`
+#### `_r_child_devicetrees`: <0,*,R_DeviceTree>
+_relation_: `_r_parent_devicetree`
+#### `_r_administrator`: <0,*,R_Person>
+#### `_r_device`: <0,*,R_Device>
 ### aspect obi
 
 ## class R_LDAPConfiguration

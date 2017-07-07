@@ -22,6 +22,9 @@ import { AspectComponent } from './aspect/aspect.component';
           <li role="presentation" (click)="_tab = 'authorizations'" [class.active]="_tab == 'authorizations'"><a href="#" role="tab">Autorisations</a></li>
           <li role="presentation" (click)="_tab = 'settings'"       [class.active]="_tab == 'settings'"      ><a href="#" role="tab">Administration</a></li>
         </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="#" (click)="this.logOut()">Déconnexion</a></li>
+        </ul>
       </div>
     </nav>
     <div style="padding-top: 70px;">
@@ -72,10 +75,17 @@ export class AppComponent extends AspectComponent {
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
     this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onLogged', this);
+    this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onIsAuthenticated', this);
+    this.ctx.session.farEvent('isAuthenticated', undefined, 'onIsAuthenticated', this);
   }
 
   logIn() {
     this.ctx.session.farEvent('loginByPassword', { login: this._login, password: this._password }, 'onLogged', this);
+  }
+
+  logOut() {
+    this.ctx.session.farPromise('logout', undefined);
+    this._state = 'loggedout';
   }
 
   onLogged(n) {

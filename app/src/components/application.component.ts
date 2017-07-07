@@ -22,25 +22,29 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
     </vo-input-set>
   </div>
   <div>
-    <vo-input-select label="Software Context" [object]="this.object" attribute="_r_software_context" query="software-contexts"></vo-input-select>
+    <vo-input-select label="Software Context" [object]="this.object" attribute="_r_software_context" query="root-software-contexts">
+      <ng-template let-item="$implicit">
+        <software-context-li [item]="item"></software-context-li>
+      </ng-template>
+    </vo-input-select>
   </div>
   <div>
     <vo-input-set label="Parameters" [object]="this.object" attribute="_parameter" [domains]="this._parameter_domains">
-       <ng-template let-item="$implicit">
+      <ng-template let-item="$implicit">
         <parameter [object]="item"></parameter>
       </ng-template>
     </vo-input-set>
   </div>
   <div>
     <vo-input-set label="Profiles d'utilisations" [object]="this.object" attribute="_r_sub_use_profile" [domains]="this._r_sub_use_profile_domains">
-       <ng-template let-item="$implicit">
+      <ng-template let-item="$implicit">
         <use-profile [object]="item"></use-profile>
       </ng-template>
     </vo-input-set>
   </div>
   <div>
     <vo-input-set label="Profiles d'appareils" [object]="this.object" attribute="_r_sub_device_profile" [domains]="this._r_sub_device_profile_domains">
-       <ng-template let-item="$implicit">
+      <ng-template let-item="$implicit">
         <device-profile [object]="item"></device-profile>
       </ng-template>
     </vo-input-set>
@@ -55,6 +59,7 @@ export class ApplicationComponent extends VOComponent<R_Application.Aspects.obi>
   _parameter_domains: VOInputSetComponent.Domain[] = [];
   _r_sub_use_profile_domains: VOInputSetComponent.Domain[] = [];
   _r_sub_device_profile_domains: VOInputSetComponent.Domain[] = [];
+  _sc_query: any;
   constructor(public ctx: AppContext) {
     super(ctx.dataSource);
     this._r_authentication_domains    .push({ label: "by password"   , create: () => new ctx.R_AuthenticationPWD() });

@@ -10,10 +10,11 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
   selector: 'person',
   template: `
 <form *ngIf="this.object">
-  <div><vo-input-text     label="First name"  [object]="this.object" attribute="_first_name"      ></vo-input-text    ></div>
-  <div><vo-input-text     label="Middle name" [object]="this.object" attribute="_middle_name"     ></vo-input-text    ></div>
-  <div><vo-input-text     label="Last name"   [object]="this.object" attribute="_last_name"       ></vo-input-text    ></div>
-  <div><vo-input-checkbox label="Disabled"    [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
+  <div><vo-input-text     label="Nom"          [object]="this.object" attribute="_last_name"       ></vo-input-text    ></div>
+  <div><vo-input-text     label="Prénom"       [object]="this.object" attribute="_first_name"      ></vo-input-text    ></div>
+  <div><vo-input-text     label="Deuxième nom" [object]="this.object" attribute="_middle_name"     ></vo-input-text    ></div>
+  <div><vo-input-text     label="Adresse mail" [object]="this.object" attribute="_mail"            ></vo-input-text    ></div>
+  <div><vo-input-checkbox label="Désactiver"   [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div>
     <vo-input-set label="Authentification" [object]="this.object" attribute="_r_authentication" [domains]="this._r_authentication_domains">
        <ng-template let-item="$implicit">
@@ -25,6 +26,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
   </div>
   <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
+  <button class="btn btn-warning" [disabled]="!this.canDelete()" type="submit" (click)="this.delete()">Delete</button>
 </form>
 `
 })
@@ -52,11 +54,16 @@ export class PersonComponent extends VOComponent<R_Person.Aspects.obi> {
   isAuthLDAP(item) { return item instanceof this.ctx.R_AuthenticationLDAP; }
 
   scope() { 
-    return ["_first_name", "_middle_name", "_last_name", "_disabled", "_r_authentication", "_login"];
+    return ["_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_login", "_r_services"];
   }
 
   objectsToSave(): VersionedObject[] {
     return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication"]);
+  }
+
+  markForDeletion() {
+    for (let a of this.objectsToSave())
+      a.manager().delete();
   }
 }
 

@@ -1,5 +1,5 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { Notification, Invocation, VersionedObject, Event, DataSource } from '@openmicrostep/aspects';
+import { Notification, Invocation, VersionedObject, Event, DataSource, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect.component';
 import { VOInputSetComponent }  from './vo.input.set.component';
 
@@ -49,7 +49,12 @@ export abstract class VOComponent<T extends VersionedObject> extends AspectCompo
   }
 
   canSave() : boolean {
-    return true; //return this._person ? this._person.manager().hasChanges() : false;
+    return this.object ? this.object.manager().hasChanges() : false;
+  }
+
+  canDelete() : boolean {
+    let state = this.object ? this.object.manager().state() : VersionedObjectManager.State.NEW;
+    return state !== VersionedObjectManager.State.NEW && state !== VersionedObjectManager.State.DELETED;
   }
 
   objectsToSave(): VersionedObject[] {
@@ -58,5 +63,13 @@ export abstract class VOComponent<T extends VersionedObject> extends AspectCompo
 
   save() {
     this._datasource.farEvent("save", this.objectsToSave(), VOComponent.saved, this);
+  }
+  markForDeletion() {
+    this._object!.manager().delete();
+  }
+  delete() {
+    this.markForDeletion();
+    this.save();
+    this._object = undefined;
   }
 }

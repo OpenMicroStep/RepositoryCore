@@ -137,12 +137,11 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   <div><vo-input-text     label="Label"       [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Disabled"    [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div>
-    <vo-input-set label="Persons & Applications" [object]="this.object" attribute="_r_authenticable" [domains]="this._r_authenticabledomains">
-       <ng-template let-item="$implicit">
-        <person      *ngIf="isPerson(item)"       [object]="item"></person     >
-        <application *ngIf="isApplication(item)"  [object]="item"></application>
+    <vo-input-setselect label="Personnes" [object]="this.object" attribute="_r_authenticable" query="persons">
+      <ng-template let-item="$implicit">
+        <person-li [item]="item"></person-li>
       </ng-template>
-    </vo-input-set>
+    </vo-input-setselect>
   </div>
   <div>
     <div class="form-group has-feedback">
@@ -243,7 +242,7 @@ export class AuthorizationComponent extends VOComponent<R_Authorization.Aspects.
   }
 
   scope() {
-    return ["_label", "_disabled", "_urn", "_r_authenticable", "_r_sub_right"/*, "_r_action", "_r_application",  "_r_software_context",  "_r_use_profile",  "_r_device_profile"*/];
+    return ["_label", "_disabled", "_urn", "_r_authenticable", "_r_sub_right", "_first_name", "_last_name", "_r_action", "_r_application",  "_r_software_context",  "_r_use_profile",  "_r_device_profile"];
   }
 
   objectsToSave(): VersionedObject[] {

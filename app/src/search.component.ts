@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy, Input, ContentChild, TemplateRef } from '@angular/core';
 import { AppContext } from './main';
-import { Notification, Invocation, DataSource, VersionedObject, Event } from '@openmicrostep/aspects';
+import { Notification, Result, DataSource, VersionedObject, Event } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect/aspect.component';
 
 @Component({
@@ -58,8 +58,8 @@ export class SearchListComponent extends AspectComponent {
     this.ctx.dataSource.farEvent('query', { id: this.query, text: this._search }, 'onItems', this);
   }
 
-  onItems(notification: Notification<Invocation<{ items: VersionedObject[] }>>) {
-    let items = notification.info.result().items;
+  onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
+    let items = notification.info.value().items;
     this._items = this.ctx.controlCenter.swapObjects(this, this._items, items);
   }
 

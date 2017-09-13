@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, Parameter } from '../main';
-import { Notification, Invocation } from '@openmicrostep/aspects';
+import { Notification } from '@openmicrostep/aspects';
 import { VOComponent } from '../aspect/vo.component';
 
 @Component({
@@ -11,11 +11,8 @@ import { VOComponent } from '../aspect/vo.component';
 `
 })
 export class ParameterComponent extends VOComponent<Parameter.Aspects.obi> {
+  static readonly scope = ["_label", "_string"];
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
-  }
-
-  scope() { 
-    return ["_label", "_string"];
+    super(ctx.controlCenter);
   }
 }

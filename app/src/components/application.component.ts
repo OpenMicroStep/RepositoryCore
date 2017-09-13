@@ -1,10 +1,14 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Application, R_AuthenticationPK, R_AuthenticationPWD } from '../main';
-import { Notification, Invocation, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Notification, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
-import { VOComponent } from '../aspect/vo.component';
+import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
+import { SoftwareContextListItemComponent } from './software-context.component';
+import { UseProfileComponent } from './use-profile.component';
+import { DeviceProfileComponent } from './device-profile.component';
+import { ParameterComponent } from './parameter.component';
 
 @Component({
   selector: 'application',
@@ -24,7 +28,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
   <div>
     <vo-input-select label="Software Context" [object]="this.object" attribute="_r_software_context" query="root-software-contexts">
       <ng-template let-item="$implicit">
-        <software-context-li [item]="item"></software-context-li>
+        <software-context-li [object]="item"></software-context-li>
       </ng-template>
     </vo-input-select>
   </div>
@@ -54,7 +58,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
 </form>
 `
 })
-export class ApplicationComponent extends VOComponent<R_Application.Aspects.obi> {
+export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.obi> {
   _r_authentication_domains: VOInputSetComponent.Domain[] = [];
   _parameter_domains: VOInputSetComponent.Domain[] = [];
   _r_sub_use_profile_domains: VOInputSetComponent.Domain[] = [];
@@ -72,8 +76,24 @@ export class ApplicationComponent extends VOComponent<R_Application.Aspects.obi>
   isAuthPWD(item) { return item instanceof this.ctx.R_AuthenticationPWD; }
   isAuthPK(item) { return item instanceof this.ctx.R_AuthenticationPK; }
 
-  scope() { 
-    return ["_label", "_urn", "_r_authentication", "_login", "_parameter", "_r_software_context", "_r_sub_use_profile", "_r_sub_device_profile"];
+  scope() {
+    return {
+      R_Application: {
+        '.': ["_label", "_urn", "_r_authentication", "_parameter", "_r_software_context", "_r_sub_use_profile", "_r_sub_device_profile"],
+      },
+      R_Software_Context: {
+        '_r_software_context.': SoftwareContextListItemComponent.scope,
+      },
+      Parameter: {
+        '_parameter.': ParameterComponent.scope
+      },
+      R_Use_Profile: {
+        '_r_sub_use_profile.': UseProfileComponent.scope
+      },
+      R_Device_Profile: {
+        '_r_sub_device_profile.': DeviceProfileComponent.scope
+      },
+    };
   }
 
   objectsToSave(): VersionedObject[] {
@@ -83,12 +103,10 @@ export class ApplicationComponent extends VOComponent<R_Application.Aspects.obi>
 
 @Component({
   selector: 'application-li',
-  template: `{{this.item._label}} ({{this.item._urn}})` 
+  template: `{{this.object._label}} ({{this.object._urn}})`
 })
-export class ApplicationListItemComponent extends AspectComponent {
-  @Input() item: R_Application.Aspects.obi;
-
-  static scope: ['_label', '_urn']
+export class ApplicationListItemComponent extends VOComponent<R_Application.Aspects.obi> {
+  static readonly scope = ['_label', '_urn']
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
   }

@@ -31,8 +31,8 @@ module.exports =  {
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
       npmPackage: { is: "component",
         dependencies: { is: "component",
-          "@angular/material" : "2.0.0-beta.6"
-        }
+          "@openmicrostep/async": "^0.1.1",
+        },
       },
     },
     "repository server=":  {

@@ -1,7 +1,7 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Device } from '../main';
-import { Notification, Invocation } from '@openmicrostep/aspects';
-import { VOComponent } from '../aspect/vo.component';
+import { Notification } from '@openmicrostep/aspects';
+import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { AspectComponent } from '../aspect/aspect.component';
 
@@ -19,7 +19,7 @@ import { AspectComponent } from '../aspect/aspect.component';
 </form>
 `
 })
-export class DeviceComponent extends VOComponent<R_Device.Aspects.obi> {
+export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
   constructor(public ctx: AppContext) {
     super(ctx.dataSource);
   }
@@ -31,12 +31,10 @@ export class DeviceComponent extends VOComponent<R_Device.Aspects.obi> {
 
 @Component({
   selector: 'device-li',
-  template: `{{this.item._label}}` 
+  template: `{{this.object._label}}`
 })
-export class DeviceListItemComponent extends AspectComponent {
-  @Input() item: R_Device.Aspects.obi;
-
-  static scope: ['_label']
+export class DeviceListItemComponent extends VOComponent<R_Device.Aspects.obi> {
+  static readonly scope = ['_label']
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
   }

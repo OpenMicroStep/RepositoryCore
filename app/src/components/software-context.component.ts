@@ -1,7 +1,7 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Software_Context } from '../main';
-import { Notification, Invocation } from '@openmicrostep/aspects';
-import { VOComponent } from '../aspect/vo.component';
+import { Notification } from '@openmicrostep/aspects';
+import { VOLoadComponent, VOComponent } from '../aspect/vo.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { AspectComponent } from '../aspect/aspect.component';
 
@@ -27,24 +27,22 @@ import { AspectComponent } from '../aspect/aspect.component';
 </form>
 `
 })
-export class SoftwareContextComponent extends VOComponent<R_Software_Context.Aspects.obi> {
+export class SoftwareContextComponent extends VOLoadComponent<R_Software_Context.Aspects.obi> {
   constructor(public ctx: AppContext) {
     super(ctx.dataSource);
   }
 
-  scope() { 
+  scope() {
     return ["_label", "_disabled", "_urn", "_r_parent_context", "_r_child_contexts"];
   }
 }
 
 @Component({
   selector: 'software-context-li',
-  template: `{{this.item._label}}` 
+  template: `{{this.object._label}}`
 })
-export class SoftwareContextListItemComponent extends AspectComponent {
-  @Input() item: R_Software_Context.Aspects.obi;
-
-  static scope: ['_label']
+export class SoftwareContextListItemComponent extends VOComponent<R_Software_Context.Aspects.obi> {
+  static readonly scope = ['_label'];
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
   }

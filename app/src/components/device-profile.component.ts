@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Use_Profile } from '../main';
-import { Notification, Invocation } from '@openmicrostep/aspects';
+import { Notification } from '@openmicrostep/aspects';
 import { VOComponent } from '../aspect/vo.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 
@@ -18,13 +18,10 @@ import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 `
 })
 export class DeviceProfileComponent extends VOComponent<R_Use_Profile.Aspects.obi> {
+  static readonly scope = ["_label", "_r_device"];
   _r_device_domains: VOInputSetComponent.Domain[] = [];
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.controlCenter);
     this._r_device_domains.push({ label: "device", create: () => new ctx.R_Device() });
-  }
-
-  scope() { 
-    return ["_label", "_r_device"];
   }
 }

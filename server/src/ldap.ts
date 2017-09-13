@@ -63,8 +63,8 @@ async function findLdapUser(cfg: R_LDAPConfiguration, login: string, dn: string 
   return user;
 }
 async function bindLdapUser(
-  db: DataSource.Aspects.server, cfg: R_LDAPConfiguration, 
-  login: string, password: string, user: { dn: string, [s: string]: string }, 
+  db: DataSource.Aspects.server, cfg: R_LDAPConfiguration,
+  login: string, password: string, user: { dn: string, [s: string]: string },
   person: R_Person | undefined, auth: R_AuthenticationLDAP | undefined
 ) : Promise<boolean> {
   let link = { url: cfg._ldap_url! };
@@ -76,13 +76,13 @@ async function bindLdapUser(
     let save: VersionedObject[] = [];
     if (!auth) {
       if (!person) {
-        person = db.controlCenter().create<R_Person>(R_Person, []);
+        person = db.controlCenter().create<R_Person>("R_Person", []);
         let user_object = user.object;
         for (let a of cfg._ldap_attribute_map)
           person[a._ldap_to_attribute_name!] = user_object[a._ldap_attribute_name!];
         save.push(person);
       }
-      let a = db.controlCenter().create<R_AuthenticationLDAP>(R_AuthenticationLDAP, []);
+      let a = db.controlCenter().create<R_AuthenticationLDAP>("R_AuthenticationLDAP", []);
       a._mlogin = login;
       a._ldap_dn = user.dn;
       person._r_authentication = new Set(person._r_authentication).add(a);
@@ -126,7 +126,7 @@ async function bindLdapUser(
 }
 
 export async function authLdap(
-  db: DataSource.Aspects.server, login: string, password: string, 
+  db: DataSource.Aspects.server, login: string, password: string,
   person: R_Person | undefined, auth: R_AuthenticationLDAP | undefined
 ) : Promise<boolean> {
   if (!(/^[a-zA-Z0-9_-]+$/.test(login)))
@@ -150,8 +150,8 @@ export async function authLdap(
       scope: ['_ldap_attribute_name', '_ldap_to_attribute_name'],
     },
   ]});
-  if (inv.hasResult()) {
-    let configurations = inv.result().configurations as R_LDAPConfiguration[];
+  if (inv.hasOneValue()) {
+    let configurations = inv.value().configurations as R_LDAPConfiguration[];
     let users = await Promise.all(configurations.map(cfg => findLdapUser(cfg, login, auth ? auth._ldap_dn : undefined)));
     let nb = users.filter(u => !!u).length;
     if (nb === 1) {

@@ -1,4 +1,4 @@
-import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, InvocationState, DataSourceQuery, ImmutableSet, Validation} from '@openmicrostep/aspects';
+import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, DataSourceQuery, ImmutableSet, Validation} from '@openmicrostep/aspects';
 import * as interfaces from '../../generated/aspects.interfaces';
 export * from '../../generated/aspects.interfaces';
 import {AttributePath, AttributeTypes as V, Reporter} from '@openmicrostep/msbuildsystem.shared';
@@ -6,7 +6,7 @@ import {AttributePath, AttributeTypes as V, Reporter} from '@openmicrostep/msbui
 function cachedClasses<T extends object>(classes: { name: keyof T, aspect: string, cstor: VersionedObjectConstructor }[]) : (cc: ControlCenter) => T {
   class Cache {
     [s: string]: Aspect.Constructor;
-    
+
     constructor (cc: ControlCenter) {
       for (let c of classes) {
         let cstor = cc.cache().createAspect(cc, c.aspect, c.cstor);

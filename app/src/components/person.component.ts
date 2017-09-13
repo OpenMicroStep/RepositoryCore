@@ -1,9 +1,9 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD } from '../main';
-import { Notification, Invocation, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Notification, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
-import { VOComponent } from '../aspect/vo.component';
+import { VOLoadComponent, VOComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
 
 @Component({
@@ -30,7 +30,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
 </form>
 `
 })
-export class PersonComponent extends VOComponent<R_Person.Aspects.obi> {
+export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
   _r_authentication_domains: VOInputSetComponent.Domain[] = [];
 
   constructor(public ctx: AppContext) {
@@ -53,7 +53,7 @@ export class PersonComponent extends VOComponent<R_Person.Aspects.obi> {
   isAuthPK(item) { return item instanceof this.ctx.R_AuthenticationPK; }
   isAuthLDAP(item) { return item instanceof this.ctx.R_AuthenticationLDAP; }
 
-  scope() { 
+  scope() {
     return ["_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_login", "_r_services"];
   }
 
@@ -69,12 +69,10 @@ export class PersonComponent extends VOComponent<R_Person.Aspects.obi> {
 
 @Component({
   selector: 'person-li',
-  template: `{{this.item._first_name}} {{this.item._last_name}}` 
+  template: `{{this.object._first_name}} {{this.object._last_name}}`
 })
-export class PersonListItemComponent extends AspectComponent {
-  @Input() item: R_Person.Aspects.obi;
-
-  static scope: ['_first_name', '_last_name']
+export class PersonListItemComponent extends VOComponent<R_Person.Aspects.obi> {
+  static readonly scope = ['_first_name', '_last_name']
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
   }

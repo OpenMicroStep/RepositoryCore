@@ -89,7 +89,7 @@ export class AppComponent extends AspectComponent {
   }
 
   onLogged(n) {
-    if (n.info.hasResult() && n.info.result() === true) {
+    if (n.info.hasOneValue() && n.info.value() === true) {
       this._state = 'logged';
     }
   }

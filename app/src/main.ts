@@ -18,7 +18,6 @@ import { FormsModule }      from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule }   from '@angular/router';
 import { AspectModule }  from './aspect/aspect.module';
-import { MdTabsModule }        from '@angular/material';
 
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import { AppComponent }  from './app.component';
@@ -54,10 +53,10 @@ const xhr = new XHRTransport();
 controlCenter.installTransport(xhr);
 
 @NgModule({
-  imports: [ CommonModule, BrowserModule, FormsModule, MdTabsModule, BrowserAnimationsModule, AspectModule.withComponents([
+  imports: [ CommonModule, BrowserModule, FormsModule, BrowserAnimationsModule, AspectModule.withComponents([
     AuthenticationPWDComponent
   ])],
-  declarations: [ AppComponent, 
+  declarations: [ AppComponent,
     SearchListComponent, AdminTreeComponent, AdminTreeItemComponent,
     ManagePersonsComponent, ManageDevicesComponent, ManageApplicationsComponent, ManageAuthorizationsComponent, ManageSettingsComponent,
 

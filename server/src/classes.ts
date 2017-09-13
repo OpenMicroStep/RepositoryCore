@@ -1,15 +1,14 @@
-import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, InvocationState, DataSourceQuery, ImmutableSet, SafeValidator, Invocation} from '@openmicrostep/aspects';
+import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, DataSourceQuery, ImmutableSet, SafeValidator, Result} from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, StdDefinition, ObiDefinition} from '@openmicrostep/aspects.obi';
 import {cache, All, R_AuthenticationPWD, R_AuthenticationLDAP, R_Person, Session} from '../../shared/src/classes';
 import {SecureHash, SecurePK} from './securehash';
 export * from '../../shared/src/classes';
-import {authLdap} from './ldap';
 
 function cachedClasses<T extends object>(classes: { [K in keyof T]: VersionedObjectConstructor }) : (cc: ControlCenter) => T {
   class Cache {
     constructor (public __cc: ControlCenter) {}
   }
-  Object.keys(classes).forEach(k => {
+  Object.keys(classes).forEach((k: keyof T) => {
     let c = classes[k];
     Object.defineProperty(Cache.prototype, k, {
       get: function(this: Cache) {
@@ -84,64 +83,6 @@ export function controlCenterCreator(ouiDb: OuiDB): CreateContext {
   }
 }
 
-Session.category('server', {
-  setData(data) {
-    this._data = data;
-  },
-  data() {
-    return this._data;
-  }
-} as Session.ImplCategories.server<Session & { _data: any }>);
-
-Session.category('client', {
-  isAuthenticated() {
-    return !!this.data().isAuthenticated;
-  },
-  logout() {
-    this.data().isAuthenticated = false;
-  },
-  async loginByPassword(q) {
-    let db = this.controlCenter().registeredObject('odb') as DataSource.Aspects.server;
-    let inv = await db.farPromise('rawQuery', { results: [
-      { name: 'bypwd' , where: { $instanceOf: "R_AuthenticationPWD" , _mlogin: q.login }, scope: ['_mlogin', '_hashed_password'] },
-      { name: 'bypk'  , where: { $instanceOf: "R_AuthenticationPK"  , _mlogin: q.login }, scope: ['_mlogin', '_public_key'     ] },
-      { name: 'byldap', where: { $instanceOf: "R_AuthenticationLDAP", _mlogin: q.login }, scope: ['_mlogin', '_ldap_dn'        ] },
-    ]});
-    let ok = false;
-    if (inv.hasResult()) {
-      let r = inv.result();
-      let auths = [...r.bypwd, ...r.bypk, ...r.byldap]; // TODO: $union
-      if (auths.length === 1) {
-        let a = auths[0];
-        let inv = await db.farPromise('rawQuery', { name: 'p', where: { $instanceOf: "R_Person" , _r_authentication: { $has: a } }, scope: ['_disabled'] });
-        if (inv.hasResult() && inv.result().p.length === 1) {
-          let p = inv.result().p[0] as R_Person;
-          if (p._disabled)
-            ok = false;
-          else if (a instanceof R_AuthenticationPWD)
-            ok = await SecureHash.isValid(q.password, a._hashed_password!)
-          else if (a instanceof R_AuthenticationLDAP) {
-            let cmp = {};
-            this.controlCenter().registerComponent(cmp);
-            this.controlCenter().registerObjects(cmp, [p, a]);
-            ok = await authLdap(db, q.login, q.password, p, a);
-            this.controlCenter().unregisterComponent(cmp);
-          }
-        }
-        else
-          console.error(inv.diagnostics());
-      }
-      else {
-        ok = await authLdap(db, q.login, q.password, undefined, undefined);
-      }
-    }
-    else
-      console.error(inv.diagnostics());
-    this.data().isAuthenticated = ok;
-    return new Invocation<boolean>(ok ? [] : [{ type: "error", msg: `bad login/password` }], true, ok);
-  }
-} as Session.ImplCategories.client<Session.Aspects.server>)
-
 function getOne(def: ObiDefinition, attribute: ObiDefinition, defaultValue?: string | number | ObiDefinition) {
   let set = def.attributes.get(attribute);
   if (!set && defaultValue !== undefined)
@@ -192,7 +133,7 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
       else
         atype = { is: "type", type: "or", types: class_names.map<Aspect.Type>(n => ({ is: "type", type: "class", name: n })) }; // TODO: check multiple domain entities
     }
-    else 
+    else
       atype = db.config.mapTypes[type.system_name!];
     if (cardinality === multi)
       atype = { is: "type", type: "set", itemType: atype, min: 0, max: '*' };

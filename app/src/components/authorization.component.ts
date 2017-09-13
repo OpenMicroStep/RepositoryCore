@@ -1,9 +1,9 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Authorization, R_Right, R_Application, R_Software_Context, R_Element, R_Use_Profile, R_Device_Profile } from '../main';
-import { Notification, Invocation, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Notification, Result, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
-import { VOComponent } from '../aspect/vo.component';
+import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
 
 @Component({
@@ -11,11 +11,11 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
   template: `
 <li class="list-group-item">
   <div style="display: flex;align-items: center;justify-content: center;">
-    <span *ngIf="this._r_child_contexts.length" class="glyphicon glyphicon" 
+    <span *ngIf="this._r_child_contexts.length" class="glyphicon glyphicon"
       [class.glyphicon-menu-right]="!this._expanded"
       [class.glyphicon-menu-down]="this._expanded"
       (click)="this._expanded = !this._expanded"></span>
-    <span style="flex: 1;margin: 5px;">{{this._item._label}}</span>
+    <span style="flex: 1;margin: 5px;">{{this.object._label}}</span>
     <div *ngIf="this.allowFastValue()" class="btn-group" role="group">
       <div class="btn-group" role="group" [class.open]="this._fastIsOpen">
         <button type="button" class="btn btn-default dropdown-toggle" (click)="this._fastIsOpen = !this._fastIsOpen;">
@@ -60,19 +60,18 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
     </li>
   </ul>
   <ul *ngIf="this._expanded !== undefined && this._r_child_contexts.length" [class.hidden]="!this._expanded"  class="list-group" style="margin: 0; margin-top: 5px">
-    <software-context-ti *ngFor="let child of this._r_child_contexts" [item]="child" [app]="this._app" [auth]="this._auth"></software-context-ti>
+    <software-context-ti *ngFor="let child of this._r_child_contexts" [object]="child" [app]="this._app" [auth]="this._auth"></software-context-ti>
   </ul>
 </li>
-` 
+`
 })
 export class SoftwareContextTreeItemComponent extends AspectComponent {
   _expanded = undefined;
-  _item: R_Software_Context;
   _r_child_contexts: R_Software_Context[] = [];
   _auth: AuthorizationComponent;
   _app: R_Application;
   _UndefinedRight = { _system_name: "Undefined" };
-  
+
   @Input() set app(app) {
     this._app = app;
   }
@@ -81,9 +80,13 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
     this._auth = auth;
   }
 
-  @Input() set item(item: R_Software_Context) {
-    this._item = this._controlCenter.swapObject(this, this._item, item);
-    this._r_child_contexts = [...this._item._r_child_contexts].sort((a, b) => a._label! < b._label! ? -1 : 1);
+  _object?: R_Software_Context;
+  get object(): R_Software_Context | undefined {
+    return this._object;
+  }
+  @Input() set object(item: R_Software_Context | undefined) {
+    this._object = this._controlCenter.swapObject(this, this._object, item);
+    this._r_child_contexts = this._controlCenter.swapObjects(this, this._r_child_contexts, item ? [...item._r_child_contexts] : []).sort((a, b) => a._label! < b._label! ? -1 : 1);
   }
 
   constructor(public ctx: AppContext) {
@@ -91,7 +94,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   }
 
   rights() {
-    return this._auth.rightsOnSoftwareContext(this._item)
+    return this._auth.rightsOnSoftwareContext(this._object!)
   }
 
   allowFastValue() {
@@ -120,7 +123,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   }
 
   createRight() {
-    return this._auth.createRight(this._app, this._item!);
+    return this._auth.createRight(this._app, this._object!);
   }
 
   deleteRight(right: R_Right) {
@@ -139,7 +142,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   <div>
     <vo-input-setselect label="Personnes" [object]="this.object" attribute="_r_authenticable" query="persons">
       <ng-template let-item="$implicit">
-        <person-li [item]="item"></person-li>
+        <person-li [object]="item"></person-li>
       </ng-template>
     </vo-input-setselect>
   </div>
@@ -149,7 +152,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
       <ul *ngIf="this._rights_loaded" class="list-group">
         <li class="list-group-item" *ngFor="let app of this._applications">
           Application {{app._label}} ({{app._urn}})
-          <software-context-ti [item]="app._r_software_context" [app]="app" [auth]="this"></software-context-ti>
+          <software-context-ti [object]="app._r_software_context" [app]="app" [auth]="this"></software-context-ti>
         </li>
       </ul>
     </div>
@@ -159,7 +162,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
 </form>
 `
 })
-export class AuthorizationComponent extends VOComponent<R_Authorization.Aspects.obi> {
+export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspects.obi> {
   _r_authenticabledomains: VOInputSetComponent.Domain[] = [];
   _r_sub_right_domains: VOInputSetComponent.Domain[] = [];
   _rights_loaded = false;
@@ -184,13 +187,13 @@ export class AuthorizationComponent extends VOComponent<R_Authorization.Aspects.
   isPerson(item) { return item instanceof this.ctx.R_Person; }
   isApplication(item) { return item instanceof this.ctx.R_Application; }
 
-  loaded(n: Notification<Invocation<R_Authorization.Aspects.obi[]>>) {
+  loaded(n: Notification<Result<R_Authorization.Aspects.obi[]>>) {
     super.loaded(n);
     this._rights_loaded = false;
     if (this._object && this._object._r_sub_right.size > 0) {
-      this.ctx.dataSource.farEvent('load', { 
-        objects: [...this._object._r_sub_right], 
-        scope: ["_label", "_r_action", "_r_application", "_r_software_context", "_r_use_profile", "_r_device_profile"] 
+      this.ctx.dataSource.farEvent('load', {
+        objects: [...this._object._r_sub_right],
+        scope: ["_label", "_r_action", "_r_application", "_r_software_context", "_r_use_profile", "_r_device_profile"]
       }, "onRights", this);
     }
     else {
@@ -203,11 +206,11 @@ export class AuthorizationComponent extends VOComponent<R_Authorization.Aspects.
     this._rights_by_ctx = new Map();
   }
 
-  onTree(notification: Notification<Invocation<{ "applications": R_Application[], "actions": R_Element[] }>>) {
-    if (!notification.info.hasResult()) return;
-    let r = notification.info.result();
+  onTree(notification: Notification<Result<{ "applications": R_Application[], "actions": R_Element[] }>>) {
+    if (!notification.info.hasOneValue()) return;
+    let r = notification.info.value();
     this._applications = this._controlCenter.swapObjects(this, this._applications, r.applications);
-    this._actions = this._controlCenter.swapObjects(this, this._actions, r.actions.sort((a, b) => a._order! < b._order! ? -1 : 1));
+    this._actions = this._controlCenter.swapObjects(this, this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
   }
 
   rightsOnSoftwareContext(sc: R_Software_Context): R_Right[] {
@@ -242,7 +245,20 @@ export class AuthorizationComponent extends VOComponent<R_Authorization.Aspects.
   }
 
   scope() {
-    return ["_label", "_disabled", "_urn", "_r_authenticable", "_r_sub_right", "_first_name", "_last_name", "_r_action", "_r_application",  "_r_software_context",  "_r_use_profile",  "_r_device_profile"];
+    return {
+      R_Authorization: {
+        '.': ["_disabled", "_urn", "_label", "_r_authenticable", "_r_sub_right"],
+      },
+      R_Person: {
+        '_r_authenticable.': ["_disabled", "_urn", "_first_name", "_last_name"],
+      },
+      R_Application: {
+        '_r_authenticable.': ["_disabled", "_urn", "_label"],
+      },
+      R_Right: {
+        '_r_sub_right.': ["_label", "_r_action", "_r_application",  "_r_software_context",  "_r_use_profile",  "_r_device_profile"],
+      }
+    };
   }
 
   objectsToSave(): VersionedObject[] {
@@ -252,12 +268,10 @@ export class AuthorizationComponent extends VOComponent<R_Authorization.Aspects.
 
 @Component({
   selector: 'authorization-li',
-  template: `{{this.item._label}}` 
+  template: `{{this.object._label}}`
 })
-export class AuthorizationListItemComponent extends AspectComponent {
-  @Input() item: R_Authorization.Aspects.obi;
-
-  static scope: ['_label']
+export class AuthorizationListItemComponent extends VOComponent<R_Authorization.Aspects.obi> {
+  static readonly scope = ['_label']
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
   }

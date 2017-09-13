@@ -12,7 +12,7 @@ import { AuthorizationComponent } from '../components/authorization.component';
 <div class="col-md-4">
   <search-list query="authorizations">
     <ng-template let-item="$implicit">
-      <authorization-li [item]="item"></authorization-li>
+      <authorization-li [object]="item"></authorization-li>
     </ng-template>
   </search-list>
 </div>

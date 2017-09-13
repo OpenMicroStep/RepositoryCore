@@ -1,10 +1,10 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { SearchListComponent } from '../search.component';
 import { AppContext, R_LDAPConfiguration } from '../main';
-import { Notification, Invocation, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Notification, Result, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
-import { VOComponent }  from '../aspect/vo.component';
+import { VOLoadComponent }  from '../aspect/vo.component';
 import { PersonComponent } from '../components/person.component';
 
 @Component({
@@ -21,7 +21,9 @@ import { PersonComponent } from '../components/person.component';
       <vo-input-set label="Attribute Map" [object]="object" attribute="_ldap_attribute_map" [domains]="this._ldap_attribute_map_domains">
         <ng-template let-item="$implicit">
           <div><vo-input-text label="LDAP Attribute Name" [object]="item" attribute="_ldap_attribute_name"   ></vo-input-text></div>
-          <div><vo-input-text label="Person Attribute Name" [object]="item" attribute="_ldap_to_attribute_name"></vo-input-text></div>
+          <div><vo-input-select label="Person Attribute Name" [object]="item" attribute="_ldap_to_attribute_name" [items]="_person_attributes">
+            <ng-template let-item="$implicit">{{ item }}</ng-template>
+          </vo-input-select></div>
         </ng-template>
       </vo-input-set>
     </div>
@@ -32,7 +34,7 @@ import { PersonComponent } from '../components/person.component';
           <div>
             <vo-input-select label="Authorization" [object]="item" attribute="_ldap_group" query="authorizations">
               <ng-template let-item="$implicit">
-                <authorization-li [item]="item"></authorization-li>
+                <authorization-li [object]="item"></authorization-li>
               </ng-template>
             </vo-input-select>
           </div>
@@ -47,6 +49,7 @@ import { PersonComponent } from '../components/person.component';
 `
 })
 export class ManageSettingsComponent extends AspectComponent {
+  _person_attributes = ["_first_name", "_last_name", "_mail"];
   _ldap_configurations: R_LDAPConfiguration[] = [];
   _ldap_attribute_map_domains: VOInputSetComponent.Domain[] = [];
   _ldap_group_map_domains: VOInputSetComponent.Domain[] = [];
@@ -62,9 +65,9 @@ export class ManageSettingsComponent extends AspectComponent {
     this.ctx.dataSource.farEvent('query', { id: "settings" }, 'onSettings', this);
   }
 
-  onSettings(notification: Notification<Invocation<{ "ldap-configurations": R_LDAPConfiguration[] }>>) {
-    if (!notification.info.hasResult()) return;
-    this._ldap_configurations = this._controlCenter.swapObjects(this, this._ldap_configurations, notification.info.result()["ldap-configurations"]);
+  onSettings(notification: Notification<Result<{ "ldap-configurations": R_LDAPConfiguration[] }>>) {
+    if (!notification.info.hasOneValue()) return;
+    this._ldap_configurations = this._controlCenter.swapObjects(this, this._ldap_configurations, notification.info.value()["ldap-configurations"]);
   }
 
   createLDAPConfiguration() {
@@ -74,6 +77,6 @@ export class ManageSettingsComponent extends AspectComponent {
   }
 
   saveLDAPConfiguration(object: R_LDAPConfiguration) {
-    this.ctx.dataSource.farEvent("save", VersionedObjectManager.objectsInScope([object], ["_ldap_attribute_map", "_ldap_group_map"]), VOComponent.saved, this);
+    this.ctx.dataSource.farEvent("save", VersionedObjectManager.objectsInScope([object], ["_ldap_attribute_map", "_ldap_group_map"]), VOLoadComponent.saved, this);
   }
 }

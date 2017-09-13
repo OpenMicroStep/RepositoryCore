@@ -1,4 +1,4 @@
-import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, InvocationState, DataSourceQuery} from '@openmicrostep/aspects';
+import {ControlCenter, VersionedObject, VersionedObjectConstructor, DataSource, Aspect, DataSourceQuery} from '@openmicrostep/aspects';
 import {SqliteDBConnectorFactory, SqlDataSource} from '@openmicrostep/aspects.sql';
 import {ObiDataSource, OuiDB, StdDefinition, ObiDefinition} from '@openmicrostep/aspects.obi';
 import {Parser, Reporter} from '@openmicrostep/msbuildsystem.shared';
@@ -10,6 +10,7 @@ import {api_aspect} from './api-aspect';
 import {api_xnet} from '../../xnet/src/api-xnet';
 import {importCity} from '../../xnet/src/import';
 import {controlCenterCreator, printClassesMd, buildMaps} from './classes';
+import './session';
 var sqlite3 = require('sqlite3').verbose();
 require('source-map-support').install();
 
@@ -17,7 +18,7 @@ require('source-map-support').install();
 let trace = false;
 async function boot() {
   const sqlite3 = require('sqlite3').verbose();
-  const connector = SqliteDBConnectorFactory(sqlite3, { 
+  const connector = SqliteDBConnectorFactory(sqlite3, {
     filename: "repository.sqlite",
     trace: sql => trace && console.info(sql),
   }, { max: 1 });
@@ -71,7 +72,7 @@ async function boot() {
   }
   if (0) printClassesMd(ouiDb);
   console.info("Repository is ready");
-  
+
   if (0) {
     let {cc, db, classes} = creator();
     let contexts = importCity(classes, 'std');
@@ -80,7 +81,7 @@ async function boot() {
       return Promise.reject(invs.diagnostics());
   }
   trace = true;
-  
+
   const app = express();
   //app.use('/api/v1', api_v1(creator));
   //app.use('/api/v2', api_v2(creator));

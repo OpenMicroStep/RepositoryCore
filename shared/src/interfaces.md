@@ -100,28 +100,6 @@ _relation_: `_r_parent_devicetree`
 #### `_r_device`: <0,*,R_Device>
 ### aspect obi
 
-## class R_LDAPConfiguration
-### attributes
-#### `_ldap_url`: string
-#### `_ldap_dn`: string
-#### `_ldap_password`: string
-#### `_ldap_user_base`: string
-#### `_ldap_user_filter`: string
-#### `_ldap_attribute_map`: <0,*,R_LDAPAttribute>
-#### `_ldap_group_map`: <0,*,R_LDAPGroup>
-
-## class R_LDAPAttribute
-### attributes
-#### `_ldap_attribute_name`: string
-#### `_ldap_to_attribute_name`: string
-### aspect obi
-
-## class R_LDAPGroup
-### attributes
-#### `_ldap_dn`: string
-#### `_ldap_group`: R_Authorization
-### aspect obi
-
 ## class Parameter
 ### attributes
 #### `_label`: string

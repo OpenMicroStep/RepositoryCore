@@ -1,5 +1,5 @@
 import { Component, Input, ContentChild, Type, OnInit, TemplateRef, HostListener, Output, EventEmitter } from '@angular/core';
-import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Invocation } from '@openmicrostep/aspects';
+import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Result } from '@openmicrostep/aspects';
 import { VOInputComponent } from './vo.input.component';
 import { AspectComponent } from './aspect.component';
 
@@ -9,10 +9,10 @@ import { AspectComponent } from './aspect.component';
   `
 <span class="dropdown" [class.open]="this._isOpen">
   <button class="btn btn-default" type="button" (click)="this._isOpen = !this._isOpen;">
-    <ng-template [ngIf]="this.value">
+    <ng-template [ngIf]="this.value && this._items.length">
       <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.value }"></ng-container>
     </ng-template>
-    <ng-template [ngIf]="!this.value">
+    <ng-template [ngIf]="!(this.value && this._items.length)">
       &nbsp;
     </ng-template>
     <span class="caret"></span>
@@ -25,23 +25,26 @@ import { AspectComponent } from './aspect.component';
 </span>
 `
 })
-export class InputSelectComponent extends AspectComponent {
+export class InputSelectComponent<T> extends AspectComponent {
   _items: any[] = [];
   _isOpen = false;
   @ContentChild(TemplateRef) template: any;
 
-  @Input() set items(items: IterableIterator<VersionedObject>) {
+  @Input() set items(items: IterableIterator<T>) {
     this._items = [...items];
   }
-  
-  _value: VersionedObject | undefined = undefined;
-  @Input() get value(): VersionedObject | undefined {
+
+  _value: T | undefined = undefined;
+  @Input() get value(): T | undefined {
     return this._value;
   }
   @Output() valueChange = new EventEmitter();
-  set value(newValue: VersionedObject | undefined) {
+  set value(newValue: T | undefined) {
     if (this._value === newValue) return;
-    this._value = this._controlCenter.swapObject(this, this._value, newValue);
+    if (this._value instanceof VersionedObject || newValue instanceof VersionedObject)
+      this._value = this._controlCenter.swapObject(this, this._value as any, newValue as any);
+    else
+    this._value = newValue;
     this.valueChange.emit(this._value);
   }
 
@@ -93,8 +96,8 @@ export class VOInputSelectComponent extends VOInputComponent<VersionedObject> {
     this._controlCenter.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
   }
 
-  onItems(notification: Notification<Invocation<{ items: VersionedObject[] }>>) {
-    let items = notification.info.result().items;
+  onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
+    let items = notification.info.value().items;
     this._items = this._controlCenter.swapObjects(this, this._items, items);
   }
 

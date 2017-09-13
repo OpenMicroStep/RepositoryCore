@@ -1,7 +1,7 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_AuthenticationPWD } from '../main';
-import { Notification, Invocation, VersionedObjectManager } from '@openmicrostep/aspects';
-import { VOComponent } from '../aspect/vo.component';
+import { Notification, VersionedObjectManager } from '@openmicrostep/aspects';
+import { VOLoadComponent } from '../aspect/vo.component';
 
 @Component({
   selector: 'authentication-pwd',
@@ -23,13 +23,13 @@ import { VOComponent } from '../aspect/vo.component';
 </ng-template>
 `
 })
-export class AuthenticationPWDComponent extends VOComponent<R_AuthenticationPWD.Aspects.obi> {
+export class AuthenticationPWDComponent extends VOLoadComponent<R_AuthenticationPWD.Aspects.obi> {
   password2: string;
   constructor(public ctx: AppContext) {
     super(ctx.dataSource);
   }
 
-  scope() { 
+  scope() {
     return ["_mlogin", "_hashed_password"]; // TODO: fix this workaround (will load _password)
   }
 

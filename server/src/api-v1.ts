@@ -11,7 +11,7 @@ const allowDangerousApi = false;
 
 declare module "express-serve-static-core" {
   interface Request {
-    session: { 
+    session: {
       authenticated: boolean;
       r_authenticable?: { id: Identifier, auth_id: Identifier },
       auth?: { type: 'pk' | 'pwd', id: Identifier, challenge: string }
@@ -65,7 +65,7 @@ function validate<T>(validator: V.Validator0<T>, req: express.Request, res: expr
 }
 
 async function authOk(ctx: Classes.Context, req: express.Request, res: express.Response, auths: any, attr: string, validate: (value) => Promise<boolean>) {
-  let inv = await ctx.db.farPromise('rawQuery', { 
+  let inv = await ctx.db.farPromise('rawQuery', {
     'auths=': auths,
     'applications=': {
       $out: '=a',
@@ -85,9 +85,9 @@ async function authOk(ctx: Classes.Context, req: express.Request, res: express.R
     ]
   });
   let ok = false;
-  if (inv.hasResult() && inv.result().auths.length === 1) {
-    let auth = inv.result().auths[0] as Classes.R_AuthenticationPWD;
-    let a = inv.result().authenticables[0] as Classes.R_Application | Classes.R_Person;
+  if (inv.hasOneValue() && inv.value().auths.length === 1) {
+    let auth = inv.value().auths[0] as Classes.R_AuthenticationPWD;
+    let a = inv.value().authenticables[0] as Classes.R_Application | Classes.R_Person;
     ok = await validate(auth[attr]);
     if (ok) {
       req.session.r_authenticable = { id: a.id(), auth_id: auth.id() };
@@ -105,8 +105,8 @@ async function authOk(ctx: Classes.Context, req: express.Request, res: express.R
 async function challengeForLogin(ctx: Classes.Context, login: string) {
   let inv = await ctx.db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: ctx.classes.R_AuthenticationPWD, login: login }, scope: ['login', 'hashed password'] });
   let challenge: string | undefined;
-  if (inv.hasResult()) {
-    let auths = inv.result().auths as Classes.R_AuthenticationPWD[];
+  if (inv.hasOneValue()) {
+    let auths = inv.value().auths as Classes.R_AuthenticationPWD[];
     if (auths.length === 1) {
       challenge = await SecureHash.challenge(auths[0]["hashed password"]);
       if (challenge)
@@ -140,8 +140,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       else if ((urn = req.get('mh-urn'))) {
         let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: classes.R_AuthenticationPK, login: urn } });
         let challenge: string | undefined;
-        if (inv.hasResult()) {
-          let auths = inv.result().auths as Classes.R_AuthenticationPK[];
+        if (inv.hasOneValue()) {
+          let auths = inv.value().auths as Classes.R_AuthenticationPK[];
           if (auths.length === 1) {
             challenge = await SecurePK.challenge();
             session.auth = { type: 'pk', id: auths[0].id(), challenge: challenge };
@@ -153,11 +153,11 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
     else if (session.auth) {
       let password: string, challenge: string;
       if ((password = req.get('mh-password')) && session.auth.type === 'pwd') {
-        authOk(ctx, req, res, { $instanceOf: classes.R_AuthenticationPWD, _id: session.auth.id }, 
+        authOk(ctx, req, res, { $instanceOf: classes.R_AuthenticationPWD, _id: session.auth.id },
           'hashed password', (hashedPassword) => SecureHash.isChallengeResponseValid(session.auth!.challenge, password, hashedPassword));
       }
       else if ((challenge = req.get('mh-challenge')) && session.auth.type === 'pk') {
-        authOk(ctx, req, res, { $instanceOf: classes.R_AuthenticationPK, _id: session.auth.id }, 
+        authOk(ctx, req, res, { $instanceOf: classes.R_AuthenticationPK, _id: session.auth.id },
           'public key', (publickey) => Promise.resolve(SecurePK.isChallengeResponseValid(session.auth!.challenge, challenge, publickey)));
       }
     }
@@ -176,8 +176,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       else {
         let {db, classes} = creator();
         let inv = await db.farPromise('rawQuery', { name: 'urns', where: { $instanceOf: classes.R_Person, r_authenticable: { $has: { login: login } } }, scope: ['urn'] });
-        if (inv.hasResult() && inv.result().urns.length === 1)
-          res.send(200, inv.result().urns[0]['urn']);
+        if (inv.hasOneValue() && inv.value().urns.length === 1)
+          res.send(200, inv.value().urns[0]['urn']);
         else
           res.send(200, ""); // old api would return 200 and nothing if not found
       }
@@ -199,8 +199,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       else {
         let {db, classes} = creator();
         let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: classes.R_AuthenticationPWD, _id: session.auth.id }, scope: ['login', 'hashed password'] });
-        if (inv.hasResult() && inv.result().auths.length === 1) {
-          let auth = inv.result().auths[0] as Classes.R_AuthenticationPWD;
+        if (inv.hasOneValue() && inv.value().auths.length === 1) {
+          let auth = inv.value().auths[0] as Classes.R_AuthenticationPWD;
           if (await SecureHash.isChallengeResponseValid(session.auth.challenge, password, auth["hashed password"]))
             res.send(200, "OK");
           else
@@ -215,8 +215,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       else {
         let {db, classes} = creator();
         let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: classes.R_AuthenticationPK, login: urn }, scope: ['login', 'public key'] });
-        if (inv.hasResult() && inv.result().auths.length === 1)
-          res.send(200, inv.result().auths[0]["public key"]);
+        if (inv.hasOneValue() && inv.value().auths.length === 1)
+          res.send(200, inv.value().auths[0]["public key"]);
         res.send(200, ""); // old api would return 200 and nothing if not found
       }
     });
@@ -239,8 +239,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
           },
           scope: ['urn']
         });
-        if (inv.hasResult())
-          res.send(200, MSTEEncoded(inv.result().apps.map(a => a["urn"])));
+        if (inv.hasOneValue())
+          res.send(200, MSTEEncoded(inv.value().apps.map(a => a["urn"])));
         else
           res.send(500, "unable to process request");
       }
@@ -264,8 +264,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       where: where,
       scope: ['urn', 'first name', 'last name', 'middle name'],
     });
-    if (inv.hasResult())
-      res.send(200, MSTEEncodedVOList(inv.result().persons));
+    if (inv.hasOneValue())
+      res.send(200, MSTEEncodedVOList(inv.value().persons));
     else
       res.send(500, "unable to process request");
   });
@@ -283,8 +283,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       where: { $instanceOf: classes.R_Service, r_administrator: { $has: { _id: req.session.r_authenticable!.id }} },
       scope: ['urn'],
     });
-    if (inv.hasResult()) {
-      let services = inv.result().services as Classes.R_Service[];
+    if (inv.hasOneValue()) {
+      let services = inv.value().services as Classes.R_Service[];
       if (!p.rootsOnly) {
         let all = new Set(services);
         let n = 0;
@@ -298,8 +298,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
             where: { $instanceOf: classes.R_Service, "r_parent service": { $in: services } },
             scope: ['urn', 'r_parent service'],
           });
-          if (inv.hasResult()) {
-            services = inv.result().services as Classes.R_Service[];
+          if (inv.hasOneValue()) {
+            services = inv.value().services as Classes.R_Service[];
             cc.registerObjects(component, services);
             for (let s of services)
               all.add(s);
@@ -318,7 +318,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
     if (diags.length > 0)
       res.send(500, diags);
   });
-  
+
   const validateAuthorizationBunchsForDeviceURN = V.objectValidator({
     "deviceURN": V.validateString,
   }, V.validateAnyToUndefined);
@@ -328,11 +328,11 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
     let {db, classes} = creator();
     let inv = await db.farPromise('safeQuery', {
       "devices=": { $instanceOf: classes.R_Device, urn: p.deviceURN, disabled: false, "r_out of order": false },
-      "device_profiles=": { 
+      "device_profiles=": {
         $out: "=p",
         "p=": { $elementOf: { $instanceOf: classes.R_Device_Profile } },
         "d=": { $elementOf: "=devices" },
-        "=p.r_device": { $has: "=d" } 
+        "=p.r_device": { $has: "=d" }
       },
       "rights=": {
         $out: "=r",
@@ -374,26 +374,26 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       ]
       /* or
       results: [
-        { name: "all", where: { $union: [ 
+        { name: "all", where: { $union: [
             "=devices"        , "=device_profiles", "=rights"         , "=actions"        ,
             "=use_profiles"   , "=authorizations" , "=applications"   , "=persons"        ,
           ], scope: [
-            "urn", "label", "r_serial number", 
-            "r_action", "r_application", "r_software context", "r_use profile", "r_device profile", 
-            "system name", "order", 
-            "r_device", 
+            "urn", "label", "r_serial number",
+            "r_action", "r_application", "r_software context", "r_use profile", "r_device profile",
+            "system name", "order",
+            "r_device",
             "first name", "last name", "middle name"
           ]
         }
       ]
-      if (inv.hasResult()) {
-        res.send(200, MSTEEncodedVOList(inv.result().all));
+      if (inv.hasOneValue()) {
+        res.send(200, MSTEEncodedVOList(inv.value().all));
       }
       */
     });
-    if (inv.hasResult()) {
+    if (inv.hasOneValue()) {
       let set = new Set<VersionedObject>();
-      let r = inv.result();
+      let r = inv.value();
       for (let k in r)
         for (let v of r[k])
           set.add(v);
@@ -416,8 +416,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       where: { _id: { $in: p.refs } },
       scope: p.keys,
     });
-    if (inv.hasResult())
-      res.send(200, MSTEEncodedVOList(inv.result().infos));
+    if (inv.hasOneValue())
+      res.send(200, MSTEEncodedVOList(inv.value().infos));
     else
       res.send(500, "unable to process request");
   });
@@ -436,8 +436,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       where: where,
       scope: [],
     });
-    if (inv.hasResult())
-      res.send(200, MSTEEncodedVOList(inv.result().infos));
+    if (inv.hasOneValue())
+      res.send(200, MSTEEncodedVOList(inv.value().infos));
     else
       res.send(500, "unable to process request");
   });
@@ -457,8 +457,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       where: where,
       scope: p.keys,
     });
-    if (inv.hasResult())
-      res.send(200, MSTEEncodedVOList(inv.result().infos));
+    if (inv.hasOneValue())
+      res.send(200, MSTEEncodedVOList(inv.value().infos));
     else
       res.send(500, "unable to process request");
   });
@@ -469,8 +469,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       where: { $instanceOf: classes.R_AuthenticationPWD, _id: req.session.r_authenticable!.auth_id },
       scope: ["hashed password"],
     });
-    if (inv.hasResult() && inv.result().auth.length === 1) {
-      let auth = inv.result().auth[0] as Classes.R_AuthenticationPWD;
+    if (inv.hasOneValue() && inv.value().auth.length === 1) {
+      let auth = inv.value().auth[0] as Classes.R_AuthenticationPWD;
       res.send(200, MSTEEncoded({
         oldPasswordChallengeInfo: SecureHash.challenge(auth["hashed password"]),
         newPasswordRequest: await SecureHash.generatePasswordRequest(),
@@ -514,7 +514,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
         e[lnk.car] = e[lnk.car] instanceof Set ? new Set().add(pe) : pe;
       }
       let inv = await db.farPromise("safeSave", [e]);
-      if (inv.hasResult())
+      if (inv.hasOneValue())
         res.send(200, MSTEEncoded({ "urn": e.manager().hasAttributeValue("urn" as any) ? e["urn"] : e.id() }));
       else
         res.send(400, MSTEEncoded({ "error description": inv.diagnostics() }));
@@ -532,11 +532,11 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
     if (!p) return;
     let {db, classes} = creator();
     let inv = await db.farPromise('safeQuery', { name: 'obi', where: { _id: p.ref } });
-    if (!inv.hasResult() || inv.result().obi.length !== 1) {
+    if (!inv.hasOneValue() || inv.value().obi.length !== 1) {
       res.send(400, MSTEEncoded({ "error description": "entity not found" }))
       return;
     }
-    let e = inv.result().obi[0];
+    let e = inv.value().obi[0];
     try {
       for (let k in p.cars) {
         let nv = p.cars[k];
@@ -544,7 +544,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
         e[k] = ov instanceof Set ? new Set(nv) : nv[0];
       }
       let inv = await db.farPromise("safeSave", [e]);
-      if (inv.hasResult())
+      if (inv.hasOneValue())
         res.send(200, MSTEEncoded(null))
       else
         res.send(400, MSTEEncoded({ "error description": inv.diagnostics() }));
@@ -561,14 +561,14 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
     if (!p) return;
     let {db, classes} = creator();
     let invq = await db.farPromise('safeQuery', { name: 'obi', where: { _id: p.ref } });
-    if (!invq.hasResult() || invq.result().obi.length !== 1) {
+    if (!invq.hasOneValue() || invq.value().obi.length !== 1) {
       res.send(400, MSTEEncoded({ "error description": "entity not found" }))
       return;
     }
-    let e = invq.result().obi[0];
+    let e = invq.value().obi[0];
     e.manager().delete();
     let invs = await db.farPromise("safeSave", [e]);
-    if (invs.hasResult())
+    if (invs.hasOneValue())
       res.send(200, MSTEEncoded(null))
     else
       res.send(400, MSTEEncoded({ "error description": invs.diagnostics() }));

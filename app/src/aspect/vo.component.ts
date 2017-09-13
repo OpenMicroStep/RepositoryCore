@@ -1,10 +1,21 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { Notification, Invocation, VersionedObject, Event, DataSource, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Notification, Result, VersionedObject, Event, DataSource, VersionedObjectManager, DataSourceInternal } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect.component';
 import { VOInputSetComponent }  from './vo.input.set.component';
+import Scope = DataSourceInternal.Scope;
 
-export abstract class VOComponent<T extends VersionedObject> extends AspectComponent {
-  static loaded: Event<Invocation<[VersionedObject]>> = "loaded";
+export class VOComponent<T extends VersionedObject> extends AspectComponent {
+  _object?: T;
+  get object(): T | undefined {
+    return this._object;
+  }
+  @Input() set object(object: T | undefined) {
+    this._object = this._controlCenter.swapObject(this, this._object, object);
+  }
+}
+
+export abstract class VOLoadComponent<T extends VersionedObject> extends AspectComponent {
+  static loaded: Event<Result<[VersionedObject]>> = "loaded";
   static saved: Event<[VersionedObject]> = "saved";
 
   protected _datasource: DataSource.Aspects.client;
@@ -15,11 +26,11 @@ export abstract class VOComponent<T extends VersionedObject> extends AspectCompo
     this._datasource = dataSource as DataSource.Aspects.client;
   }
 
-  abstract scope(): string[];
+  abstract scope(): Scope;
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this._controlCenter.notificationCenter().addObserver(this, "loaded", VOComponent.loaded, this);
+    this._controlCenter.notificationCenter().addObserver(this, "loaded", VOLoadComponent.loaded, this);
   }
 
   get object(): T | undefined {
@@ -35,16 +46,13 @@ export abstract class VOComponent<T extends VersionedObject> extends AspectCompo
       return;
     this._object = undefined;
     if (object)
-      this._datasource.farEvent("load", { objects: [object], scope: this.scope() }, VOComponent.loaded, this);
+      this._datasource.farEvent("load", { objects: [object], scope: this.scope() }, VOLoadComponent.loaded, this);
   }
 
-  loaded(n: Notification<Invocation<T[]>>) {
+  loaded(n: Notification<Result<T[]>>) {
     let r = n.info;
-    if (r.hasResult()) {
-      if (this._object)
-        this._controlCenter.unregisterObjects(this, [this._object]);
-      this._object = r.result()[0];
-      this._controlCenter.registerObjects(this, [this._object]);
+    if (r.hasOneValue()) {
+      this._object = this._controlCenter.swapObject(this, this._object, r.value()[0]);
     }
   }
 
@@ -62,7 +70,7 @@ export abstract class VOComponent<T extends VersionedObject> extends AspectCompo
   }
 
   save() {
-    this._datasource.farEvent("save", this.objectsToSave(), VOComponent.saved, this);
+    this._datasource.farEvent("save", this.objectsToSave(), VOLoadComponent.saved, this);
   }
   markForDeletion() {
     this._object!.manager().delete();

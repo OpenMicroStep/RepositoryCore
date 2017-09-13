@@ -1,5 +1,5 @@
 import { Component, Input, ContentChild, Type, OnInit, TemplateRef } from '@angular/core';
-import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Invocation } from '@openmicrostep/aspects';
+import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Result } from '@openmicrostep/aspects';
 import { VOInputComponent } from './vo.input.component';
 
 @Component({
@@ -55,8 +55,8 @@ export class VOInputSetSelectComponent<T extends VersionedObject> extends VOInpu
     this._controlCenter.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
   }
 
-  onItems(notification: Notification<Invocation<{ items: T[] }>>) {
-    let items = notification.info.result().items;
+  onItems(notification: Notification<Result<{ items: T[] }>>) {
+    let items = notification.info.value().items;
     this._items = this._controlCenter.swapObjects(this, this._items, items);
   }
 

@@ -1,7 +1,7 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_AuthenticationLDAP } from '../main';
-import { Notification, Invocation } from '@openmicrostep/aspects';
-import { VOComponent } from '../aspect/vo.component';
+import { Notification } from '@openmicrostep/aspects';
+import { VOLoadComponent } from '../aspect/vo.component';
 
 @Component({
   selector: 'authentication-ldap',
@@ -10,12 +10,12 @@ import { VOComponent } from '../aspect/vo.component';
   <div><vo-input-text label="DN"         [object]="this.object" attribute="_ldap_dn"></vo-input-text></div>
 `
 })
-export class AuthenticationLDAPComponent extends VOComponent<R_AuthenticationLDAP.Aspects.obi> {
+export class AuthenticationLDAPComponent extends VOLoadComponent<R_AuthenticationLDAP.Aspects.obi> {
   constructor(public ctx: AppContext) {
     super(ctx.dataSource);
   }
 
-  scope() { 
+  scope() {
     return ["_mlogin", "_ldap_dn"];
   }
 }

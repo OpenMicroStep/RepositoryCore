@@ -1,28 +1,28 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy, Input, ContentChild, TemplateRef, Output, EventEmitter } from '@angular/core';
 import { AppContext } from './main';
-import { Notification, Invocation, DataSource, VersionedObject, Event, ControlCenter } from '@openmicrostep/aspects';
+import { Notification, Result, DataSource, VersionedObject, Event, ControlCenter } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect/aspect.component';
+import { VOComponent } from './aspect/vo.component';
 
 @Component({
   selector: 'admin-tree-item',
   template:
   `
 <li class="list-group-item">
-  <span (click)="this.selected.emit(this.item)">
-    <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.item }"></ng-container>
+  <span (click)="this.selected.emit(this.object)">
+    <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.object }"></ng-container>
   </span>
   <ul class="list-group" style="margin: 0; margin-top: 5px">
-    <admin-tree-item *ngFor="let child of this.item[this.child_attribute]" [item]="child" [child_attribute]="this.child_attribute" (selected)="this.selected.emit(child)">
+    <admin-tree-item *ngFor="let child of this.object[this.child_attribute]" [object]="child" [child_attribute]="this.child_attribute" (selected)="this.selected.emit(child)">
       <ng-template let-item="$implicit">
-        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
+        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.object }"></ng-container>
       </ng-template>
     </admin-tree-item>
   </ul>
 </li>
 `
 })
-export class AdminTreeItemComponent extends AspectComponent {
-  @Input() item: VersionedObject;
+export class AdminTreeItemComponent extends VOComponent<VersionedObject> {
   @Input() child_attribute: string;
   @Output() selected = new EventEmitter();
   @ContentChild(TemplateRef) template: any;
@@ -42,7 +42,7 @@ export class AdminTreeItemComponent extends AspectComponent {
   `
 <div>
   <ul class="list-group">
-    <admin-tree-item *ngFor="let child of this._roots" [item]="child" [child_attribute]="this.child_attribute" (selected)="this.selected($event)">
+    <admin-tree-item *ngFor="let child of this._roots" [object]="child" [child_attribute]="this.child_attribute" (selected)="this.selected($event)">
       <ng-template let-item="$implicit">
         <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
       </ng-template>
@@ -80,8 +80,8 @@ export class AdminTreeComponent extends AspectComponent {
     this.ctx.dataSource.farEvent('query', { id: this.query, text: "" }, 'onItems', this);
   }
 
-  onItems(notification: Notification<Invocation<{ items: VersionedObject[] }>>) {
-    let items = notification.info.result().items;
+  onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
+    let items = notification.info.value().items;
     this._items = this.ctx.controlCenter.swapObjects(this, this._items, items);
     this._roots = this._items.filter(i => !i[this.parent_attribute]);
   }

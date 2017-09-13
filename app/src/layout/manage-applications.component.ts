@@ -14,12 +14,12 @@ import { AdminTreeComponent }  from '../tree.component';
 <div class="col-md-4">
   <admin-tree query="apptrees" parent_attribute="_r_parent_apptree" child_attribute="_r_child_apptrees">
     <ng-template let-item="$implicit">
-      <apptree-li [item]="item"></apptree-li>
+      <apptree-li [object]="item"></apptree-li>
     </ng-template>
   </admin-tree>
   <search-list query="applications">
     <ng-template let-item="$implicit">
-      <application-li [item]="item"></application-li>
+      <application-li [object]="item"></application-li>
     </ng-template>
   </search-list>
 </div>

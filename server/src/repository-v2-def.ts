@@ -1,7 +1,7 @@
 export const repositoryV2Definition = `
 ENT // ENT-Gab
 _id: 7
-pattern: 
+pattern:
   Gab
   _id: 1089
   characteristic: r_internal right
@@ -93,19 +93,19 @@ _end:
 ENT // ENT-R_Element
 _id: 10011
 system name: R_Element
-pattern: 
+pattern:
   Gab
   _id: 10013
   characteristic: system name
   cardinality: one
   _end:
-pattern: 
+pattern:
   Gab
   _id: 10014
   characteristic: version
   cardinality: one
   _end:
-pattern: 
+pattern:
   Gab
   _id: 10015
   characteristic: order
@@ -116,14 +116,14 @@ _end:
 ENT // ENT-R_Internal Right
 _id: 10021
 system name: R_Internal Right
-pattern: 
+pattern:
   Gab
   _id: 10023
   characteristic: r_operation
   cardinality: multi
   mandatory: 1
   _end:
-pattern: 
+pattern:
   Gab
   _id: 10027
   characteristic: r_who
@@ -135,7 +135,7 @@ _end:
 ENT // ENT-R_Person (101)
 _id: 10101
 system name: R_Person
-pattern: 
+pattern:
   Gab
   _id: 10102
   characteristic: version
@@ -145,13 +145,13 @@ pattern:  // ENT-R_Person-entity, used for the creat-id and invalidate-id rights
   Gab
   _id: 10111
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10115
     r_operation: read
     r_who: public
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10117
     r_operation: create-id
@@ -182,7 +182,7 @@ pattern:  // ENT-R_Person-authentication
   _id: 10142
   characteristic: r_authentication
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10144
     r_operation: modify
@@ -195,7 +195,7 @@ pattern:  // ENT-R_Person-first name
   characteristic: first name
   mandatory: 1
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10313
     r_operation: read
@@ -204,7 +204,7 @@ pattern:  // ENT-R_Person-first name
     r_who: device_admin
     r_who: admin
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10315
     r_operation: modify
@@ -216,7 +216,7 @@ pattern:  // ENT-R_Person-middle name
   _id: 10331
   characteristic: middle name
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10332
     r_operation: read
@@ -225,7 +225,7 @@ pattern:  // ENT-R_Person-middle name
     r_who: device_admin
     r_who: admin
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10333
     r_operation: modify
@@ -238,7 +238,7 @@ pattern:  // ENT-R_Person-last name
   characteristic: last name
   mandatory: 1
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10352
     r_operation: read
@@ -247,7 +247,7 @@ pattern:  // ENT-R_Person-last name
     r_who: device_admin
     r_who: admin
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10353
     r_operation: modify
@@ -260,7 +260,7 @@ pattern:  // ENT-R_Person-mail
   characteristic: mail
   mandatory: 1
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10362
     r_operation: read
@@ -269,7 +269,7 @@ pattern:  // ENT-R_Person-mail
     r_who: device_admin
     r_who: admin
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10363
     r_operation: modify
@@ -281,7 +281,7 @@ _end:
 ENT // ENT-R_Service (105)
 _id: 10501
 system name: R_Service
-pattern: 
+pattern:
   Gab
   _id: 10502
   characteristic: version
@@ -291,13 +291,13 @@ pattern:  // ENT-R_Service-entity
   Gab
   _id: 10511
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10512
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10513
     r_operation: modify
@@ -309,13 +309,13 @@ pattern:  // ENT-R_Service-label
   _id: 10521
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10522
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10523
     r_operation: modify
@@ -327,13 +327,13 @@ pattern:  // ENT-R_Service-disabled
   _id: 10531
   characteristic: disabled
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10532
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10533
     r_operation: modify
@@ -346,7 +346,7 @@ pattern:  // ENT-R_Service-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10542
     r_operation: read
@@ -359,13 +359,13 @@ pattern:  // ENT-R_Service-r_parent service
   _id: 10551
   characteristic: r_parent service
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10558
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10559
     r_operation: modify
@@ -377,13 +377,13 @@ pattern:  // ENT-R_Service-r_administrator
   _id: 10561
   characteristic: r_administrator
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10562
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10563
     r_operation: modify
@@ -395,13 +395,13 @@ pattern:  // ENT-R_Service-r_member
   _id: 10571
   characteristic: r_member
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10572
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10574
     r_operation: modify
@@ -414,7 +414,7 @@ _end:
 ENT // ENT-R_AppTree (106)
 _id: 10601
 system name: R_AppTree
-pattern: 
+pattern:
   Gab
   _id: 10602
   characteristic: version
@@ -424,13 +424,13 @@ pattern:  // ENT-R_AppTree-entity
   Gab
   _id: 10611
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10612
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10613
     r_operation: modify
@@ -442,13 +442,13 @@ pattern:  // ENT-R_AppTree-label
   _id: 10621
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10622
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10623
     r_operation: modify
@@ -460,13 +460,13 @@ pattern:  // ENT-R_AppTree-disabled
   _id: 10631
   characteristic: disabled
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10632
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10633
     r_operation: modify
@@ -479,7 +479,7 @@ pattern:  // ENT-R_AppTree-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10642
     r_operation: read
@@ -492,13 +492,13 @@ pattern:  // ENT-R_AppTree-r_parent apptree
   _id: 10651
   characteristic: r_parent apptree
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10652
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10653
     r_operation: modify
@@ -510,13 +510,13 @@ pattern:  // ENT-R_AppTree-r_administrator
   _id: 10661
   characteristic: r_administrator
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10662
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10663
     r_operation: modify
@@ -528,13 +528,13 @@ pattern:  // ENT-R_AppTree-r_member
   _id: 10671
   characteristic: r_application
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10672
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10673
     r_operation: modify
@@ -547,7 +547,7 @@ _end:
 ENT // ENT-R_DeviceTree (107)
 _id: 10701
 system name: R_DeviceTree
-pattern: 
+pattern:
   Gab
   _id: 10702
   characteristic: version
@@ -557,13 +557,13 @@ pattern:  // ENT-R_DeviceTree-entity
   Gab
   _id: 10711
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10712
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10713
     r_operation: modify
@@ -575,13 +575,13 @@ pattern:  // ENT-R_DeviceTree-label
   _id: 10721
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10722
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10723
     r_operation: modify
@@ -593,13 +593,13 @@ pattern:  // ENT-R_DeviceTree-disabled
   _id: 10731
   characteristic: disabled
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10732
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10733
     r_operation: modify
@@ -612,7 +612,7 @@ pattern:  // ENT-R_DeviceTree-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10742
     r_operation: read
@@ -625,13 +625,13 @@ pattern:  // ENT-R_DeviceTree-r_parent devicetree
   _id: 10751
   characteristic: r_parent devicetree
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10752
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10753
     r_operation: modify
@@ -643,13 +643,13 @@ pattern:  // ENT-R_DeviceTree-r_administrator
   _id: 10761
   characteristic: r_administrator
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10762
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10763
     r_operation: modify
@@ -661,13 +661,13 @@ pattern:  // ENT-R_DeviceTree-r_device
   _id: 10771
   characteristic: r_device
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10772
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10773
     r_operation: modify
@@ -690,13 +690,13 @@ pattern:  // ENT-R_Application-entity
   Gab
   _id: 10911
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10912
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10913
     r_operation: modify
@@ -708,13 +708,13 @@ pattern:  // ENT-R_Application-label
   _id: 10921
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10922
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10923
     r_operation: modify
@@ -726,13 +726,13 @@ pattern:  // ENT-R_Application-disabled
   _id: 10931
   characteristic: disabled
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10932
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10933
     r_operation: modify
@@ -746,7 +746,7 @@ pattern:  // ENT-R_Application-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10944
     r_operation: read
@@ -765,7 +765,7 @@ pattern:  // ENT-R_Application-authentication
   _id: 10942
   characteristic: r_authentication
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10945
     r_operation: modify
@@ -777,13 +777,13 @@ pattern:  // ENT-R_Application-parameter
   _id: 11111
   characteristic: parameter
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10955
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 10956
     r_operation: modify
@@ -803,13 +803,13 @@ pattern:  // ENT-R_Application-r_software context
   _id: 11131
   characteristic: r_software context
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11132
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11134
     r_operation: modify
@@ -828,7 +828,7 @@ pattern:  // ENT-R_Application-r_sub-use profile
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11155
     r_operation: modify
@@ -841,13 +841,13 @@ pattern:  // ENT-R_Application-r_sub-device profile
   _id: 11171
   characteristic: r_sub-device profile
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11172
     r_operation: read
     r_who: member
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11175
     r_operation: modify
@@ -860,7 +860,7 @@ _end:
 ENT // ENT-R_Software Context (113)
 _id: 11301
 system name: R_Software Context
-pattern: 
+pattern:
   Gab
   _id: 11302
   characteristic: version
@@ -870,7 +870,7 @@ pattern:  // ENT-R_Software Context-entity
   Gab
   _id: 11311
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11312
     r_operation: modify
@@ -882,7 +882,7 @@ pattern:  // ENT-R_Software Context-label
   _id: 11321
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11322
     r_operation: modify
@@ -894,7 +894,7 @@ pattern:  // ENT-R_Software Context-disabled
   _id: 11331
   characteristic: disabled
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11332
     r_operation: modify
@@ -907,7 +907,7 @@ pattern:  // ENT-R_Software Context-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11342
     r_operation: modify
@@ -919,7 +919,7 @@ pattern:  // ENT-R_Software Context-r_parent context
   _id: 11351
   characteristic: r_parent context
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11352
     r_operation: modify
@@ -931,7 +931,7 @@ pattern:  // ENT-R_Software Context-r_license needed
   _id: 11361
   characteristic: r_license needed
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11362
     r_operation: modify
@@ -947,13 +947,13 @@ pattern:  // ENT-R_Right-entity
   Gab
   _id: 11711
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12112
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11713
     r_operation: modify
@@ -965,13 +965,13 @@ pattern:  // ENT-R_Right-label
   _id: 11721
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11722
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11723
     r_operation: modify
@@ -983,13 +983,13 @@ pattern:  // ENT-R_Right-r_action
   _id: 11751
   characteristic: r_action
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11752
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11754
     r_operation: modify
@@ -1001,13 +1001,13 @@ pattern:  // ENT-R_Right-r_application
   _id: 11761
   characteristic: r_application
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11762
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11764
     r_operation: modify
@@ -1019,13 +1019,13 @@ pattern:  // ENT-R_Right-r_software context
   _id: 11771
   characteristic: r_software context
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11772
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11773
     r_operation: modify
@@ -1037,13 +1037,13 @@ pattern:  // ENT-R_Right-r_use profile
   _id: 11781
   characteristic: r_use profile
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11782
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11783
     r_operation: modify
@@ -1055,13 +1055,13 @@ pattern:  // ENT-R_Right-r_device profile
   _id: 11791
   characteristic: r_device profile
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11792
     r_operation: read
     r_who: authorized_by_rights
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 11793
     r_operation: modify
@@ -1073,7 +1073,7 @@ _end:
 ENT // ENT-R_Authorization (121)
 _id: 12101
 system name: R_Authorization
-pattern: 
+pattern:
   Gab
   _id: 12102
   characteristic: version
@@ -1083,7 +1083,7 @@ pattern:  // ENT-R_Authorization-entity
   Gab
   _id: 12111
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12113
     r_operation: modify
@@ -1095,7 +1095,7 @@ pattern:  // ENT-R_Authorization-label
   _id: 12121
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12123
     r_operation: modify
@@ -1107,7 +1107,7 @@ pattern:  // ENT-R_Authorization-disabled
   _id: 12131
   characteristic: disabled
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12133
     r_operation: modify
@@ -1126,7 +1126,7 @@ pattern:  // ENT-R_Authorization-r_authenticable
   _id: 12151
   characteristic: r_authenticable
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12154
     r_operation: modify
@@ -1138,7 +1138,7 @@ pattern:  // ENT-R_Authorization-r_sub-right
   _id: 12161
   characteristic: r_sub-right
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12164
     r_operation: modify
@@ -1154,7 +1154,7 @@ pattern:  // ENT-Use Profile-entity
   Gab
   _id: 12411
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12412
     r_operation: modify
@@ -1166,7 +1166,7 @@ pattern:  // ENT-R_Use Profile-label
   _id: 12421
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12422
     r_operation: modify
@@ -1188,7 +1188,7 @@ pattern:  // ENT-R_Device Profile-label
   _id: 12721
   characteristic: label
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12722
     r_operation: modify
@@ -1200,7 +1200,7 @@ pattern:  // ENT-R_Device Profile-r_device
   _id: 12751
   characteristic: r_device
   cardinality: multi
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 12752
     r_operation: modify
@@ -1212,7 +1212,7 @@ _end:
 ENT // ENT-R_Device (131)
 _id: 13101
 system name: R_Device
-pattern: 
+pattern:
   Gab
   _id: 13102
   characteristic: version
@@ -1222,13 +1222,13 @@ pattern:  // ENT-R_Device-entity
   Gab
   _id: 13111
   characteristic: entity
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13112
     r_operation: read
     r_who: public
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13113
     r_operation: modify
@@ -1259,7 +1259,7 @@ pattern:  // ENT-R_Device-r_serial number
   _id: 13151
   characteristic: r_serial number
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13152
     r_operation: modify
@@ -1271,7 +1271,7 @@ pattern:  // ENT-R_Device-r_out of order
   _id: 13161
   characteristic: r_out of order
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13154
     r_operation: modify
@@ -1330,13 +1330,13 @@ pattern:
   characteristic: mlogin
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13720
     r_operation: read
     r_who: authentication
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13730
     r_operation: read
@@ -1351,19 +1351,19 @@ pattern:
   _id: 13740
   characteristic: hashed password
   cardinality: one
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13750
     r_operation: read
     r_who: nobody
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13760
     r_operation: modify
     r_who: logged
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13770
     r_operation: modify
@@ -1389,13 +1389,13 @@ pattern:
   characteristic: mlogin
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13820
     r_operation: read
     r_who: authentication
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13830
     r_operation: read
@@ -1434,13 +1434,13 @@ pattern:
   characteristic: mlogin
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13920
     r_operation: read
     r_who: authentication
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13930
     r_operation: read
@@ -1456,19 +1456,19 @@ pattern:
   characteristic: ldap_dn
   cardinality: one
   mandatory: 1
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13950
     r_operation: read
     r_who: nobody
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13960
     r_operation: modify
     r_who: logged
     _end:
-  r_internal right: 
+  r_internal right:
     R_Internal Right
     _id: 13970
     r_operation: modify

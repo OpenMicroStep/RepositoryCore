@@ -4,8 +4,15 @@ import { AspectComponent } from './aspect.component';
 
 export class VOInputComponent<T> extends AspectComponent {
   @Input() label?: string;
-  @Input() object?: VersionedObject;
   @Input() attribute?: string;
+
+  _object?: VersionedObject;
+  get object(): VersionedObject | undefined {
+    return this._object;
+  }
+  @Input() set object(object: VersionedObject | undefined) {
+    this._object = this._controlCenter.swapObject(this, this._object, object);
+  }
 
   get value(): T | undefined {
     return this.getValue();
@@ -22,7 +29,7 @@ export class VOInputComponent<T> extends AspectComponent {
       return m.attributeValue(this.attribute as any);
     return undefined;
   }
-  
+
   setValue(newValue: T | undefined) {
     if (this.object && this.attribute)
       this.object[this.attribute] = newValue;

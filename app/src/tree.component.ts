@@ -13,9 +13,9 @@ import { VOComponent } from './aspect/vo.component';
     <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.object }"></ng-container>
   </span>
   <ul class="list-group" style="margin: 0; margin-top: 5px">
-    <admin-tree-item *ngFor="let child of this.object[this.child_attribute]" [object]="child" [child_attribute]="this.child_attribute" (selected)="this.selected.emit(child)">
+    <admin-tree-item *ngFor="let child of this.object[this.child_attribute]" [object]="child" [child_attribute]="this.child_attribute" (selected)="this.selected.emit($event)">
       <ng-template let-item="$implicit">
-        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.object }"></ng-container>
+        <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
       </ng-template>
     </admin-tree-item>
   </ul>

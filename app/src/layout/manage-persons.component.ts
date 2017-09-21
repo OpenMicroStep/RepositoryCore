@@ -12,7 +12,7 @@ import { AdminTreeComponent }  from '../tree.component';
   template:
   `
 <div class="col-md-4">
-  <admin-tree query="services" parent_attribute="_r_parent_service" child_attribute="_r_child_services">
+  <admin-tree query="services" parent_attribute="_r_parent_service">
     <ng-template let-item="$implicit">
       <service-li [object]="item"></service-li>
     </ng-template>

@@ -19,24 +19,18 @@ let trace = false;
 async function boot() {
   const sqlite3 = require('sqlite3').verbose();
   const connector = SqliteDBConnectorFactory(sqlite3, {
-    filename: "repository.sqlite",
+    filename: ":memory:",
+    // filename: "repository.sqlite",
     trace: sql => trace && console.info(sql),
   }, { max: 1 });
-  let version = 0;
+
   await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_ID`  (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` bigint(20) NOT NULL  , PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
   await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_INT` (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` bigint(20) NOT NULL  , PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
   await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_STR` (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` varchar(144) NOT NULL, PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
   const ouiDb = new OuiDB(connector);
-  const creator = controlCenterCreator(ouiDb);
-  try {
-    let rows = await connector.select({ sql: 'SELECT COUNT(*) nb FROM TJ_VAL_ID', bind: [] });
-    if (rows[0]['nb'] === 0)
-      throw "empty";
-    console.info("Loading Repository...");
-    await ouiDb.loadSystemObis();
-    buildMaps(ouiDb);
-  }
-  catch(e) {
+  let rows = await connector.select({ sql: 'SELECT COUNT(*) nb FROM TJ_VAL_ID', bind: [] });
+  let must_insert_initial_objects = rows[0]['nb'] === 0;
+  if (must_insert_initial_objects) {
     console.info("Creating Initial Repository...");
     const reporter = new Reporter();
     const obis_std = ouiDb.parseObis(new Parser(reporter, StdDefinition));
@@ -49,27 +43,48 @@ async function boot() {
     if (reporter.diagnostics.length > 0)
       return Promise.reject(reporter.diagnostics);
     await ouiDb.injectObis(obis_v2);
-    await ouiDb.loadSystemObis();
-    buildMaps(ouiDb);
+  }
 
+  console.info("Loading Repository...");
+  await ouiDb.loadSystemObis();
+  buildMaps(ouiDb);
+
+  const creator = controlCenterCreator(ouiDb);
+  if (must_insert_initial_objects) {
     console.info("Inserting initial objects...");
-    let {cc, db, classes} = creator();
+    let {cc, db, classes, session} = creator();
 
+    session.setData({
+      is_super_admin: true,
+    });
+
+    console.info("Creating administration entities...");
     let p = new classes.R_Person();
     p._first_name = "Admin";
     p._last_name = "Admin";
+
+    let p_admin = new classes.R_Service();
+    p_admin._label = "Administrateurs d'utilisateurs";
+    p_admin._r_administrator = new Set([p]);
+
+    let a_admin = new classes.R_AppTree();
+    a_admin._label = "Administrateurs d'applications";
+    a_admin._r_administrator = new Set([p]);
+
+    let r_admin = new classes.R_DeviceTree();
+    r_admin._label = "Administrateurs de resources";
+    r_admin._r_administrator = new Set([p]);
+
     let a = new classes.R_AuthenticationPWD();
     a._mlogin = "admin";
-    a._password = "admin";
+    a._hashed_password = "admin";
     p._r_authentication = new Set([a]);
 
-    let s = new classes.R_Service();
-    s._label = "Service Racine"
-    s._r_administrator = new Set([p]);
-    let invs = await db.farPromise("safeSave", [a, p, s]);
-    if (invs.hasDiagnostics())
-      return Promise.reject(invs.diagnostics());
+    let res = await db.farPromise("safeSave", [a, p, p_admin, a_admin, r_admin]);
+    if (res.hasDiagnostics())
+      return Promise.reject(res.diagnostics());
   }
+
   if (0) printClassesMd(ouiDb);
   console.info("Repository is ready");
 

@@ -154,7 +154,9 @@ pattern:  // ENT-R_Person-entity, used for the creat-id and invalidate-id rights
   r_internal right:
     R_Internal Right
     _id: 10117
-    r_operation: create-id
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -185,7 +187,9 @@ pattern:  // ENT-R_Person-authentication
   r_internal right:
     R_Internal Right
     _id: 10144
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -207,7 +211,9 @@ pattern:  // ENT-R_Person-first name
   r_internal right:
     R_Internal Right
     _id: 10315
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -228,7 +234,9 @@ pattern:  // ENT-R_Person-middle name
   r_internal right:
     R_Internal Right
     _id: 10333
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -250,7 +258,9 @@ pattern:  // ENT-R_Person-last name
   r_internal right:
     R_Internal Right
     _id: 10353
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -272,7 +282,9 @@ pattern:  // ENT-R_Person-mail
   r_internal right:
     R_Internal Right
     _id: 10363
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -300,7 +312,9 @@ pattern:  // ENT-R_Service-entity
   r_internal right:
     R_Internal Right
     _id: 10513
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -318,7 +332,9 @@ pattern:  // ENT-R_Service-label
   r_internal right:
     R_Internal Right
     _id: 10523
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -336,7 +352,9 @@ pattern:  // ENT-R_Service-disabled
   r_internal right:
     R_Internal Right
     _id: 10533
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -368,7 +386,9 @@ pattern:  // ENT-R_Service-r_parent service
   r_internal right:
     R_Internal Right
     _id: 10559
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -386,7 +406,9 @@ pattern:  // ENT-R_Service-r_administrator
   r_internal right:
     R_Internal Right
     _id: 10563
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -404,7 +426,9 @@ pattern:  // ENT-R_Service-r_member
   r_internal right:
     R_Internal Right
     _id: 10574
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     r_who: person_admin
     _end:
@@ -433,7 +457,9 @@ pattern:  // ENT-R_AppTree-entity
   r_internal right:
     R_Internal Right
     _id: 10613
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -451,7 +477,9 @@ pattern:  // ENT-R_AppTree-label
   r_internal right:
     R_Internal Right
     _id: 10623
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -469,7 +497,9 @@ pattern:  // ENT-R_AppTree-disabled
   r_internal right:
     R_Internal Right
     _id: 10633
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -501,7 +531,9 @@ pattern:  // ENT-R_AppTree-r_parent apptree
   r_internal right:
     R_Internal Right
     _id: 10653
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -519,7 +551,9 @@ pattern:  // ENT-R_AppTree-r_administrator
   r_internal right:
     R_Internal Right
     _id: 10663
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -537,7 +571,9 @@ pattern:  // ENT-R_AppTree-r_member
   r_internal right:
     R_Internal Right
     _id: 10673
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     r_who: app_admin
     _end:
@@ -566,7 +602,9 @@ pattern:  // ENT-R_DeviceTree-entity
   r_internal right:
     R_Internal Right
     _id: 10713
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -584,7 +622,9 @@ pattern:  // ENT-R_DeviceTree-label
   r_internal right:
     R_Internal Right
     _id: 10723
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -602,7 +642,9 @@ pattern:  // ENT-R_DeviceTree-disabled
   r_internal right:
     R_Internal Right
     _id: 10733
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -634,7 +676,9 @@ pattern:  // ENT-R_DeviceTree-r_parent devicetree
   r_internal right:
     R_Internal Right
     _id: 10753
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -652,7 +696,9 @@ pattern:  // ENT-R_DeviceTree-r_administrator
   r_internal right:
     R_Internal Right
     _id: 10763
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -670,7 +716,9 @@ pattern:  // ENT-R_DeviceTree-r_device
   r_internal right:
     R_Internal Right
     _id: 10773
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     r_who: device_admin
     _end:
@@ -699,7 +747,9 @@ pattern:  // ENT-R_Application-entity
   r_internal right:
     R_Internal Right
     _id: 10913
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -717,7 +767,9 @@ pattern:  // ENT-R_Application-label
   r_internal right:
     R_Internal Right
     _id: 10923
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -735,7 +787,9 @@ pattern:  // ENT-R_Application-disabled
   r_internal right:
     R_Internal Right
     _id: 10933
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     r_who: admin
     _end:
@@ -768,7 +822,9 @@ pattern:  // ENT-R_Application-authentication
   r_internal right:
     R_Internal Right
     _id: 10945
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -786,7 +842,9 @@ pattern:  // ENT-R_Application-parameter
   r_internal right:
     R_Internal Right
     _id: 10956
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     r_who: admin
     _end:
@@ -812,7 +870,9 @@ pattern:  // ENT-R_Application-r_software context
   r_internal right:
     R_Internal Right
     _id: 11134
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
 //  r_who: app_admin ?
     r_who: admin
     _end:
@@ -831,7 +891,9 @@ pattern:  // ENT-R_Application-r_sub-use profile
   r_internal right:
     R_Internal Right
     _id: 11155
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     r_who: admin
     _end:
@@ -850,7 +912,9 @@ pattern:  // ENT-R_Application-r_sub-device profile
   r_internal right:
     R_Internal Right
     _id: 11175
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     r_who: admin
     _end:
@@ -873,7 +937,9 @@ pattern:  // ENT-R_Software Context-entity
   r_internal right:
     R_Internal Right
     _id: 11312
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -885,7 +951,9 @@ pattern:  // ENT-R_Software Context-label
   r_internal right:
     R_Internal Right
     _id: 11322
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -897,7 +965,9 @@ pattern:  // ENT-R_Software Context-disabled
   r_internal right:
     R_Internal Right
     _id: 11332
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -910,7 +980,9 @@ pattern:  // ENT-R_Software Context-urn
   r_internal right:
     R_Internal Right
     _id: 11342
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -922,7 +994,9 @@ pattern:  // ENT-R_Software Context-r_parent context
   r_internal right:
     R_Internal Right
     _id: 11352
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -934,7 +1008,9 @@ pattern:  // ENT-R_Software Context-r_license needed
   r_internal right:
     R_Internal Right
     _id: 11362
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: admin
     _end:
   _end:
@@ -956,7 +1032,9 @@ pattern:  // ENT-R_Right-entity
   r_internal right:
     R_Internal Right
     _id: 11713
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -974,7 +1052,9 @@ pattern:  // ENT-R_Right-label
   r_internal right:
     R_Internal Right
     _id: 11723
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -992,7 +1072,9 @@ pattern:  // ENT-R_Right-r_action
   r_internal right:
     R_Internal Right
     _id: 11754
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1010,7 +1092,9 @@ pattern:  // ENT-R_Right-r_application
   r_internal right:
     R_Internal Right
     _id: 11764
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1028,7 +1112,9 @@ pattern:  // ENT-R_Right-r_software context
   r_internal right:
     R_Internal Right
     _id: 11773
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1046,7 +1132,9 @@ pattern:  // ENT-R_Right-r_use profile
   r_internal right:
     R_Internal Right
     _id: 11783
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1064,7 +1152,9 @@ pattern:  // ENT-R_Right-r_device profile
   r_internal right:
     R_Internal Right
     _id: 11793
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1086,7 +1176,9 @@ pattern:  // ENT-R_Authorization-entity
   r_internal right:
     R_Internal Right
     _id: 12113
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1098,7 +1190,9 @@ pattern:  // ENT-R_Authorization-label
   r_internal right:
     R_Internal Right
     _id: 12123
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1110,7 +1204,9 @@ pattern:  // ENT-R_Authorization-disabled
   r_internal right:
     R_Internal Right
     _id: 12133
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1129,7 +1225,9 @@ pattern:  // ENT-R_Authorization-r_authenticable
   r_internal right:
     R_Internal Right
     _id: 12154
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1141,7 +1239,9 @@ pattern:  // ENT-R_Authorization-r_sub-right
   r_internal right:
     R_Internal Right
     _id: 12164
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1157,7 +1257,9 @@ pattern:  // ENT-Use Profile-entity
   r_internal right:
     R_Internal Right
     _id: 12412
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1169,7 +1271,9 @@ pattern:  // ENT-R_Use Profile-label
   r_internal right:
     R_Internal Right
     _id: 12422
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1191,7 +1295,9 @@ pattern:  // ENT-R_Device Profile-label
   r_internal right:
     R_Internal Right
     _id: 12722
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1203,7 +1309,9 @@ pattern:  // ENT-R_Device Profile-r_device
   r_internal right:
     R_Internal Right
     _id: 12752
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: app_admin
     _end:
   _end:
@@ -1231,7 +1339,9 @@ pattern:  // ENT-R_Device-entity
   r_internal right:
     R_Internal Right
     _id: 13113
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: device_admin
     _end:
   _end:
@@ -1262,7 +1372,9 @@ pattern:  // ENT-R_Device-r_serial number
   r_internal right:
     R_Internal Right
     _id: 13152
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: device_admin
     _end:
   _end:
@@ -1274,7 +1386,9 @@ pattern:  // ENT-R_Device-r_out of order
   r_internal right:
     R_Internal Right
     _id: 13154
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: device_admin
     _end:
   _end:
@@ -1339,10 +1453,9 @@ pattern:
   r_internal right:
     R_Internal Right
     _id: 13730
-    r_operation: read
-    r_operation: modify
-    r_operation: add
-    r_operation: remove
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -1360,15 +1473,17 @@ pattern:
   r_internal right:
     R_Internal Right
     _id: 13760
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: logged
     _end:
   r_internal right:
     R_Internal Right
     _id: 13770
-    r_operation: modify
-    r_operation: add
-    r_operation: remove
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -1398,10 +1513,9 @@ pattern:
   r_internal right:
     R_Internal Right
     _id: 13830
-    r_operation: read
-    r_operation: modify
-    r_operation: add
-    r_operation: remove
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -1443,10 +1557,9 @@ pattern:
   r_internal right:
     R_Internal Right
     _id: 13930
-    r_operation: read
-    r_operation: modify
-    r_operation: add
-    r_operation: remove
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -1465,15 +1578,17 @@ pattern:
   r_internal right:
     R_Internal Right
     _id: 13960
-    r_operation: modify
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: logged
     _end:
   r_internal right:
     R_Internal Right
     _id: 13970
-    r_operation: modify
-    r_operation: add
-    r_operation: remove
+    r_operation: create
+    r_operation: update
+    r_operation: delete
     r_who: person_admin
     _end:
   _end:
@@ -1819,15 +1934,9 @@ _id: 10025
 system name: the r_operations
 element entity: R_Element
 element: read
-element: modify
-
-element: pseudo-read
-element: move
-element: modify
-element: add
-element: remove
-element: create-id
-element: invalidate-id
+element: create
+element: update
+element: delete
 _end:
 
 Lst
@@ -1875,38 +1984,20 @@ _end:
 
 R_Element
 _id: 10035
-system name: move
+system name: create
 order: 130
 _end:
 
 R_Element
 _id: 10037
-system name: modify
+system name: update
 order: 140
 _end:
 
 R_Element
 _id: 10039
-system name: add
+system name: delete
 order: 150
-_end:
-
-R_Element
-_id: 10041
-system name: remove
-order: 160
-_end:
-
-R_Element
-_id: 10051
-system name: create-id
-order: 200
-_end:
-
-R_Element
-_id: 10053
-system name: invalidate-id
-order: 210
 _end:
 
 R_Element
@@ -1919,6 +2010,12 @@ R_Element
 _id: 10073
 system name: public
 order: 1020
+_end:
+
+R_Element
+_id: 10074
+system name: member
+order: 1025
 _end:
 
 R_Element
@@ -1936,7 +2033,7 @@ _end:
 R_Element
 _id: 10081
 system name: person_admin
-order: 1110   // applications
+order: 1110
 _end:
 
 R_Element
@@ -1950,6 +2047,13 @@ _id: 10085
 system name: device_admin
 order: 1130
 _end:
+
+R_Element
+_id: 10084
+system name: authorized_by_rights
+order: 1140
+_end:
+
 
 R_Element
 _id: 10091

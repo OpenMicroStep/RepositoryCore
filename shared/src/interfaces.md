@@ -49,7 +49,6 @@ _relation_: `_r_member`
 ## class R_AuthenticationPWD
 ### attributes
 #### `_mlogin`: string
-#### `_password`: string
 #### `_hashed_password`: string
 #### `_must_change_password`: boolean
 ### aspect obi

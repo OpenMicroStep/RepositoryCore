@@ -4,6 +4,11 @@ import { Notification, Result, DataSource, VersionedObject, Event, ControlCenter
 import { AspectComponent } from './aspect/aspect.component';
 import { VOComponent } from './aspect/vo.component';
 
+
+export type AdminTreeItem = {
+  vo: VersionedObject;
+  childs: AdminTreeItem[];
+};
 @Component({
   selector: 'admin-tree-item',
   template:
@@ -13,7 +18,7 @@ import { VOComponent } from './aspect/vo.component';
     <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: this.object }"></ng-container>
   </span>
   <ul class="list-group" style="margin: 0; margin-top: 5px">
-    <admin-tree-item *ngFor="let child of this.object[this.child_attribute]" [object]="child" [child_attribute]="this.child_attribute" (selected)="this.selected.emit($event)">
+    <admin-tree-item *ngFor="let child of this.childs" [object]="child.vo" [childs]="child.childs" (selected)="this.selected.emit($event)">
       <ng-template let-item="$implicit">
         <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
       </ng-template>
@@ -23,7 +28,7 @@ import { VOComponent } from './aspect/vo.component';
 `
 })
 export class AdminTreeItemComponent extends VOComponent<VersionedObject> {
-  @Input() child_attribute: string;
+  @Input() childs: AdminTreeItem[];
   @Output() selected = new EventEmitter();
   @ContentChild(TemplateRef) template: any;
 
@@ -42,7 +47,7 @@ export class AdminTreeItemComponent extends VOComponent<VersionedObject> {
   `
 <div>
   <ul class="list-group">
-    <admin-tree-item *ngFor="let child of this._roots" [object]="child" [child_attribute]="this.child_attribute" (selected)="this.selected($event)">
+    <admin-tree-item *ngFor="let child of this._roots" [object]="child.vo" [childs]="child.childs" (selected)="this.selected($event)">
       <ng-template let-item="$implicit">
         <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
       </ng-template>
@@ -59,11 +64,10 @@ export class AdminTreeComponent extends AspectComponent {
   static create: Event<undefined> = "create";
 
   @Input() query: string;
-  @Input() child_attribute: string;
   @Input() parent_attribute: string;
   @ContentChild(TemplateRef) template: any;
   _items: VersionedObject[] = [];
-  _roots: VersionedObject[] = [];
+  _roots: AdminTreeItem[] = [];
 
   constructor(public ctx: AppContext) {
     super(ctx.controlCenter);
@@ -83,7 +87,24 @@ export class AdminTreeComponent extends AspectComponent {
   onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
     let items = notification.info.value().items;
     this._items = this.ctx.controlCenter.swapObjects(this, this._items, items);
-    this._roots = this._items.filter(i => !i[this.parent_attribute]);
+    this._roots = [];
+    let roots = new Map<VersionedObject | undefined, AdminTreeItem>();
+    for (let vo of this._items) {
+      let node_vo = roots.get(vo);
+      if (!node_vo)
+        roots.set(vo, node_vo = { vo: vo, childs: [] });
+
+      let parent = vo[this.parent_attribute];
+      if (parent) {
+        let node_p = roots.get(parent);
+        if (!node_p)
+          roots.set(vo, node_p = { vo: vo, childs: [] });
+        node_p.childs.push(node_vo);
+      }
+      else {
+        this._roots.push(node_vo);
+      }
+    }
   }
 
   selected(item) {

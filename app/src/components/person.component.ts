@@ -54,7 +54,12 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
   isAuthLDAP(item) { return item instanceof this.ctx.R_AuthenticationLDAP; }
 
   scope() {
-    return ["_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_login", "_r_services"];
+    return {
+      R_Person: { '.': ["_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_r_services"] },
+      R_AuthenticationPWD: { '_r_authentication.': AuthenticationPWDComponent.scope },
+      R_AuthenticationPK: { '_r_authentication.': ["_mlogin"] },
+      R_AuthenticationLDAP: { '_r_authentication.': ["_mlogin"] },
+    }
   }
 
   objectsToSave(): VersionedObject[] {

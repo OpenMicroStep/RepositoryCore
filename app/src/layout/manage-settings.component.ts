@@ -72,7 +72,7 @@ export class ManageSettingsComponent extends AspectComponent {
 
   createLDAPConfiguration() {
     let c = new this.ctx.R_LDAPConfiguration();
-    this._controlCenter.registerObjects(this, [c]);
+    this._controlCenter.registerObject(this, c);
     this._ldap_configurations.push(c);
   }
 

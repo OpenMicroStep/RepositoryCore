@@ -1,7 +1,7 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_AuthenticationPWD } from '../main';
 import { Notification, VersionedObjectManager } from '@openmicrostep/aspects';
-import { VOLoadComponent } from '../aspect/vo.component';
+import { VOComponent } from '../aspect/vo.component';
 
 @Component({
   selector: 'authentication-pwd',
@@ -10,7 +10,7 @@ import { VOLoadComponent } from '../aspect/vo.component';
   <vo-input-text label="Login" [object]="this.object" attribute="_mlogin"></vo-input-text>
   <div class="form-group has-feedback" [ngClass]="this.class()">
     <label class="control-label">Password</label>
-    <input type="name" class="form-control" [(ngModel)]="this._object._password">
+    <input type="name" class="form-control" [(ngModel)]="this._object._hashed_password">
     <span *ngIf="this.class()['has-warning']" class="glyphicon glyphicon-warning-sign form-control-feedback" aria-hidden="true"></span>
     <span *ngIf="this.class()['has-success']" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
   </div>
@@ -23,20 +23,18 @@ import { VOLoadComponent } from '../aspect/vo.component';
 </ng-template>
 `
 })
-export class AuthenticationPWDComponent extends VOLoadComponent<R_AuthenticationPWD.Aspects.obi> {
+export class AuthenticationPWDComponent extends VOComponent<R_AuthenticationPWD.Aspects.obi> {
   password2: string;
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.controlCenter);
   }
 
-  scope() {
-    return ["_mlogin", "_hashed_password"]; // TODO: fix this workaround (will load _password)
-  }
+  static readonly scope = ["_mlogin", "_hashed_password"];
 
   class() {
     let isnew = this._object!.manager().state() === VersionedObjectManager.State.NEW;
-    let newpwd = this._object!._password && this.password2;
-    let pwdok = newpwd && this._object!._password === this.password2;
+    let newpwd = this._object!._hashed_password && this.password2;
+    let pwdok = newpwd && this._object!._hashed_password === this.password2;
     return {
       'has-warning': isnew && !pwdok,
       'has-success': pwdok,

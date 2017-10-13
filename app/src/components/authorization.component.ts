@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { AppContext, R_Authorization, R_Right, R_Application, R_Software_Context, R_Element, R_Use_Profile, R_Device_Profile } from '../main';
-import { Notification, Result, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
+import { AppContext, R_Authorization, R_Right, R_Application, R_Software_Context, R_Element, R_Use_Profile, R_Device_Profile, R_Person } from '../main';
+import { Notification, Result, VersionedObject, VersionedObjectManager, Invocation, ControlCenterContext } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
@@ -85,12 +85,12 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
     return this._object;
   }
   @Input() set object(item: R_Software_Context | undefined) {
-    this._object = this._controlCenter.swapObject(this, this._object, item);
-    this._r_child_contexts = this._controlCenter.swapObjects(this, this._r_child_contexts, item ? [...item._r_child_contexts] : []).sort((a, b) => a._label! < b._label! ? -1 : 1);
+    this._object = this._controlCenter.ccc(this).swapObject(this._object, item);
+    this._r_child_contexts = this._controlCenter.ccc(this).swapObjects(this._r_child_contexts, item ? [...item._r_child_contexts] : []).sort((a, b) => a._label! < b._label! ? -1 : 1);
   }
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   rights() {
@@ -123,7 +123,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   }
 
   createRight() {
-    return this._auth.createRight(this._app, this._object!);
+    return this._auth.createRight(this.ctx.cc.ccc(this), this._app, this._object!);
   }
 
   deleteRight(right: R_Right) {
@@ -173,25 +173,25 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   _rights_by_ctx = new Map<R_Software_Context, R_Right[]>();
 
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
-    this._r_sub_right_domains.push({ label: "right" , create: () => new ctx.R_Right() });
+    super(ctx.db);
+    this._r_sub_right_domains.push({ label: "right" , create: () => ctx.cc.ccc(this).create<R_Right>("R_Right") });
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'onTree', 'onTree', this);
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'onRights', 'onRights', this);
-    this.ctx.dataSource.farEvent('query', { id: "application-tree" }, 'onTree', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'onTree', 'onTree', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'onRights', 'onRights', this);
+    Invocation.farEvent(this.ctx.db.query, { id: "application-tree" }, 'onTree', this);
   }
 
-  isPerson(item) { return item instanceof this.ctx.R_Person; }
-  isApplication(item) { return item instanceof this.ctx.R_Application; }
+  isPerson(item) { return item instanceof R_Person; }
+  isApplication(item) { return item instanceof R_Application; }
 
   loaded(n: Notification<Result<R_Authorization.Aspects.obi[]>>) {
     super.loaded(n);
     this._rights_loaded = false;
     if (this._object && this._object._r_sub_right.size > 0) {
-      this.ctx.dataSource.farEvent('load', {
+      Invocation.farEvent(this.ctx.db.load, {
         objects: [...this._object._r_sub_right],
         scope: ["_label", "_r_action", "_r_application", "_r_software_context", "_r_use_profile", "_r_device_profile"]
       }, "onRights", this);
@@ -209,8 +209,8 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   onTree(notification: Notification<Result<{ "applications": R_Application[], "actions": R_Element[] }>>) {
     if (!notification.info.hasOneValue()) return;
     let r = notification.info.value();
-    this._applications = this._controlCenter.swapObjects(this, this._applications, r.applications);
-    this._actions = this._controlCenter.swapObjects(this, this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
+    this._applications = this._controlCenter.ccc(this).swapObjects(this._applications, r.applications);
+    this._actions = this._controlCenter.ccc(this).swapObjects(this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
   }
 
   rightsOnSoftwareContext(sc: R_Software_Context): R_Right[] {
@@ -226,8 +226,8 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
     return b;
   }
 
-  createRight(app: R_Application, sc: R_Software_Context) : R_Right {
-    let r = new this.ctx.R_Right();
+  createRight(ccc: ControlCenterContext, app: R_Application, sc: R_Software_Context) : R_Right {
+    let r = ccc.create<R_Right>("R_Right");
     r._r_action = this._actions[0];
     r._r_application = app;
     r._r_software_context = sc;
@@ -273,6 +273,6 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
 export class AuthorizationListItemComponent extends VOComponent<R_Authorization.Aspects.obi> {
   static readonly scope = ['_label']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

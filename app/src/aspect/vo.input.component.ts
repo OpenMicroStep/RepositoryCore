@@ -11,7 +11,7 @@ export class VOInputComponent<T> extends AspectComponent {
     return this._object;
   }
   @Input() set object(object: VersionedObject | undefined) {
-    this._object = this._controlCenter.swapObject(this, this._object, object);
+    this._object = this._controlCenter.ccc(this).swapObject(this._object, object);
   }
 
   get value(): T | undefined {

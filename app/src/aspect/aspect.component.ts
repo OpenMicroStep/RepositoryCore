@@ -1,5 +1,5 @@
 import {ControlCenter} from '@openmicrostep/aspects';
-import {Injectable, Component} from '@angular/core';
+import {Injectable} from '@angular/core';
 
 Injectable()(ControlCenter); // Makes ControlCenter injectable
 

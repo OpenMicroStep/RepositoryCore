@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { SearchListComponent } from '../search.component';
-import { AppContext } from '../main';
+import { AppContext, R_Authorization } from '../main';
 import { Notification } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { AuthorizationComponent } from '../components/authorization.component';
@@ -24,7 +24,7 @@ export class ManageAuthorizationsComponent extends AspectComponent {
   @ViewChild(SearchListComponent) searchListComponent: SearchListComponent;
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   ngAfterViewInit() {
@@ -38,6 +38,6 @@ export class ManageAuthorizationsComponent extends AspectComponent {
   }
 
   onCreate(notification: Notification) {
-    this.authorizationComponent.object = new this.ctx.R_Authorization();
+    this.authorizationComponent.object = R_Authorization.create(this.ctx.cc.ccc(this));
   }
 }

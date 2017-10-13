@@ -41,7 +41,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
 })
 export class ServiceComponent extends VOLoadComponent<R_Service.Aspects.obi> {
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
   }
 
   scope() {
@@ -60,6 +60,6 @@ export class ServiceComponent extends VOLoadComponent<R_Service.Aspects.obi> {
 export class ServiceListItemComponent extends VOComponent<R_Service.Aspects.obi> {
   static readonly scope = ['_label', '_disabled']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

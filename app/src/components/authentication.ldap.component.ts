@@ -12,7 +12,7 @@ import { VOLoadComponent } from '../aspect/vo.component';
 })
 export class AuthenticationLDAPComponent extends VOLoadComponent<R_AuthenticationLDAP.Aspects.obi> {
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
   }
 
   scope() {

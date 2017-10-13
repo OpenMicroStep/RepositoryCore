@@ -13,6 +13,6 @@ import { VOComponent } from '../aspect/vo.component';
 export class ParameterComponent extends VOComponent<Parameter.Aspects.obi> {
   static readonly scope = ["_label", "_string"];
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

@@ -1,11 +1,9 @@
-import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
-import { SearchListComponent } from '../search.component';
-import { AppContext, R_LDAPConfiguration } from '../main';
-import { Notification, Result, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Component } from '@angular/core';
+import { AppContext, R_LDAPConfiguration, R_LDAPAttribute, R_LDAPGroup } from '../main';
+import { Notification, Result, VersionedObjectManager, Invocation } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOLoadComponent }  from '../aspect/vo.component';
-import { PersonComponent } from '../components/person.component';
 
 @Component({
   selector: 'manage-settings',
@@ -54,29 +52,29 @@ export class ManageSettingsComponent extends AspectComponent {
   _ldap_attribute_map_domains: VOInputSetComponent.Domain[] = [];
   _ldap_group_map_domains: VOInputSetComponent.Domain[] = [];
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
-    this._ldap_attribute_map_domains.push({ label: "by attribute map"   , create: () => new ctx.R_LDAPAttribute() });
-    this._ldap_group_map_domains    .push({ label: "by group map" , create: () => new ctx.R_LDAPGroup()  });
+    super(ctx.cc);
+    this._ldap_attribute_map_domains.push({ label: "by attribute map"   , create: () => R_LDAPAttribute.create(ctx.cc.ccc(this)) });
+    this._ldap_group_map_domains    .push({ label: "by group map" , create: () => R_LDAPGroup.create(ctx.cc.ccc(this))  });
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'onSettings', 'onSettings', this);
-    this.ctx.dataSource.farEvent('query', { id: "settings" }, 'onSettings', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'onSettings', 'onSettings', this);
+    Invocation.farEvent(this.ctx.db.query, { id: "settings" }, 'onSettings', this);
   }
 
   onSettings(notification: Notification<Result<{ "ldap-configurations": R_LDAPConfiguration[] }>>) {
     if (!notification.info.hasOneValue()) return;
-    this._ldap_configurations = this._controlCenter.swapObjects(this, this._ldap_configurations, notification.info.value()["ldap-configurations"]);
+    this._ldap_configurations = this._controlCenter.ccc(this).swapObjects(this._ldap_configurations, notification.info.value()["ldap-configurations"]);
   }
 
   createLDAPConfiguration() {
-    let c = new this.ctx.R_LDAPConfiguration();
-    this._controlCenter.registerObject(this, c);
+    let c = R_LDAPConfiguration.create(this.ctx.cc.ccc(this));
+    this._controlCenter.ccc(this).registerObject(c);
     this._ldap_configurations.push(c);
   }
 
   saveLDAPConfiguration(object: R_LDAPConfiguration) {
-    this.ctx.dataSource.farEvent("save", VersionedObjectManager.objectsInScope([object], ["_ldap_attribute_map", "_ldap_group_map"]), VOLoadComponent.saved, this);
+    Invocation.farEvent(this.ctx.db.save, VersionedObjectManager.objectsInScope([object], ["_ldap_attribute_map", "_ldap_group_map"]), VOLoadComponent.saved, this);
   }
 }

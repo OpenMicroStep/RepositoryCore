@@ -12,6 +12,6 @@ import { VOComponent } from '../aspect/vo.component';
 export class UseProfileComponent extends VOComponent<R_Use_Profile.Aspects.obi> {
   static readonly scope = ["_label"];
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

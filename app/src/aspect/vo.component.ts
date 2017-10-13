@@ -1,5 +1,5 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { Notification, Result, VersionedObject, Event, DataSource, VersionedObjectManager, DataSourceInternal } from '@openmicrostep/aspects';
+import { Notification, Result, VersionedObject, Event, DataSource, VersionedObjectManager, DataSourceInternal, Invocation } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect.component';
 import { VOInputSetComponent }  from './vo.input.set.component';
 import Scope = DataSourceInternal.Scope;
@@ -10,7 +10,7 @@ export class VOComponent<T extends VersionedObject> extends AspectComponent {
     return this._object;
   }
   @Input() set object(object: T | undefined) {
-    this._object = this._controlCenter.swapObject(this, this._object, object);
+    this._object = this._controlCenter.ccc(this).swapObject(this._object, object);
   }
 }
 
@@ -46,13 +46,13 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
       return;
     this._object = undefined;
     if (object)
-      this._datasource.farEvent("load", { objects: [object], scope: this.scope() }, VOLoadComponent.loaded, this);
+      Invocation.farEvent(this._datasource.load, { objects: [object], scope: this.scope() }, VOLoadComponent.loaded, this);
   }
 
   loaded(n: Notification<Result<T[]>>) {
     let r = n.info;
     if (r.hasOneValue()) {
-      this._object = this._controlCenter.swapObject(this, this._object, r.value()[0]);
+      this._object = this._controlCenter.ccc(this).swapObject(this._object, r.value()[0]);
     }
   }
 
@@ -70,7 +70,7 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
   }
 
   save() {
-    this._datasource.farEvent("save", this.objectsToSave(), VOLoadComponent.saved, this);
+    Invocation.farEvent(this._datasource.save, this.objectsToSave(), VOLoadComponent.saved, this);
   }
   markForDeletion() {
     this._object!.manager().delete();

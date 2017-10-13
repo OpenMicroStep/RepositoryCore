@@ -2,7 +2,7 @@ import {VersionedObject, Identifier} from '@openmicrostep/aspects';
 import {Reporter, AttributePath, AttributeTypes as V, Diagnostic} from '@openmicrostep/msbuildsystem.shared';
 import {MSTE} from '@openmicrostep/mstools';
 import * as express from 'express';
-import * as express_s from 'express-serve-static-core';
+import 'express-serve-static-core';
 import * as Classes from './classes';
 import {SecureHash, SecurePK} from './securehash';
 const session = require('express-session');
@@ -23,14 +23,14 @@ declare module "express-serve-static-core" {
 const validateInteger = { validate: function validateInteger(reporter: Reporter, path: AttributePath, value: any) {
   if (typeof value === "number" && Number.isInteger(value))
     return value;
-  path.diagnostic(reporter, { type: "warning", msg: `attribute must be an integer, got ${typeof value}`});
+  path.diagnostic(reporter, { is: "warning", msg: `attribute must be an integer, got ${typeof value}`});
   return undefined;
-}, traverse: () => 'integer' }
+}, traverse: () => 'integer' };
 
 function mapValue(v) {
   return v instanceof VersionedObject ? v.id() : v;
 }
-function MSTEEncodedVOList(vo: VersionedObject[]): any {
+function MSTEEncodedVOList(vo: VersionedObject[]) : any {
   let dico = {};
   for (let o of vo) {
     let r = dico[o.id()] = {};
@@ -45,7 +45,7 @@ function MSTEEncodedVOList(vo: VersionedObject[]): any {
   return MSTEEncoded(dico);
 }
 
-function MSTEEncoded(o): any {
+function MSTEEncoded(o) : any {
   return MSTE.stringify(o);
 }
 function ifMSTE(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -69,13 +69,13 @@ async function authOk(ctx: Classes.Context, req: express.Request, res: express.R
     'auths=': auths,
     'applications=': {
       $out: '=a',
-      "A=": { $elementOf: { $instanceOf: ctx.classes.R_Application } },
+      "A=": { $elementOf: { $instanceOf: Classes.R_Application } },
       "a=": { $elementOf: "=auths" },
       '=A.r_authenticable': { $has: '=a' },
     },
     'persons=': {
       $out: '=a',
-      "A=": { $elementOf: { $instanceOf: ctx.classes.R_Person } },
+      "A=": { $elementOf: { $instanceOf: Classes.R_Person } },
       "a=": { $elementOf: "=auths" },
       '=A.r_authenticable': { $has: '=a' },
     },
@@ -103,7 +103,7 @@ async function authOk(ctx: Classes.Context, req: express.Request, res: express.R
 }
 
 async function challengeForLogin(ctx: Classes.Context, login: string) {
-  let inv = await ctx.db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: ctx.classes.R_AuthenticationPWD, login: login }, scope: ['login', 'hashed password'] });
+  let inv = await ctx.db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: Classes.R_AuthenticationPWD, login: login }, scope: ['login', 'hashed password'] });
   let challenge: string | undefined;
   if (inv.hasOneValue()) {
     let auths = inv.value().auths as Classes.R_AuthenticationPWD[];
@@ -121,7 +121,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   let ifAuthentified = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.session.authenticated) next();
     else res.send(403);
-  }
+  };
   r.use('/', session({
     secret: 'keyboard cat',
     resave: false,
@@ -131,14 +131,14 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.get('/auth', async (req, res) => {
     let session = req.session;
     let ctx = creator();
-    let {db, classes} = ctx;
+    let {db} = ctx;
     if (!session.authenticated) {
       let login: string, urn: string;
       if ((login = req.get('mh-login'))) {
         res.send(200, await challengeForLogin(ctx, login));
       }
       else if ((urn = req.get('mh-urn'))) {
-        let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: classes.R_AuthenticationPK, login: urn } });
+        let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: Classes.R_AuthenticationPK, login: urn } });
         let challenge: string | undefined;
         if (inv.hasOneValue()) {
           let auths = inv.value().auths as Classes.R_AuthenticationPK[];
@@ -153,11 +153,11 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
     else if (session.auth) {
       let password: string, challenge: string;
       if ((password = req.get('mh-password')) && session.auth.type === 'pwd') {
-        authOk(ctx, req, res, { $instanceOf: classes.R_AuthenticationPWD, _id: session.auth.id },
+        authOk(ctx, req, res, { $instanceOf: Classes.R_AuthenticationPWD, _id: session.auth.id },
           'hashed password', (hashedPassword) => SecureHash.isChallengeResponseValid(session.auth!.challenge, password, hashedPassword));
       }
       else if ((challenge = req.get('mh-challenge')) && session.auth.type === 'pk') {
-        authOk(ctx, req, res, { $instanceOf: classes.R_AuthenticationPK, _id: session.auth.id },
+        authOk(ctx, req, res, { $instanceOf: Classes.R_AuthenticationPK, _id: session.auth.id },
           'public key', (publickey) => Promise.resolve(SecurePK.isChallengeResponseValid(session.auth!.challenge, challenge, publickey)));
       }
     }
@@ -174,8 +174,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       if (!login)
         res.send(400, 'header mh-login was expected');
       else {
-        let {db, classes} = creator();
-        let inv = await db.farPromise('rawQuery', { name: 'urns', where: { $instanceOf: classes.R_Person, r_authenticable: { $has: { login: login } } }, scope: ['urn'] });
+        let {db} = creator();
+        let inv = await db.farPromise('rawQuery', { name: 'urns', where: { $instanceOf: Classes.R_Person, r_authenticable: { $has: { login: login } } }, scope: ['urn'] });
         if (inv.hasOneValue() && inv.value().urns.length === 1)
           res.send(200, inv.value().urns[0]['urn']);
         else
@@ -197,8 +197,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       else if (session.auth.type !== 'pwd')
         res.send(400, 'getChallengeInfo wasn\'t the last call');
       else {
-        let {db, classes} = creator();
-        let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: classes.R_AuthenticationPWD, _id: session.auth.id }, scope: ['login', 'hashed password'] });
+        let {db} = creator();
+        let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: Classes.R_AuthenticationPWD, _id: session.auth.id }, scope: ['login', 'hashed password'] });
         if (inv.hasOneValue() && inv.value().auths.length === 1) {
           let auth = inv.value().auths[0] as Classes.R_AuthenticationPWD;
           if (await SecureHash.isChallengeResponseValid(session.auth.challenge, password, auth["hashed password"]))
@@ -213,8 +213,8 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       if (!urn)
         res.send(400, 'header mh-urn was expected');
       else {
-        let {db, classes} = creator();
-        let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: classes.R_AuthenticationPK, login: urn }, scope: ['login', 'public key'] });
+        let {db} = creator();
+        let inv = await db.farPromise('rawQuery', { name: 'auths', where: { $instanceOf: Classes.R_AuthenticationPK, login: urn }, scope: ['login', 'public key'] });
         if (inv.hasOneValue() && inv.value().auths.length === 1)
           res.send(200, inv.value().auths[0]["public key"]);
         res.send(200, ""); // old api would return 200 and nothing if not found
@@ -225,14 +225,14 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       if (!urn)
         res.send(400, 'header mh-urn was expected');
       else {
-        let {db, classes} = creator();
+        let {db} = creator();
         let inv = await db.farPromise('rawQuery', {
           name: 'apps',
           where: {
             $out: "a=",
-            "A=": { $elementOf: { $instanceOf: classes.R_Application } },
-            "r=": { $elementOf: { $instanceOf: classes.R_Right } },
-            "a=": { $elementOf: { $instanceOf: classes.R_Authorization } },
+            "A=": { $elementOf: { $instanceOf: Classes.R_Application } },
+            "r=": { $elementOf: { $instanceOf: Classes.R_Right } },
+            "a=": { $elementOf: { $instanceOf: Classes.R_Authorization } },
             "=a.r_authenticable": { $has: "=A"},
             "=a.r_sub-right": { $has: "=r" },
             // so no sub-right level checking in the old API...
@@ -254,7 +254,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/matchingPersons', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateMatchingPersons, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let where = {};
     if (p.login)         where["r_authenticable"] = { $has: { login: p.login }};
     if (p["first name"]) where["first name"]      = { $eq: p["first name"] };
@@ -275,12 +275,11 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/managedServices', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateManagedServices, req, res);
     if (!p) return;
-    let {cc, db, classes} = creator();
-    let where = {};
+    let {cc, db} = creator();
     let diags: Diagnostic[] = [];
     let inv = await db.farPromise('safeQuery', {
       name: 'services',
-      where: { $instanceOf: classes.R_Service, r_administrator: { $has: { _id: req.session.r_authenticable!.id }} },
+      where: { $instanceOf: Classes.R_Service, r_administrator: { $has: { _id: req.session.r_authenticable!.id }} },
       scope: ['urn'],
     });
     if (inv.hasOneValue()) {
@@ -295,7 +294,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
           n = all.size;
           let inv = await db.farPromise('safeQuery', {
             name: 'services',
-            where: { $instanceOf: classes.R_Service, "r_parent service": { $in: services } },
+            where: { $instanceOf: Classes.R_Service, "r_parent service": { $in: services } },
             scope: ['urn', 'r_parent service'],
           });
           if (inv.hasOneValue()) {
@@ -325,18 +324,18 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/authorizationBunchsForDeviceURN', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateAuthorizationBunchsForDeviceURN, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let inv = await db.farPromise('safeQuery', {
-      "devices=": { $instanceOf: classes.R_Device, urn: p.deviceURN, disabled: false, "r_out of order": false },
+      "devices=": { $instanceOf: Classes.R_Device, urn: p.deviceURN, disabled: false, "r_out of order": false },
       "device_profiles=": {
         $out: "=p",
-        "p=": { $elementOf: { $instanceOf: classes.R_Device_Profile } },
+        "p=": { $elementOf: { $instanceOf: Classes.R_Device_Profile } },
         "d=": { $elementOf: "=devices" },
         "=p.r_device": { $has: "=d" }
       },
       "rights=": {
         $out: "=r",
-        "r=": { $elementOf: { $instanceOf: classes.R_Right } },
+        "r=": { $elementOf: { $instanceOf: Classes.R_Right } },
         "p=": { $elementOf: "=device_profiles" },
         "=r.r_device profile": { $eq: "=p" }
       },
@@ -344,21 +343,21 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       "use_profiles=": "=rights:r_use profile",
       "authorizations=": {
         $out: "=a",
-        "a=": { $elementOf: { $instanceOf: classes.R_Authorization } },
+        "a=": { $elementOf: { $instanceOf: Classes.R_Authorization } },
         "r=": { $elementOf: "=rights" },
         "=a.disabled": false,
         "=a.r_sub-right": { $has: "=r" }
       },
       "applications=": {
         $out: "=A",
-        "A=": { $elementOf: { $instanceOf: classes.R_Application } },
+        "A=": { $elementOf: { $instanceOf: Classes.R_Application } },
         "a=": { $elementOf: "=authorizations" },
         "=a.r_authenticable": { $has: "=A" },
         "=A": { $in: "=a.r_authenticable" }, //
       },
       "persons=": {
         $out: "=A",
-        "A=": { $elementOf: { $instanceOf: classes.R_Person } },
+        "A=": { $elementOf: { $instanceOf: Classes.R_Person } },
         "a=": { $elementOf: "=authorizations" },
         "=a.r_authenticable": { $has: "=A" }
       },
@@ -410,7 +409,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/informationsWithKeysForRefs', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateInformationsWithKeysForRefs, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let inv = await db.farPromise('safeQuery', {
       name: 'infos',
       where: { _id: { $in: p.refs } },
@@ -429,7 +428,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/queryInstancesOfEntityWithCars', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateQueryInstancesOfEntityWithCars, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let where = Object.assign({ $instanceOf: p.entity }, p.cars);
     let inv = await db.farPromise('safeQuery', {
       name: 'infos',
@@ -450,7 +449,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/informationsWithKeysForInstancesOfEntityWithCars', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateInformationsWithKeysForInstancesOfEntityWithCars, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let where = Object.assign({ $instanceOf: p.entity }, p.cars);
     let inv = await db.farPromise('safeQuery', {
       name: 'infos',
@@ -463,10 +462,10 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       res.send(500, "unable to process request");
   });
   r.post('/changePasswordInfo', ifAuthentified, ifMSTE, async (req, res) => {
-    let {db, classes} = creator();
+    let {db} = creator();
     let inv = await db.farPromise('safeQuery', {
       name: 'auth',
-      where: { $instanceOf: classes.R_AuthenticationPWD, _id: req.session.r_authenticable!.auth_id },
+      where: { $instanceOf: Classes.R_AuthenticationPWD, _id: req.session.r_authenticable!.auth_id },
       scope: ["hashed password"],
     });
     if (inv.hasOneValue() && inv.value().auth.length === 1) {
@@ -481,7 +480,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       res.send(500);
     }
   });
-  const entitiesParentCar= {
+  const entitiesParentCar = {
     MSEntParameterLib     : { entity: "R_Application"  , car: "parameter"            },
     MSREntRightLib        : { entity: "R_Authorization", car: "r_sub-right"          },
     MSREntUseProfileLib   : { entity: "R_Application"  , car: "r_sub-use profile"    },
@@ -497,9 +496,9 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/createEntityWithCarsWithUpRef', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateCreateEntityWithCarsWithUpRef, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db, cc} = creator();
     try {
-      let e: VersionedObject = new classes[p.entity!];
+      let e: VersionedObject = cc.create(p.entity!);
       for (let k in p.cars) {
         let nv = p.cars[k];
         let ov = e[k]; // Set | undefined
@@ -509,7 +508,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
         let lnk = entitiesParentCar[p.entity!];
         if (!lnk)
           throw `no parent for ${p.entity!}`;
-        let pe: VersionedObject = new classes[lnk.entity];
+        let pe: VersionedObject = cc.create(lnk.entity);
         pe.manager().setId(p.upRef);
         e[lnk.car] = e[lnk.car] instanceof Set ? new Set().add(pe) : pe;
       }
@@ -518,7 +517,7 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
         res.send(200, MSTEEncoded({ "urn": e.manager().hasAttributeValue("urn" as any) ? e["urn"] : e.id() }));
       else
         res.send(400, MSTEEncoded({ "error description": inv.diagnostics() }));
-    } catch(e) {
+    } catch (e) {
       res.send(400, MSTEEncoded({ "error description": e }));
     }
   });
@@ -530,10 +529,10 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/updateRefWithCars', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateUpdateRefWithCars, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let inv = await db.farPromise('safeQuery', { name: 'obi', where: { _id: p.ref } });
     if (!inv.hasOneValue() || inv.value().obi.length !== 1) {
-      res.send(400, MSTEEncoded({ "error description": "entity not found" }))
+      res.send(400, MSTEEncoded({ "error description": "entity not found" }));
       return;
     }
     let e = inv.value().obi[0];
@@ -545,10 +544,10 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
       }
       let inv = await db.farPromise("safeSave", [e]);
       if (inv.hasOneValue())
-        res.send(200, MSTEEncoded(null))
+        res.send(200, MSTEEncoded(null));
       else
         res.send(400, MSTEEncoded({ "error description": inv.diagnostics() }));
-    } catch(e) {
+    } catch (e) {
       res.send(400, MSTEEncoded({ "error description": e }));
     }
   });
@@ -559,17 +558,17 @@ export function api_v1(creator: Classes.CreateContext) : express.Router {
   r.post('/deleteRef', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateDeleteRef, req, res);
     if (!p) return;
-    let {db, classes} = creator();
+    let {db} = creator();
     let invq = await db.farPromise('safeQuery', { name: 'obi', where: { _id: p.ref } });
     if (!invq.hasOneValue() || invq.value().obi.length !== 1) {
-      res.send(400, MSTEEncoded({ "error description": "entity not found" }))
+      res.send(400, MSTEEncoded({ "error description": "entity not found" }));
       return;
     }
     let e = invq.value().obi[0];
     e.manager().delete();
     let invs = await db.farPromise("safeSave", [e]);
     if (invs.hasOneValue())
-      res.send(200, MSTEEncoded(null))
+      res.send(200, MSTEEncoded(null));
     else
       res.send(400, MSTEEncoded({ "error description": invs.diagnostics() }));
   });

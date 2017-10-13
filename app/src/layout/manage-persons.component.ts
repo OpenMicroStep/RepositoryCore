@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { SearchListComponent } from '../search.component';
-import { AppContext } from '../main';
+import { AppContext, R_Service, R_Person } from '../main';
 import { Notification } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { PersonComponent } from '../components/person.component';
@@ -36,7 +36,7 @@ export class ManagePersonsComponent extends AspectComponent {
   @ViewChild(AdminTreeComponent) adminTreeComponent: AdminTreeComponent;
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   ngAfterViewInit() {
@@ -57,13 +57,13 @@ export class ManagePersonsComponent extends AspectComponent {
   }
 
   onCreate(notification: Notification) {
-    this.setObject(new this.ctx.R_Person(), undefined);
+    this.setObject(R_Person.create(this.ctx.cc.ccc(this)), undefined);
   }
 
   onSelectService(notification: Notification) {
     this.setObject(undefined, notification.info.selected);
   }
   onCreateService(notification: Notification) {
-    this.setObject(undefined, new this.ctx.R_Service());
+    this.setObject(undefined, R_Service.create(this.ctx.cc.ccc(this)));
   }
 }

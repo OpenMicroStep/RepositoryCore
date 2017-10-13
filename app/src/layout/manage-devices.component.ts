@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { SearchListComponent } from '../search.component';
-import { AppContext } from '../main';
+import { AppContext, R_Device, R_DeviceTree } from '../main';
 import { Notification } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { DeviceComponent } from '../components/device.component';
@@ -36,7 +36,7 @@ export class ManageDevicesComponent extends AspectComponent {
   @ViewChild(AdminTreeComponent) adminTreeComponent: AdminTreeComponent;
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   ngAfterViewInit() {
@@ -57,13 +57,13 @@ export class ManageDevicesComponent extends AspectComponent {
   }
 
   onCreate(notification: Notification) {
-    this.setObject(new this.ctx.R_Device(), undefined);
+    this.setObject(R_Device.create(this.ctx.cc.ccc(this)), undefined);
   }
 
   onSelectDeviceTree(notification: Notification) {
     this.setObject(undefined, notification.info.selected);
   }
   onCreateDeviceTree(notification: Notification) {
-    this.setObject(undefined, new this.ctx.R_DeviceTree());
+    this.setObject(undefined, R_DeviceTree.create(this.ctx.cc.ccc(this)));
   }
 }

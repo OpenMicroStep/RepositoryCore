@@ -1,5 +1,5 @@
 import { Component, Input, ContentChild, Type, OnInit, TemplateRef } from '@angular/core';
-import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Result } from '@openmicrostep/aspects';
+import { Invocation, VersionedObject, VersionedObjectManager, DataSource, Notification, Result } from '@openmicrostep/aspects';
 import { VOInputComponent } from './vo.input.component';
 
 @Component({
@@ -42,7 +42,7 @@ export class VOInputSetSelectComponent<T extends VersionedObject> extends VOInpu
     if (this._query === query)
       return;
     this._query = query;
-    this._dataSource.farEvent('query', typeof query === "string" ? { id: query } : query, 'onItems', this);
+    Invocation.farEvent(this._dataSource.query, typeof query === "string" ? { id: query } : query, 'onItems', this);
   }
 
   constructor(dataSource: DataSource) {
@@ -57,7 +57,7 @@ export class VOInputSetSelectComponent<T extends VersionedObject> extends VOInpu
 
   onItems(notification: Notification<Result<{ items: T[] }>>) {
     let items = notification.info.value().items;
-    this._items = this._controlCenter.swapObjects(this, this._items, items);
+    this._items = this._controlCenter.ccc(this).swapObjects(this._items, items);
   }
 
   availableItems() {

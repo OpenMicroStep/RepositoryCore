@@ -1,5 +1,5 @@
 import { Component, Input, ContentChild, Type, OnInit, TemplateRef, HostListener, Output, EventEmitter } from '@angular/core';
-import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Result } from '@openmicrostep/aspects';
+import { ControlCenter, VersionedObject, VersionedObjectManager, DataSource, Notification, Result, Invocation } from '@openmicrostep/aspects';
 import { VOInputComponent } from './vo.input.component';
 import { AspectComponent } from './aspect.component';
 
@@ -42,7 +42,7 @@ export class InputSelectComponent<T> extends AspectComponent {
   set value(newValue: T | undefined) {
     if (this._value === newValue) return;
     if (this._value instanceof VersionedObject || newValue instanceof VersionedObject)
-      this._value = this._controlCenter.swapObject(this, this._value as any, newValue as any);
+      this._value = this._controlCenter.ccc(this).swapObject(this._value as any, newValue as any);
     else
     this._value = newValue;
     this.valueChange.emit(this._value);
@@ -83,7 +83,7 @@ export class VOInputSelectComponent extends VOInputComponent<VersionedObject> {
     if (this._query === query)
       return;
     this._query = query;
-    this._dataSource.farEvent('query', typeof query === "string" ? { id: query } : query, 'onItems', this);
+    Invocation.farEvent(this._dataSource.query, typeof query === "string" ? { id: query } : query, 'onItems', this);
   }
 
   constructor(dataSource: DataSource) {
@@ -98,7 +98,7 @@ export class VOInputSelectComponent extends VOInputComponent<VersionedObject> {
 
   onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
     let items = notification.info.value().items;
-    this._items = this._controlCenter.swapObjects(this, this._items, items);
+    this._items = this._controlCenter.ccc(this).swapObjects(this._items, items);
   }
 
   class() {

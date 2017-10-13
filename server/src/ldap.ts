@@ -1,4 +1,4 @@
-import { DataSource, VersionedObject } from '@openmicrostep/aspects';
+import { DataSource, VersionedObject, ControlCenterContext } from '@openmicrostep/aspects';
 import { AttributeTypes as V } from '@openmicrostep/msbuildsystem.shared';
 import { R_LDAPConfiguration, R_Person, R_AuthenticationLDAP } from '../../shared/src/classes';
 import * as ldap from 'ldapjs';
@@ -63,10 +63,11 @@ async function findLdapUser(cfg: R_LDAPConfiguration, login: string, dn: string 
   return user;
 }
 async function bindLdapUser(
+  ccc: ControlCenterContext,
   db: DataSource.Aspects.server, cfg: R_LDAPConfiguration,
   login: string, password: string, user: { dn: string, [s: string]: string },
   person: R_Person | undefined, auth: R_AuthenticationLDAP | undefined
-) : Promise<boolean> {
+) {
   let link = { url: cfg._ldap_url! };
   let userClient = ldap.createClient(link);
   let ok = await new Promise<boolean>((resolve, reject) => userClient.bind(user!.dn, password, (err) => {
@@ -76,13 +77,13 @@ async function bindLdapUser(
     let save: VersionedObject[] = [];
     if (!auth) {
       if (!person) {
-        person = db.controlCenter().create<R_Person>("R_Person", []);
+        person = R_Person.create(ccc);
         let user_object = user.object;
         for (let a of cfg._ldap_attribute_map)
           person[a._ldap_to_attribute_name!] = user_object[a._ldap_attribute_name!];
         save.push(person);
       }
-      let a = db.controlCenter().create<R_AuthenticationLDAP>("R_AuthenticationLDAP", []);
+      let a = R_AuthenticationLDAP.create(ccc);
       a._mlogin = login;
       a._ldap_dn = user.dn;
       person._r_authentication = new Set(person._r_authentication).add(a);
@@ -117,22 +118,23 @@ async function bindLdapUser(
       }
     }
     if (save.length) {
-      let inv = await db.farPromise('rawSave', save);
+      let inv = await db.controlCenter().safe(ccc => ccc.farPromise(db.rawSave, save));
       if (inv.hasDiagnostics())
         return Promise.reject('failed to update user');
     }
   }
-  return ok;
+  return ok ? person : undefined;
 }
 
 export async function authLdap(
+  ccc: ControlCenterContext,
   db: DataSource.Aspects.server, login: string, password: string,
   person: R_Person | undefined, auth: R_AuthenticationLDAP | undefined
-) : Promise<boolean> {
+) {
   if (!(/^[a-zA-Z0-9_-]+$/.test(login)))
     return Promise.reject(`login is too complex for ldap api`);
 
-  let inv = await db.farPromise('rawQuery', { results: [
+  let inv = await ccc.farPromise(db.rawQuery, { results: [
     { name: 'configurations',
       where: { $instanceOf: "R_LDAPConfiguration" },
       scope: ['_ldap_url', '_ldap_dn', '_ldap_password', '_ldap_user_base', '_ldap_user_filter', '_ldap_attribute_map', '_ldap_group_map'],
@@ -156,7 +158,7 @@ export async function authLdap(
     let nb = users.filter(u => !!u).length;
     if (nb === 1) {
       let i = users.findIndex(u => !!u);
-      return await bindLdapUser(db, configurations[i], login, password, users[i]!, person, auth);
+      return await bindLdapUser(ccc, db, configurations[i], login, password, users[i]!, person, auth);
     }
     if (nb > 1)
       return Promise.reject(`user is present in multiple LDAP`);

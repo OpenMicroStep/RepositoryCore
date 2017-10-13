@@ -6,6 +6,7 @@ import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
 import { PersonListItemComponent } from './person.component';
+import { ApplicationListItemComponent } from './application.component';
 
 @Component({
   selector: 'apptree',
@@ -22,7 +23,7 @@ import { PersonListItemComponent } from './person.component';
     </vo-input-setselect>
   </div>
   <div>
-    <vo-input-setselect label="Membres" [object]="this.object" attribute="_r_application" query="persons">
+    <vo-input-setselect label="Applications" [object]="this.object" attribute="_r_application" query="applications">
       <ng-template let-item="$implicit">
         <application-li [object]="item"></application-li>
       </ng-template>
@@ -43,17 +44,19 @@ import { PersonListItemComponent } from './person.component';
 export class AppTreeComponent extends VOLoadComponent<R_AppTree.Aspects.obi> {
 
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
   }
 
   scope() {
     return {
       R_AppTree: {
-        '.': ["_label", "_urn", "_disabled", "_r_member", "_r_administrator", "_r_parent_apptree"],
+        '.': ["_label", "_urn", "_disabled", "_r_application", "_r_administrator", "_r_parent_apptree"],
       },
       R_Person: {
-        '_r_member.': PersonListItemComponent.scope,
         '_r_administrator.': PersonListItemComponent.scope,
+      },
+      R_Application: {
+        '_r_application.': ApplicationListItemComponent.scope,
       },
     };
   }
@@ -65,11 +68,11 @@ export class AppTreeComponent extends VOLoadComponent<R_AppTree.Aspects.obi> {
 
 @Component({
   selector: 'apptree-li',
-  template: `{{this.object._first_name}} {{this.object._last_name}}`
+  template: `{{this.object._label}}`
 })
 export class AppTreeListItemComponent extends VOComponent<R_AppTree.Aspects.obi> {
   static readonly scope = ['_label', '_disabled']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

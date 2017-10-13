@@ -1,5 +1,5 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { AppContext, R_Application, R_AuthenticationPK, R_AuthenticationPWD } from '../main';
+import { AppContext, R_Application, R_AuthenticationPK, R_AuthenticationPWD, Parameter, R_Use_Profile, R_Device_Profile } from '../main';
 import { Notification, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
@@ -65,16 +65,17 @@ export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.
   _r_sub_device_profile_domains: VOInputSetComponent.Domain[] = [];
   _sc_query: any;
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
-    this._r_authentication_domains    .push({ label: "by password"   , create: () => new ctx.R_AuthenticationPWD() });
-    this._r_authentication_domains    .push({ label: "by public key" , create: () => new ctx.R_AuthenticationPK()  });
-    this._parameter_domains           .push({ label: "parameter"     , create: () => new ctx.Parameter()           });
-    this._r_sub_use_profile_domains   .push({ label: "use profile"   , create: () => new ctx.R_Use_Profile()       });
-    this._r_sub_device_profile_domains.push({ label: "device profile", create: () => new ctx.R_Device_Profile()    });
+    super(ctx.db);
+    let ccc = ctx.cc.ccc(this);
+    this._r_authentication_domains    .push({ label: "by password"   , create: () => R_AuthenticationPWD.create(ccc) });
+    this._r_authentication_domains    .push({ label: "by public key" , create: () => R_AuthenticationPK.create(ccc)  });
+    this._parameter_domains           .push({ label: "parameter"     , create: () => Parameter.create(ccc)           });
+    this._r_sub_use_profile_domains   .push({ label: "use profile"   , create: () => R_Use_Profile.create(ccc)       });
+    this._r_sub_device_profile_domains.push({ label: "device profile", create: () => R_Device_Profile.create(ccc)    });
   }
 
-  isAuthPWD(item) { return item instanceof this.ctx.R_AuthenticationPWD; }
-  isAuthPK(item) { return item instanceof this.ctx.R_AuthenticationPK; }
+  isAuthPWD(item) { return item instanceof R_AuthenticationPWD; }
+  isAuthPK(item) { return item instanceof R_AuthenticationPK; }
 
   scope() {
     return {
@@ -108,6 +109,6 @@ export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.
 export class ApplicationListItemComponent extends VOComponent<R_Application.Aspects.obi> {
   static readonly scope = ['_label', '_urn']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

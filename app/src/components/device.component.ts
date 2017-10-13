@@ -21,7 +21,7 @@ import { AspectComponent } from '../aspect/aspect.component';
 })
 export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
   }
 
   scope() {
@@ -36,6 +36,6 @@ export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
 export class DeviceListItemComponent extends VOComponent<R_Device.Aspects.obi> {
   static readonly scope = ['_label']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

@@ -26,7 +26,7 @@ import { VOComponent } from '../aspect/vo.component';
 export class AuthenticationPWDComponent extends VOComponent<R_AuthenticationPWD.Aspects.obi> {
   password2: string;
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   static readonly scope = ["_mlogin", "_hashed_password"];

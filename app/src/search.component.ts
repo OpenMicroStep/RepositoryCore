@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy, Input, ContentChild, TemplateRef } from '@angular/core';
 import { AppContext } from './main';
-import { Notification, Result, DataSource, VersionedObject, Event } from '@openmicrostep/aspects';
+import { Notification, Result, Invocation, VersionedObject, Event } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect/aspect.component';
 
 @Component({
@@ -36,7 +36,7 @@ export class SearchListComponent extends AspectComponent {
   _items: any[] = [];
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   get search() {
@@ -44,27 +44,27 @@ export class SearchListComponent extends AspectComponent {
   }
   set search(value) {
     this._search = value;
-    this.ctx.dataSource.farEvent('query', { id: this.query, text: value }, 'onItems', this);
+    Invocation.farEvent(this.ctx.db.query, { id: this.query, text: value }, 'onItems', this);
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'refresh', 'saved', this.ctx.dataSource);
-    this.ctx.dataSource.farEvent('query', { id: this.query, text: "" }, 'onItems', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'refresh', 'saved', this.ctx.db);
+    Invocation.farEvent(this.ctx.db.query, { id: this.query, text: "" }, 'onItems', this);
   }
 
   refresh(notification) {
-    this.ctx.dataSource.farEvent('query', { id: this.query, text: this._search }, 'onItems', this);
+    Invocation.farEvent(this.ctx.db.query, { id: this.query, text: this._search }, 'onItems', this);
   }
 
   onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
     let items = notification.info.value().items;
-    this._items = this.ctx.controlCenter.swapObjects(this, this._items, items);
+    this._items = this.ctx.cc.ccc(this).swapObjects(this._items, items);
   }
 
   selected(item) {
-    this.ctx.controlCenter.notificationCenter().postNotification({
+    this.ctx.cc.notificationCenter().postNotification({
       name: SearchListComponent.select,
       object: this,
       info: { selected: item }
@@ -72,7 +72,7 @@ export class SearchListComponent extends AspectComponent {
   }
 
   create() {
-    this.ctx.controlCenter.notificationCenter().postNotification({
+    this.ctx.cc.notificationCenter().postNotification({
       name: SearchListComponent.create,
       object: this,
       info: undefined

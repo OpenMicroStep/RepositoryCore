@@ -1,96 +1,91 @@
 import {
-  ControlCenter, VersionedObject, VersionedObjectConstructor, VersionedObjectManager,
-  DataSource, Aspect, DataSourceInternal,
-  SafePostLoadContext, SafePreSaveContext, SafeValidator, DataSourceTransaction
+  ControlCenter, ControlCenterContext,
+  VersionedObject, VersionedObjectConstructor, VersionedObjectManager,
+  DataSource, Aspect, DataSourceInternal, AspectConfiguration, AspectSelection,
+  SafePostLoadContext, SafePreSaveContext, SafeValidator, DataSourceTransaction,
 } from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, ObiDefinition} from '@openmicrostep/aspects.obi';
 import {Reporter} from '@openmicrostep/msbuildsystem.shared';
-import {cache, All, R_AuthenticationPWD, Session} from '../../shared/src/classes';
+import {R_AuthenticationPWD, Session} from '../../shared/src/classes';
+import * as interfaces from '../../shared/src/classes';
 import {SecureHash} from './securehash';
 export * from '../../shared/src/classes';
-
-function cachedClasses<T extends object>(classes: { [K in keyof T]: VersionedObjectConstructor }) : (cc: ControlCenter) => T {
-  class Cache {
-    constructor (public __cc: ControlCenter) {}
-  }
-  Object.keys(classes).forEach((k: keyof T) => {
-    let c = classes[k];
-    Object.defineProperty(Cache.prototype, k, {
-      get: function(this: Cache) {
-        let cstor = this.__cc.cache().createAspect(this.__cc, c.definition.name, c);
-        Object.defineProperty(this, k, { value: cstor });
-        return cstor;
-      }
-    });
-  });
-  return (cc: ControlCenter) => new Cache(cc) as any;
-}
+import './session';
 
 const mapClasses = {};
 const mapClassesR = {};
 const mapAttributes = {};
-const rights_by_classname: { [s: string]: {
+type AttributeRights = {
+  read: Set<string>,
+  create: Set<string>,
+  update: Set<string>,
+  delete: Set<string>,
+};
+type ClassRights = {
   read: Set<string>, read_key: string,
   create: Set<string>, create_key: string,
   update: Set<string>, update_key: string,
   delete: Set<string>, delete_key: string,
   attributes: {
-    [s: string]: {
-      read: Set<string>,
-      create: Set<string>,
-      update: Set<string>,
-      delete: Set<string>,
-    }
-  },
-}} = {};
+    [s: string]: AttributeRights
+  }
+};
+const rights_by_classname: { [s: string]: ClassRights } = {};
+const sub_object_classes = new Map<string, { classname: string, attribute: string }[]>();
 
-function admin_of(cc: ControlCenter, of: string, suffix: string) {
-  let session = cc.findChecked('session') as Session.Aspects.server;
+function admin_of(ccc: ControlCenterContext, of: string, suffix: string) {
+  let session = ccc.findChecked('session') as Session.Aspects.server;
   return { $unionForAlln: "=U(n)",
     "U(0)=": { $instanceOf: of, _r_administrator: { $has: session.data().person_id } },
     "U(n + 1)=": `=U(n):_r_child_${suffix}s`,
   };
 }
-function visible_of(cc: ControlCenter, of: string, suffix: string) {
+function visible_of(ccc: ControlCenterContext, of: string, suffix: string) {
   return { $unionForAlln: "=U(n)",
-    "U(0)=": admin_of(cc, of, suffix),
+    "U(0)=": admin_of(ccc, of, suffix),
     "U(n + 1)=": `=U(n):_r_parent_${suffix}`,
   };
 }
-function admin_of_services(cc: ControlCenter) { return admin_of(cc, "R_Service", "service"); }
-function admin_of_apptree(cc: ControlCenter) { return admin_of(cc, "R_AppTree", "apptree"); }
-function admin_of_devicetree(cc: ControlCenter) { return admin_of(cc, "R_DeviceTree", "devicetree"); }
+function admin_of_services(ccc: ControlCenterContext) { return admin_of(ccc, "R_Service", "service"); }
+function admin_of_apptree(ccc: ControlCenterContext) { return admin_of(ccc, "R_AppTree", "apptree"); }
+function admin_of_devicetree(ccc: ControlCenterContext) { return admin_of(ccc, "R_DeviceTree", "devicetree"); }
 function is_super_admin(cc: ControlCenter) {
-  return (cc.findChecked('session') as Session.Aspects.server).data().is_super_admin === true;
+  return cc.safe(ccc => (ccc.findChecked('session') as Session.Aspects.server).data().is_super_admin === true);
 }
 const rights_queries: {
-  [s: string]: (cc: ControlCenter, objects: VersionedObject[]) => true | false | DataSourceInternal.ObjectSetDefinition,
+  [s: string]: (ccc: ControlCenterContext, objects: VersionedObject[]) => true | false | DataSourceInternal.ObjectSetDefinition,
 } = {
   "public": () => true,
   "member": () => true,
-  "person_admin": (cc, objects) => {
+  "auth_admin": (ccc, objects) => {
+    return {
+      $in: "=S:_r_application",
+      "S=": admin_of_apptree(ccc),
+    };
+  },
+  "person_admin": (ccc, objects) => {
     return {
       $in: "=S:_r_member",
       _id: { $in: objects.map(m => m.id()) },
-      "S=": admin_of_services(cc),
+      "S=": admin_of_services(ccc),
     };
   },
-  "app_admin": (cc, objects) => {
+  "app_admin": (ccc, objects) => {
     return {
       $in: "=S:_r_application",
       _id: { $in: objects.map(m => m.id()) },
-      "S=": admin_of_apptree(cc),
+      "S=": admin_of_apptree(ccc),
     };
   },
-  "device_admin": (cc, objects) => {
+  "device_admin": (ccc, objects) => {
     return {
       $in: "=S:_r_device",
       _id: { $in: objects.map(m => m.id()) },
-      "S=": admin_of_devicetree(cc),
+      "S=": admin_of_devicetree(ccc),
     };
   },
-  "admin": (cc, objects) => {
-    let session = cc.findChecked('session') as Session.Aspects.server;
+  "admin": (ccc, objects) => {
+    let session = ccc.findChecked('session') as Session.Aspects.server;
     return !!session.data().is_admin;
   },
 
@@ -99,7 +94,6 @@ const rights_queries: {
 const valid_entity_operations = new Set(['read', 'create', 'update', 'delete']);
 const valid_attribute__operations = new Set(['read', 'create', 'update', 'delete']);
 export function buildMaps(ouiDb: OuiDB) {
-  let car_pattern = systemObiByName(ouiDb, "pattern");
   mapAttributes['_version'] = 'version';
   let will_build: [string, ObiDefinition][] = [];
   for (let obi of ouiDb.systemObiByName.values()) {
@@ -115,8 +109,8 @@ export function buildMaps(ouiDb: OuiDB) {
     }
   }
   for (let [n, obi] of will_build)
-    rights_by_classname[n] = buildRights(obi);
-
+    if (n !== "R_Element")
+      rights_by_classname[n] = buildRights(obi);
 
   function buildRights(obi: ObiDefinition) {
     const r_internal_right = systemObiByName(ouiDb, "r_internal right");
@@ -142,6 +136,14 @@ export function buildMaps(ouiDb: OuiDB) {
       let internal_rights = (pattern.attributes.get(r_internal_right) || []) as Iterable<ObiDefinition>;
       if (car.system_name === "entity") {
         build_car_rights(internal_rights, rights, valid_entity_operations);
+      }
+      else if (car.system_name === "urn") {
+        attributes["_urn"] = { // rights on urn are the same as on entity
+          read: rights.read,
+          create: rights.create,
+          update: new Set<string>(),
+          delete: rights.delete,
+        };
       }
       else if (car.system_name !== "version") {
         let a_name = '_' + car.system_name!.replace(/[ -]/g, '_');
@@ -186,12 +188,35 @@ export function buildMaps(ouiDb: OuiDB) {
   }
 }
 
-export type Context = { cc: ControlCenter, session: Session.Aspects.server, db: DataSource.Aspects.server, classes: All };
+export type Context = { cc: ControlCenter, session: Session.Aspects.server, db: DataSource.Aspects.server };
 export type CreateContext = () => Context;
-
+export const selection = new AspectSelection([
+  interfaces.Session.Aspects.server          ,
+  ObiDataSource.Aspects.server               ,
+  interfaces.R_AuthenticationPK.Aspects.obi  ,
+  interfaces.R_AuthenticationPWD.Aspects.obi ,
+  interfaces.R_AuthenticationLDAP.Aspects.obi,
+  interfaces.R_Person.Aspects.obi            ,
+  interfaces.R_Service.Aspects.obi           ,
+  interfaces.R_DeviceTree.Aspects.obi        ,
+  interfaces.R_AppTree.Aspects.obi           ,
+  interfaces.R_Application.Aspects.obi       ,
+  interfaces.R_Use_Profile.Aspects.obi       ,
+  interfaces.R_Device_Profile.Aspects.obi    ,
+  interfaces.R_License.Aspects.obi           ,
+  interfaces.R_Software_Context.Aspects.obi  ,
+  interfaces.R_Device.Aspects.obi            ,
+  interfaces.R_Authorization.Aspects.obi     ,
+  interfaces.R_Right.Aspects.obi             ,
+  interfaces.R_Element.Aspects.obi           ,
+  interfaces.Parameter.Aspects.obi           ,
+  interfaces.R_LDAPAttribute.Aspects.obi     ,
+  interfaces.R_LDAPGroup.Aspects.obi         ,
+  interfaces.R_LDAPConfiguration.Aspects.obi ,
+]);
+export const cfg = new AspectConfiguration(selection);
 export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
-
-  function load_access_lists(reporter: Reporter, dataSource: DataSource.Categories.raw, access_lists: Map<string, VersionedObject[]>) : Promise<Map<VersionedObject, string[]>> {
+  function load_access_lists(ccc: ControlCenterContext, reporter: Reporter, dataSource: DataSource.Categories.raw, access_lists: Map<string, VersionedObject[]>) : Promise<Map<VersionedObject, string[]>> {
     let p: Promise<void>[] = [];
     let r = new Map<VersionedObject, string[]>();
     for (let [access_name, objects] of access_lists) {
@@ -208,9 +233,9 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       for (let access_name of access_names) {
         let maker = rights_queries[access_name];
         if (!maker)
-          reporter.diagnostic({ type: "error", msg: `unsupported access_name: ${access_name}` });
+          reporter.diagnostic({ is: "error", msg: `unsupported access_name: ${access_name}` });
         else {
-          let r = maker(dataSource.controlCenter(), objects);
+          let r = maker(ccc, objects);
           if (r === true)
             apply_access_to(access_name, objects);
           else if (r !== false)
@@ -218,7 +243,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
         }
       }
       if (q.results.length > 0) {
-        p.push(dataSource.farPromise('rawQuery', q).then(res => {
+        p.push(ccc.farPromise(dataSource.rawQuery, q).then(res => {
           if (res.hasOneValue()) {
             let v = res.value();
             for (let access_name of access_names) {
@@ -239,40 +264,47 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     return {
       for_each(vo, path) {
         let manager = vo.manager();
-        let access_name = rights_by_classname[manager.name()].read_key;
-        if (!access_name)
-          reporter.diagnostic({ type: "error", msg: `no access_name for (${manager.name()})` });
-        else {
-          let objects = access_lists.get(access_name);
-          if (!objects)
-            access_lists.set(access_name, objects = []);
-          objects.push(manager.object());
+        if (!manager.isSubObject()) {
+          let access_name = rights_by_classname[manager.name()].read_key;
+          if (!access_name)
+            reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.name()})` });
+          else {
+            let objects = access_lists.get(access_name);
+            if (!objects)
+              access_lists.set(access_name, objects = []);
+            objects.push(manager.object());
+          }
         }
         all_objects.add(vo);
       },
-      async finalize() {
-        let r = await load_access_lists(reporter, dataSource, access_lists);
+      finalize: () => dataSource.controlCenter().safe(async ccc => {
+        let r = await load_access_lists(ccc, reporter, dataSource, access_lists);
         for (let vo of all_objects) {
-          let access = r.get(vo);
+          let manager = vo.manager();
+          let access = r.get(manager.rootObject());
           if (!access)
-            reporter.diagnostic({ type: "error", msg: `you don't have read access to ${vo.id()} object` });
+            reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
           else {
-            let manager = vo.manager();
             let r = rights_by_classname[manager.name()];
-            for (let a of manager.localAttributes().keys()) {
-              let ra = r.attributes[a];
-              if (!access.some(a => ra.read.has(a)))
-                reporter.diagnostic({ type: "error", msg: `you don't have read access to '${a}' on '${vo.id()}'` });
-            }
-            for (let a of manager.versionAttributes().keys()) {
-              let ra = r.attributes[a];
-              if (!access.some(a => ra.read.has(a)))
-                reporter.diagnostic({ type: "error", msg: `you don't have read access to '${a}' on '${vo.id()}'` });
-            }
+            for (let a of manager.localAttributes().keys())
+              check_access(r, a, manager, access, vo);
+            for (let a of manager.versionAttributes().keys())
+              check_access(r, a, manager, access, vo);
           }
         }
-      }
+      }),
     };
+
+    function check_access(r: ClassRights, a: string, manager: VersionedObjectManager<VersionedObject>, access: string[], vo: VersionedObject) {
+      let ra = r.attributes[a];
+      if (!ra) {
+        let attr = manager.aspect().attributes.get(a)!;
+        if (attr && attr.relation)
+          ra = rights_by_classname[attr.relation.class.name].attributes[attr.relation.attribute.name];
+      }
+      if (!ra || !access.some(a => ra.read.has(a)))
+        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${a}' on '${vo.id()}'` });
+    }
   }
 
   function safe_pre_save(reporter: Reporter, dataSource: DataSource.Categories.raw, tr: DataSourceTransaction) : SafePreSaveContext {
@@ -283,49 +315,51 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     return {
       for_each(vo, set) {
         let manager = vo.manager();
-        let r = rights_by_classname[manager.name()];
-        let access_name: string;
-        switch (manager.state()) {
-          case VersionedObjectManager.State.NEW: access_name = r.create_key; break;
-          case VersionedObjectManager.State.MODIFIED: access_name = r.update_key; break;
-          case VersionedObjectManager.State.DELETED: access_name = r.delete_key; break;
-          default:
-            reporter.diagnostic({ type: "error", msg: `invalid save object state (${manager.id})` });
-            return;
-        }
-        if (!access_name)
-          reporter.diagnostic({ type: "error", msg: `no access_name for (${manager.name()})` });
-        else {
-          let objects = access_lists.get(access_name);
-          if (!objects)
-            access_lists.set(access_name, objects = []);
-          objects.push(vo);
+        if (!manager.isSubObject()) {
+          let r = rights_by_classname[manager.name()];
+          let access_name: string;
+          switch (manager.state()) {
+            case VersionedObjectManager.State.NEW: access_name = r.create_key; break;
+            case VersionedObjectManager.State.MODIFIED: access_name = r.update_key; break;
+            case VersionedObjectManager.State.DELETED: access_name = r.delete_key; break;
+            default:
+              reporter.diagnostic({ is: "error", msg: `invalid save object state (${manager.id})` });
+              return;
+          }
+          if (!access_name)
+            reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.name()})` });
+          else {
+            let objects = access_lists.get(access_name);
+            if (!objects)
+              access_lists.set(access_name, objects = []);
+            objects.push(vo);
+          }
         }
         all_objects.add(vo);
       },
-      async finalize() {
-        let r = await load_access_lists(reporter, dataSource, access_lists);
+      finalize: () => dataSource.controlCenter().safe(async ccc => {
+        let r = await load_access_lists(ccc, reporter, dataSource, access_lists);
         for (let vo of all_objects) {
-          let access = r.get(vo);
+          let manager = vo.manager();
+          let access = r.get(manager.rootObject());
           if (!access)
-            reporter.diagnostic({ type: "error", msg: `you don't have read access to ${vo.id()} object` });
+            reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
           else {
-            let manager = vo.manager();
             let r = rights_by_classname[manager.name()];
             // TODO: handle create & delete rights
             for (let a of manager.localAttributes().keys()) {
               let ra = r.attributes[a];
               if (!access.some(a => ra.update.has(a)))
-                reporter.diagnostic({ type: "error", msg: `you don't have update access to '${a}' on '${vo.id()}'` });
+                reporter.diagnostic({ is: "error", msg: `you don't have update access to '${a}' on '${vo.id()}'` });
             }
             for (let a of manager.versionAttributes().keys()) {
               let ra = r.attributes[a];
               if (!access.some(a => ra.update.has(a)))
-                reporter.diagnostic({ type: "error", msg: `you don't have update access to '${a}' on '${vo.id()}'` });
+                reporter.diagnostic({ is: "error", msg: `you don't have update access to '${a}' on '${vo.id()}'` });
             }
           }
         }
-      }
+      }),
     };
   }
 
@@ -338,8 +372,8 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
   };
   for (let class_name in rights_by_classname) {
     let v: SafeValidator = {
-      safe_post_load: [safe_post_load],
-      safe_pre_save: [safe_pre_save],
+      safe_post_load: [],
+      safe_pre_save: [],
       safe_post_save: [],
     };
     if (class_name === "R_AuthenticationPWD") {
@@ -364,12 +398,10 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
   }
 
   return function createControlCenter() {
-    let cc = new ControlCenter();
-    let c = cache(cc);
-    let DB = ObiDataSource.installAspect(cc, "server");
-    let S = Session.installAspect(cc, "server");
-    let session = new S();
-    let db = new DB(ouiDb, {
+    let cc = new ControlCenter(cfg);
+    let ccc = cc.registerComponent({});
+    let session = Session.Aspects.server.create(ccc);
+    let db = ObiDataSource.Aspects.server.create(ccc, ouiDb, {
       aspectAttribute_to_ObiCar: (a: string) => mapAttributes[a] || a,
       aspectClassname_to_ObiEntity: (c) => mapClasses[c] || c,
       obiEntity_to_aspectClassname: (c) => mapClassesR[c] || c,
@@ -377,10 +409,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     db.setSafeValidators(safeValidators);
     session.manager().setId("session");
     db.manager().setId("odb");
-    let cmp = {};
-    cc.registerComponent(cmp);
-    cc.registerObjects(cmp, [db, session]);
-    return { cc: cc, session: session, db: db, classes: c };
+    return { cc: cc, session: session, db: db };
   };
 }
 
@@ -395,7 +424,7 @@ function getOne(def: ObiDefinition, attribute: ObiDefinition, defaultValue?: str
   return set.values().next().value;
 }
 
-function systemObiByName(db: OuiDB, name: string): ObiDefinition {
+function systemObiByName(db: OuiDB, name: string) : ObiDefinition {
   let obi = db.systemObiByName.get(name);
   if (!obi)
     throw new Error(`obi ${name} not found`);
@@ -450,6 +479,7 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
       is: "class",
       name: obi.system_name!,
       version: 0,
+      is_sub_object: false,
       attributes: attributes,
       categories: [],
       farCategories: [],
@@ -459,9 +489,9 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
         categories: [],
         farCategories: [],
       }]
-    }
+    };
     static parent = VersionedObject;
-  }
+  };
 }
 
 export function printClassesMd(ouiDb: OuiDB) {
@@ -479,7 +509,7 @@ export function printClassesMd(ouiDb: OuiDB) {
           s += `#### \`${n}\`: ${typeToMdType(a.type)}\n`;
         }
       }
-      s+= `### aspect obi\n`;
+      s += `### aspect obi\n`;
       console.info(s);
     }
   }
@@ -487,7 +517,7 @@ export function printClassesMd(ouiDb: OuiDB) {
 }
 function typeToMdType(type: Aspect.Type) {
   let t = "any";
-  switch(type.type) {
+  switch (type.type) {
     case 'primitive': t = type.name; break;
     case 'class': t = type.name.replace(/ /g, '_'); break;
     case 'set': t = `<0,*,${typeToMdType(type.itemType)}>`; break;

@@ -5,6 +5,8 @@ import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
+import { PersonListItemComponent } from './person.component';
+import { DeviceListItemComponent } from './device.component';
 
 @Component({
   selector: 'devicetree',
@@ -42,11 +44,21 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
 export class DeviceTreeComponent extends VOLoadComponent<R_DeviceTree.Aspects.obi> {
 
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
   }
 
   scope() {
-    return ["_label", "_urn", "_disabled", "_r_member", "_r_administrator", "_r_parent_devicetree"];
+    return {
+      R_AppTree: {
+        '.': ["_label", "_urn", "_disabled", "_r_device", "_r_administrator", "_r_parent_devicetree"],
+      },
+      R_Person: {
+        '_r_administrator.': PersonListItemComponent.scope,
+      },
+      R_Device: {
+        '_r_device.': DeviceListItemComponent.scope,
+      },
+    };
   }
 
   objectsToSave(): VersionedObject[] {
@@ -61,6 +73,6 @@ export class DeviceTreeComponent extends VOLoadComponent<R_DeviceTree.Aspects.ob
 export class DeviceTreeListItemComponent extends VOComponent<R_DeviceTree.Aspects.obi> {
   static readonly scope = ['_label', '_disabled']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

@@ -39,6 +39,7 @@ _relation_: `_r_member`
 ### aspect obi
 
 ## class R_AuthenticationPK
+_sub object_
 ### attributes
 #### `_mlogin`: string
 #### `_public_key`: string
@@ -47,6 +48,7 @@ _relation_: `_r_member`
 ### aspect obi
 
 ## class R_AuthenticationPWD
+_sub object_
 ### attributes
 #### `_mlogin`: string
 #### `_hashed_password`: string
@@ -54,6 +56,7 @@ _relation_: `_r_member`
 ### aspect obi
 
 ## class R_AuthenticationLDAP
+_sub object_
 ### attributes
 #### `_mlogin`: string
 #### `_ldap_dn`: string
@@ -100,6 +103,7 @@ _relation_: `_r_parent_devicetree`
 ### aspect obi
 
 ## class Parameter
+_sub object_
 ### attributes
 #### `_label`: string
 #### `_string`: string
@@ -120,6 +124,7 @@ _relation_: `_r_parent_devicetree`
 ### aspect obi
 
 ## class R_License
+_sub object_
 ### attributes
 #### `_label`: string
 #### `_r_software_context`: R_Software_Context
@@ -141,11 +146,13 @@ _relation_: `_r_parent_context`
 ### aspect obi
 
 ## class R_Use_Profile
+_sub object_
 ### attributes
 #### `_label`: string
 ### aspect obi
 
 ## class R_Device_Profile
+_sub object_
 ### attributes
 #### `_label`: string
 #### `_r_device`: <0,*,R_Device>
@@ -161,6 +168,7 @@ _relation_: `_r_parent_context`
 ### aspect obi
 
 ## class R_Right
+_sub object_
 ### attributes
 #### `_label`: string
 #### `_r_action`: R_Element
@@ -180,12 +188,14 @@ _relation_: `_r_parent_context`
 ### aspect obi
 
 ## class R_LDAPAttribute
+_sub object_
 ### attributes
 #### `_ldap_attribute_name`: string
 #### `_ldap_to_attribute_name`: string
 ### aspect obi
 
 ## class R_LDAPGroup
+_sub object_
 ### attributes
 #### `_ldap_dn`: string
 #### `_ldap_group`: R_Authorization
@@ -193,6 +203,7 @@ _relation_: `_r_parent_context`
 
 ## class R_LDAPConfiguration
 ### attributes
+#### `_urn`: string
 #### `_ldap_url`: string
 #### `_ldap_dn`: string
 #### `_ldap_password`: string

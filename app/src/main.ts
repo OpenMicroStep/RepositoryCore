@@ -1,17 +1,46 @@
-import { ControlCenter, DataSource, Aspect } from '@openmicrostep/aspects';
-import {cache, All, Session} from '../../shared/src/classes';
+import { ControlCenter, DataSource, AspectConfiguration, AspectSelection } from '@openmicrostep/aspects';
+import { XHRTransport } from '@openmicrostep/aspects.xhr';
+import {Session} from '../../shared/src/classes';
+import * as interfaces from '../../shared/src/classes';
 export * from '../../shared/src/classes';
-const controlCenter = new ControlCenter();
-const dataSource = new (DataSource.installAspect(controlCenter, "client"))();
-const session = new (Session.installAspect(controlCenter, "client"))();
-export type AppContext = All & { controlCenter: ControlCenter, dataSource: DataSource.Aspects.client, session: Session.Aspects.client };
+
+const xhr = new XHRTransport();
+const cfg = new AspectConfiguration(new AspectSelection([
+  interfaces.Session.Aspects.client          ,
+  DataSource.Aspects.client                  ,
+  interfaces.R_AuthenticationPK.Aspects.obi  ,
+  interfaces.R_AuthenticationPWD.Aspects.obi ,
+  interfaces.R_AuthenticationLDAP.Aspects.obi,
+  interfaces.R_Person.Aspects.obi            ,
+  interfaces.R_Service.Aspects.obi           ,
+  interfaces.R_DeviceTree.Aspects.obi        ,
+  interfaces.R_AppTree.Aspects.obi           ,
+  interfaces.R_Application.Aspects.obi       ,
+  interfaces.R_Use_Profile.Aspects.obi       ,
+  interfaces.R_Device_Profile.Aspects.obi    ,
+  interfaces.R_License.Aspects.obi           ,
+  interfaces.R_Software_Context.Aspects.obi  ,
+  interfaces.R_Device.Aspects.obi            ,
+  interfaces.R_Authorization.Aspects.obi     ,
+  interfaces.R_Right.Aspects.obi             ,
+  interfaces.R_Element.Aspects.obi           ,
+  interfaces.Parameter.Aspects.obi           ,
+  interfaces.R_LDAPAttribute.Aspects.obi     ,
+  interfaces.R_LDAPGroup.Aspects.obi         ,
+  interfaces.R_LDAPConfiguration.Aspects.obi ,
+]), [], xhr);
+const controlCenter = new ControlCenter(cfg);
+const ccc = controlCenter.registerComponent({});
+const dataSource = DataSource.Aspects.client.create(ccc);
+const session = Session.Aspects.client.create(ccc);
+
+export type AppContext = { cc: ControlCenter, db: DataSource.Aspects.client, session: Session.Aspects.client };
 export const AppContext: { new(): AppContext } = function AppContext() {
     throw new Error(`shouldn't be called, just here to allow dep injection`);
 } as any;
-export const appContext: AppContext = Object.assign(cache(controlCenter), { controlCenter: controlCenter, dataSource: dataSource, session: session });
+export const appContext: AppContext = { cc: controlCenter, db: dataSource, session: session };
 
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { XHRTransport } from '@openmicrostep/aspects.xhr';
 import { CommonModule } from '@angular/common';
 import { NgModule, Injectable }      from '@angular/core';
 import { FormsModule }      from '@angular/forms';
@@ -47,10 +76,6 @@ import { ManageSettingsComponent }  from './layout/manage-settings.component';
 
 import { AdminTreeComponent, AdminTreeItemComponent }  from './tree.component';
 import { SearchListComponent }  from './search.component';
-
-
-const xhr = new XHRTransport();
-controlCenter.installTransport(xhr);
 
 @NgModule({
   imports: [ CommonModule, BrowserModule, FormsModule, BrowserAnimationsModule, AspectModule.withComponents([

@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { SearchListComponent } from '../search.component';
-import { AppContext } from '../main';
+import { AppContext, R_Application, R_AppTree } from '../main';
 import { Notification } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { ApplicationComponent } from '../components/application.component';
@@ -36,7 +36,7 @@ export class ManageApplicationsComponent extends AspectComponent {
   @ViewChild(AdminTreeComponent) adminTreeComponent: AdminTreeComponent;
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   ngAfterViewInit() {
@@ -57,13 +57,13 @@ export class ManageApplicationsComponent extends AspectComponent {
   }
 
   onCreate(notification: Notification) {
-    this.setObject(new this.ctx.R_Application(), undefined);
+    this.setObject(R_Application.create(this.ctx.cc.ccc(this)), undefined);
   }
 
   onSelectAppTree(notification: Notification) {
     this.setObject(undefined, notification.info.selected);
   }
   onCreateAppTree(notification: Notification) {
-    this.setObject(undefined, new this.ctx.R_AppTree());
+    this.setObject(undefined, R_AppTree.create(this.ctx.cc.ccc(this)));
   }
 }

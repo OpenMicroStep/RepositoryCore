@@ -1,5 +1,5 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD } from '../main';
+import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD, R_AuthenticationLDAP } from '../main';
 import { Notification, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
@@ -34,24 +34,24 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
   _r_authentication_domains: VOInputSetComponent.Domain[] = [];
 
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
     this._r_authentication_domains.push({
       label: "by password",
-      create: () => new ctx.R_AuthenticationPWD()
+      create: () => R_AuthenticationPWD.create(ctx.cc.ccc(this))
     });
     this._r_authentication_domains.push({
       label: "by public key",
-      create: () => new ctx.R_AuthenticationPK()
+      create: () => R_AuthenticationPK.create(ctx.cc.ccc(this))
     });
     this._r_authentication_domains.push({
       label: "by ldap",
-      create: () => new ctx.R_AuthenticationLDAP()
+      create: () => R_AuthenticationLDAP.create(ctx.cc.ccc(this))
     });
   }
 
-  isAuthPWD(item) { return item instanceof this.ctx.R_AuthenticationPWD; }
-  isAuthPK(item) { return item instanceof this.ctx.R_AuthenticationPK; }
-  isAuthLDAP(item) { return item instanceof this.ctx.R_AuthenticationLDAP; }
+  isAuthPWD(item) { return item instanceof R_AuthenticationPWD; }
+  isAuthPK(item) { return item instanceof R_AuthenticationPK; }
+  isAuthLDAP(item) { return item instanceof R_AuthenticationLDAP; }
 
   scope() {
     return {
@@ -79,6 +79,6 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
 export class PersonListItemComponent extends VOComponent<R_Person.Aspects.obi> {
   static readonly scope = ['_first_name', '_last_name']
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

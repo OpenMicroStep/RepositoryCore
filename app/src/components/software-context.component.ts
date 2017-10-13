@@ -29,7 +29,7 @@ import { AspectComponent } from '../aspect/aspect.component';
 })
 export class SoftwareContextComponent extends VOLoadComponent<R_Software_Context.Aspects.obi> {
   constructor(public ctx: AppContext) {
-    super(ctx.dataSource);
+    super(ctx.db);
   }
 
   scope() {
@@ -44,6 +44,6 @@ export class SoftwareContextComponent extends VOLoadComponent<R_Software_Context
 export class SoftwareContextListItemComponent extends VOComponent<R_Software_Context.Aspects.obi> {
   static readonly scope = ['_label'];
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 }

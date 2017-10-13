@@ -1,6 +1,6 @@
 import { Component, ViewChildren, ViewChild, AfterViewInit, OnDestroy, Input, ContentChild, TemplateRef, Output, EventEmitter } from '@angular/core';
 import { AppContext } from './main';
-import { Notification, Result, DataSource, VersionedObject, Event, ControlCenter } from '@openmicrostep/aspects';
+import { Notification, Result, Invocation, VersionedObject, Event, ControlCenter } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect/aspect.component';
 import { VOComponent } from './aspect/vo.component';
 
@@ -70,23 +70,23 @@ export class AdminTreeComponent extends AspectComponent {
   _roots: AdminTreeItem[] = [];
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
-    this.ctx.controlCenter.notificationCenter().addObserver(this, 'refresh', 'saved', this.ctx.dataSource);
-    this.ctx.dataSource.farEvent('query', { id: this.query, text: "" }, 'onItems', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'onItems', 'onItems', this);
+    this.ctx.cc.notificationCenter().addObserver(this, 'refresh', 'saved', this.ctx.db);
+    Invocation.farEvent(this.ctx.db.query, { id: this.query, text: "" }, 'onItems', this);
   }
 
   refresh(notification) {
-    this.ctx.dataSource.farEvent('query', { id: this.query, text: "" }, 'onItems', this);
+    Invocation.farEvent(this.ctx.db.query, { id: this.query, text: "" }, 'onItems', this);
   }
 
   onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
     let items = notification.info.value().items;
-    this._items = this.ctx.controlCenter.swapObjects(this, this._items, items);
+    this._items = this.ctx.cc.ccc(this).swapObjects(this._items, items);
     this._roots = [];
     let roots = new Map<VersionedObject | undefined, AdminTreeItem>();
     for (let vo of this._items) {
@@ -108,7 +108,7 @@ export class AdminTreeComponent extends AspectComponent {
   }
 
   selected(item) {
-    this.ctx.controlCenter.notificationCenter().postNotification({
+    this.ctx.cc.notificationCenter().postNotification({
       name: AdminTreeComponent.select,
       object: this,
       info: { selected: item }
@@ -116,7 +116,7 @@ export class AdminTreeComponent extends AspectComponent {
   }
 
   create() {
-    this.ctx.controlCenter.notificationCenter().postNotification({
+    this.ctx.cc.notificationCenter().postNotification({
       name: AdminTreeComponent.create,
       object: this,
       info: undefined

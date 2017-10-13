@@ -165,6 +165,14 @@ pattern:  // ENT-R_Person-disabled
   _id: 10131
   characteristic: disabled
   cardinality: one
+  r_internal right:
+    R_Internal Right
+    _id: 10132
+    r_operation: read
+    r_operation: create
+    r_operation: update
+    r_who: person_admin
+    _end:
   _end:
 pattern:  // ENT-R_Person-urn
   Gab
@@ -172,6 +180,13 @@ pattern:  // ENT-R_Person-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
+  r_internal right:
+    R_Internal Right
+    _id: 10145
+    r_operation: read
+    r_operation: create
+    r_who: person_admin
+    _end:
   _end:
 pattern:  // ENT-R_Person-login
   Gab
@@ -187,6 +202,7 @@ pattern:  // ENT-R_Person-authentication
   r_internal right:
     R_Internal Right
     _id: 10144
+    r_operation: read
     r_operation: create
     r_operation: update
     r_operation: delete
@@ -203,10 +219,7 @@ pattern:  // ENT-R_Person-first name
     R_Internal Right
     _id: 10313
     r_operation: read
-    r_who: person_admin
-    r_who: app_admin
-    r_who: device_admin
-    r_who: admin
+    r_who: public
     _end:
   r_internal right:
     R_Internal Right
@@ -226,10 +239,7 @@ pattern:  // ENT-R_Person-middle name
     R_Internal Right
     _id: 10332
     r_operation: read
-    r_who: person_admin
-    r_who: app_admin
-    r_who: device_admin
-    r_who: admin
+    r_who: public
     _end:
   r_internal right:
     R_Internal Right
@@ -250,10 +260,7 @@ pattern:  // ENT-R_Person-last name
     R_Internal Right
     _id: 10352
     r_operation: read
-    r_who: person_admin
-    r_who: app_admin
-    r_who: device_admin
-    r_who: admin
+    r_who: public
     _end:
   r_internal right:
     R_Internal Right
@@ -274,10 +281,7 @@ pattern:  // ENT-R_Person-mail
     R_Internal Right
     _id: 10362
     r_operation: read
-    r_who: person_admin
-    r_who: app_admin
-    r_who: device_admin
-    r_who: admin
+    r_who: public
     _end:
   r_internal right:
     R_Internal Right
@@ -800,13 +804,6 @@ pattern:  // ENT-R_Application-urn
   characteristic: urn
   cardinality: one
   mandatory: 1
-  r_internal right:
-    R_Internal Right
-    _id: 10944
-    r_operation: read
-    r_who: member
-    r_who: admin
-    _end:
   _end:
 pattern:  // ENT-R_Application-login
   Gab
@@ -825,6 +822,7 @@ pattern:  // ENT-R_Application-authentication
     r_operation: create
     r_operation: update
     r_operation: delete
+    r_who: app_admin
     r_who: admin
     _end:
   _end:
@@ -936,6 +934,12 @@ pattern:  // ENT-R_Software Context-entity
   characteristic: entity
   r_internal right:
     R_Internal Right
+    _id: 11313
+    r_operation: read
+    r_who: public
+    _end:
+  r_internal right:
+    R_Internal Right
     _id: 11312
     r_operation: create
     r_operation: update
@@ -950,6 +954,12 @@ pattern:  // ENT-R_Software Context-label
   cardinality: one
   r_internal right:
     R_Internal Right
+    _id: 11323
+    r_operation: read
+    r_who: public
+    _end:
+  r_internal right:
+    R_Internal Right
     _id: 11322
     r_operation: create
     r_operation: update
@@ -962,6 +972,12 @@ pattern:  // ENT-R_Software Context-disabled
   _id: 11331
   characteristic: disabled
   cardinality: one
+  r_internal right:
+    R_Internal Right
+    _id: 11333
+    r_operation: read
+    r_who: public
+    _end:
   r_internal right:
     R_Internal Right
     _id: 11332
@@ -979,6 +995,12 @@ pattern:  // ENT-R_Software Context-urn
   mandatory: 1
   r_internal right:
     R_Internal Right
+    _id: 11343
+    r_operation: read
+    r_who: public
+    _end:
+  r_internal right:
+    R_Internal Right
     _id: 11342
     r_operation: create
     r_operation: update
@@ -993,6 +1015,12 @@ pattern:  // ENT-R_Software Context-r_parent context
   cardinality: one
   r_internal right:
     R_Internal Right
+    _id: 11354
+    r_operation: read
+    r_who: public
+    _end:
+  r_internal right:
+    R_Internal Right
     _id: 11352
     r_operation: create
     r_operation: update
@@ -1005,6 +1033,12 @@ pattern:  // ENT-R_Software Context-r_license needed
   _id: 11361
   characteristic: r_license needed
   cardinality: one
+  r_internal right:
+    R_Internal Right
+    _id: 11365
+    r_operation: read
+    r_who: public
+    _end:
   r_internal right:
     R_Internal Right
     _id: 11362
@@ -1027,7 +1061,7 @@ pattern:  // ENT-R_Right-entity
     R_Internal Right
     _id: 12112
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1035,7 +1069,8 @@ pattern:  // ENT-R_Right-entity
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Right-label
@@ -1047,7 +1082,7 @@ pattern:  // ENT-R_Right-label
     R_Internal Right
     _id: 11722
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1055,7 +1090,8 @@ pattern:  // ENT-R_Right-label
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Right-r_action
@@ -1067,7 +1103,7 @@ pattern:  // ENT-R_Right-r_action
     R_Internal Right
     _id: 11752
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1075,7 +1111,8 @@ pattern:  // ENT-R_Right-r_action
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Right-r_application
@@ -1087,7 +1124,7 @@ pattern:  // ENT-R_Right-r_application
     R_Internal Right
     _id: 11762
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1095,7 +1132,8 @@ pattern:  // ENT-R_Right-r_application
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Right-r_software context
@@ -1107,7 +1145,7 @@ pattern:  // ENT-R_Right-r_software context
     R_Internal Right
     _id: 11772
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1115,7 +1153,8 @@ pattern:  // ENT-R_Right-r_software context
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Right-r_use profile
@@ -1127,7 +1166,7 @@ pattern:  // ENT-R_Right-r_use profile
     R_Internal Right
     _id: 11782
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1135,7 +1174,8 @@ pattern:  // ENT-R_Right-r_use profile
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Right-r_device profile
@@ -1147,7 +1187,7 @@ pattern:  // ENT-R_Right-r_device profile
     R_Internal Right
     _id: 11792
     r_operation: read
-    r_who: authorized_by_rights
+    r_who: member
     _end:
   r_internal right:
     R_Internal Right
@@ -1155,7 +1195,8 @@ pattern:  // ENT-R_Right-r_device profile
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 _end:
@@ -1176,10 +1217,12 @@ pattern:  // ENT-R_Authorization-entity
   r_internal right:
     R_Internal Right
     _id: 12113
+    r_operation: read
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Authorization-label
@@ -1190,10 +1233,12 @@ pattern:  // ENT-R_Authorization-label
   r_internal right:
     R_Internal Right
     _id: 12123
+    r_operation: read
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Authorization-disabled
@@ -1204,10 +1249,12 @@ pattern:  // ENT-R_Authorization-disabled
   r_internal right:
     R_Internal Right
     _id: 12133
+    r_operation: read
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Authorization-urn
@@ -1225,10 +1272,12 @@ pattern:  // ENT-R_Authorization-r_authenticable
   r_internal right:
     R_Internal Right
     _id: 12154
+    r_operation: read
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 pattern:  // ENT-R_Authorization-r_sub-right
@@ -1239,10 +1288,12 @@ pattern:  // ENT-R_Authorization-r_sub-right
   r_internal right:
     R_Internal Right
     _id: 12164
+    r_operation: read
     r_operation: create
     r_operation: update
     r_operation: delete
-    r_who: app_admin
+    r_who: auth_admin
+    r_who: admin
     _end:
   _end:
 _end:
@@ -1599,6 +1650,33 @@ _id: 14001
 system name: R_LDAPConfiguration
 pattern:
   Gab
+  _id: 14002
+  characteristic: entity
+  r_internal right:
+    R_Internal Right
+    _id: 14003
+    r_operation: read
+    r_operation: create
+    r_operation: update
+    r_operation: delete
+    r_who: admin
+    _end:
+  _end:
+pattern:
+  Gab
+  _id: 14004
+  characteristic: version
+  cardinality: one
+  _end:
+pattern:
+  Gab
+  _id: 14008
+  characteristic: urn
+  cardinality: one
+  mandatory: 1
+  _end:
+pattern:
+  Gab
   _id: 14010
   characteristic: ldap_url
   cardinality: one
@@ -1943,21 +2021,14 @@ Lst
 _id: 10029
 system name: the r_who’s
 element entity: R_Element
+element: public
 element: member
 element: person_admin
 element: app_admin
 element: device_admin
+element: auth_admin
 element: admin
-// member
-// authorized_by_rights
 element: nobody
-
-element: public
-element: authentication
-element: logged
-element: person_admin
-element: app_admin
-element: device_admin
 _end:
 
 Lst
@@ -2037,6 +2108,12 @@ order: 1110
 _end:
 
 R_Element
+_id: 10082
+system name: auth_admin
+order: 1115
+_end:
+
+R_Element
 _id: 10083
 system name: app_admin
 order: 1120
@@ -2047,13 +2124,6 @@ _id: 10085
 system name: device_admin
 order: 1130
 _end:
-
-R_Element
-_id: 10084
-system name: authorized_by_rights
-order: 1140
-_end:
-
 
 R_Element
 _id: 10091

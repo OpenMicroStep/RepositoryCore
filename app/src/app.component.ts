@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { AppContext } from './main';
 import { AspectComponent } from './aspect/aspect.component';
+import { Invocation } from '@openmicrostep/aspects';
 
 @Component({
   selector: 'my-app',
@@ -73,18 +74,18 @@ export class AppComponent extends AspectComponent {
   _tab = 'persons';
 
   constructor(public ctx: AppContext) {
-    super(ctx.controlCenter);
+    super(ctx.cc);
     this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onLogged', this);
     this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onIsAuthenticated', this);
-    this.ctx.session.farEvent('isAuthenticated', undefined, 'onIsAuthenticated', this);
+    Invocation.farEvent(this.ctx.session.isAuthenticated, undefined, 'onIsAuthenticated', this);
   }
 
   logIn() {
-    this.ctx.session.farEvent('loginByPassword', { login: this._login, password: this._password }, 'onLogged', this);
+    Invocation.farEvent(this.ctx.session.loginByPassword, { login: this._login, password: this._password }, 'onLogged', this);
   }
 
   logOut() {
-    this.ctx.session.farPromise('logout', undefined);
+    Invocation.farEvent(this.ctx.session.logout, undefined, 'loggedout');
     this._state = 'loggedout';
   }
 

@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ApplicationRef } from '@angular/core';
 import { AppContext } from './main';
 import { AspectComponent } from './aspect/aspect.component';
-import { Invocation } from '@openmicrostep/aspects';
+import { Invocation, ControlCenterContext } from '@openmicrostep/aspects';
 
 @Component({
   selector: 'my-app',
@@ -73,11 +73,22 @@ export class AppComponent extends AspectComponent {
   _password = '';
   _tab = 'persons';
 
-  constructor(public ctx: AppContext) {
+  constructor(public ctx: AppContext, ref: ApplicationRef) {
     super(ctx.cc);
     this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onLogged', this);
     this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onIsAuthenticated', this);
     Invocation.farEvent(this.ctx.session.isAuthenticated, undefined, 'onIsAuthenticated', this);
+    let destroy = ControlCenterContext.prototype.destroy;
+    Object.defineProperty(ControlCenterContext.prototype, "destroy",
+      {
+        ...Object.getOwnPropertyDescriptor(ControlCenterContext.prototype, "destroy"),
+        value: function(this: ControlCenterContext) {
+          if ((ref as any)._runningTick === false)
+            ref.tick();
+          destroy.apply(this, arguments);
+        },
+      }
+    )
   }
 
   logIn() {
@@ -91,7 +102,11 @@ export class AppComponent extends AspectComponent {
 
   onLogged(n) {
     if (n.info.hasOneValue() && n.info.value() === true) {
-      this._state = 'logged';
+      let redirect = document.location.search.match(/[&?]url=(.+?)(?:&|$)/);
+      if (redirect)
+        document.location.href = redirect[1];
+      else
+        this._state = 'logged';
     }
   }
 }

@@ -188,6 +188,10 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   isApplication(item) { return item instanceof R_Application; }
 
   loaded(n: Notification<Result<R_Authorization.Aspects.obi[]>>) {
+    if (n.info.hasOneValue()) {
+      let s = n.info.value()[0];
+      this._controlCenter.ccc(this).swapObjects(this._object ? [...this._object._r_sub_right] : [], s ? [...s._r_sub_right] : []);
+    }
     super.loaded(n);
     this._rights_loaded = false;
     if (this._object && this._object._r_sub_right.size > 0) {
@@ -209,6 +213,7 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   onTree(notification: Notification<Result<{ "applications": R_Application[], "actions": R_Element[] }>>) {
     if (!notification.info.hasOneValue()) return;
     let r = notification.info.value();
+    this._controlCenter.ccc(this).swapObjects(this._applications.map(a => a._r_software_context!), r.applications.map(a => a._r_software_context!));
     this._applications = this._controlCenter.ccc(this).swapObjects(this._applications, r.applications);
     this._actions = this._controlCenter.ccc(this).swapObjects(this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
   }

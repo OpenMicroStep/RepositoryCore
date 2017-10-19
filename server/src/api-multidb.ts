@@ -10,7 +10,7 @@ import {ModuleMultiDb} from './config';
 import {modules, session} from './server';
 
 async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
-  const multidb_cache = new MultiDbCache();
+  const multidb_cache = new MultiDbCache(m.resolve_customer_uuid_url);
   app.use('/:client_id/:repo_name', express.static(__dirname + "/../../../repository app/"));
   app.use('/:client_id/:repo_name', async function (req, res, next) {
     try {
@@ -59,11 +59,12 @@ export type MultiDbConfig = { creator: CreateContext };
 export class MultiDbCache {
   static readonly cache_time = 10 * 60 * 1000; // 10 min
   _configurations = new Map<string, LazyLoad<MultiDbConfig>>();
+  constructor(private _resolve_customer_uuid_url: string) {}
   async configuration(client_id: string, repo_name: string) : Promise<MultiDbConfig> {
     let cfg = this._configurations.get(client_id);
     if (!cfg)
       this._configurations.set(client_id, cfg = new LazyLoad(async () => {
-        let res = JSON.parse(await request(config_url + client_id));
+        let res = JSON.parse(await request(this._resolve_customer_uuid_url + client_id));
         let repositories = res && res.generals && res.generals.repositories;
         let storages = res && res.generals && res.generals.storages;
         let repo_config = repositories && repositories[repo_name];
@@ -73,6 +74,9 @@ export class MultiDbCache {
         const pg = require('pg');
         pg.types.setTypeParser(20, val => parseInt(val)); // BIGINT as number not string
         const connector = PostgresDBConnectorFactory(pg, db, { max: 4 });
+        await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_ID"  ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
+        await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_INT" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
+        await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_STR" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" TEXT NOT NULL, PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         let creator = await boot(connector);
         return { creator: creator };
       }));

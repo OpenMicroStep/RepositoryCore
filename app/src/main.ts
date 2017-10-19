@@ -5,30 +5,33 @@ import * as interfaces from '../../shared/src/classes';
 export * from '../../shared/src/classes';
 
 const xhr = new XHRTransport();
-const cfg = new AspectConfiguration(new AspectSelection([
-  interfaces.Session.Aspects.client          ,
-  DataSource.Aspects.client                  ,
-  interfaces.R_AuthenticationPK.Aspects.obi  ,
-  interfaces.R_AuthenticationPWD.Aspects.obi ,
-  interfaces.R_AuthenticationLDAP.Aspects.obi,
-  interfaces.R_Person.Aspects.obi            ,
-  interfaces.R_Service.Aspects.obi           ,
-  interfaces.R_DeviceTree.Aspects.obi        ,
-  interfaces.R_AppTree.Aspects.obi           ,
-  interfaces.R_Application.Aspects.obi       ,
-  interfaces.R_Use_Profile.Aspects.obi       ,
-  interfaces.R_Device_Profile.Aspects.obi    ,
-  interfaces.R_License.Aspects.obi           ,
-  interfaces.R_Software_Context.Aspects.obi  ,
-  interfaces.R_Device.Aspects.obi            ,
-  interfaces.R_Authorization.Aspects.obi     ,
-  interfaces.R_Right.Aspects.obi             ,
-  interfaces.R_Element.Aspects.obi           ,
-  interfaces.Parameter.Aspects.obi           ,
-  interfaces.R_LDAPAttribute.Aspects.obi     ,
-  interfaces.R_LDAPGroup.Aspects.obi         ,
-  interfaces.R_LDAPConfiguration.Aspects.obi ,
-]), [], xhr);
+const cfg = new AspectConfiguration({
+  selection: new AspectSelection([
+    interfaces.Session.Aspects.client          ,
+    DataSource.Aspects.client                  ,
+    interfaces.R_AuthenticationPK.Aspects.obi  ,
+    interfaces.R_AuthenticationPWD.Aspects.obi ,
+    interfaces.R_AuthenticationLDAP.Aspects.obi,
+    interfaces.R_Person.Aspects.obi            ,
+    interfaces.R_Service.Aspects.obi           ,
+    interfaces.R_DeviceTree.Aspects.obi        ,
+    interfaces.R_AppTree.Aspects.obi           ,
+    interfaces.R_Application.Aspects.obi       ,
+    interfaces.R_Use_Profile.Aspects.obi       ,
+    interfaces.R_Device_Profile.Aspects.obi    ,
+    interfaces.R_License.Aspects.obi           ,
+    interfaces.R_Software_Context.Aspects.obi  ,
+    interfaces.R_Device.Aspects.obi            ,
+    interfaces.R_Authorization.Aspects.obi     ,
+    interfaces.R_Right.Aspects.obi             ,
+    interfaces.R_Element.Aspects.obi           ,
+    interfaces.Parameter.Aspects.obi           ,
+    interfaces.R_LDAPAttribute.Aspects.obi     ,
+    interfaces.R_LDAPGroup.Aspects.obi         ,
+    interfaces.R_LDAPConfiguration.Aspects.obi ,
+  ]),
+  defaultFarTransport: xhr
+});
 const controlCenter = new ControlCenter(cfg);
 const ccc = controlCenter.registerComponent({});
 const dataSource = DataSource.Aspects.client.create(ccc);

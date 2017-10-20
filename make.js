@@ -16,10 +16,6 @@ module.exports =  {
       { is: 'group', name: 'shared', path: 'shared/src/', elements: [
         { is: 'file', name: 'interfaces.md', tags: ['interface']},
       ]},
-      { is: 'group', name: 'xnet', path: 'xnet/src/', elements: [
-        { is: 'file', name: 'plist.js', tags: ['copy'] },
-        { is: 'file', name: 'villes.plist', tags: ['copy'] },
-      ]},
   ]},
   "targets=": { is: 'group',
     "repository app=":  {
@@ -38,7 +34,6 @@ module.exports =  {
       is: 'target',
       environments: ["=::openms.aspects.node::"],
       files: ["=files:server ? tsc", "=files:shared ? tsc"],
-      copyFiles: [{ is: "group", elements: ["=files:xnet ? copy"], dest: "xnet/src", expand: true }],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
       npmPackage: { is: "component",
         dependencies: { is: "component",
@@ -54,6 +49,7 @@ module.exports =  {
         devDependencies: { is: "component",
           "@types/ldapjs": "^1.0.0",
           "@types/express-session": "^1.15.3",
+          "@types/request-promise-native": "^1.0.8",
         },
       },
     }

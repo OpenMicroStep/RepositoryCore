@@ -1,4 +1,9 @@
-build:
+stages:
+  - build
+  - deploy
+
+build_modules:
+  stage: build
   image: node:8
   script:
     # installation du buildsystem
@@ -15,11 +20,12 @@ build:
 
 
 build_docker_container:
+  stage: deploy
   image: docker:git
   services:
     - docker:dind
   dependencies:
-    - build
+    - build_modules
   script:
     # build du conteneur repository
     - docker build --no-cache -t registry-dev.logitud.fr/recherche/repository:$CI_COMMIT_REF_NAME .

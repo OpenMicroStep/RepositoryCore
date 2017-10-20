@@ -1,7 +1,6 @@
 FROM node:6
-WORKDIR /srv/services/
-
-COPY dist/openms.aspects.node/ dist/openms.aspects.node/ /srv/
+WORKDIR /srv/
+COPY dist/openms.aspects.node/node_modules dist/openms.aspects.angular/node_modules /srv/
 
 EXPOSE 8080
-CMD ["node", "/srv/openms.aspects.node/node_modules/repository server/server/src/server.js"]
+CMD ["node", "/srv/repository server/server/src/server.js"]

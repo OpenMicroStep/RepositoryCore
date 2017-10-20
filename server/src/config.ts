@@ -31,14 +31,19 @@ export type Config = {
 export const config: Config = {
   modules: [
     {
-      type: "singledb",
+      type: "multidb",
       path: "/",
+      resolve_customer_uuid_url: "http://services:8803/admin/resolveCustomerUUID?uuid=",
+      pg_option: { max: 4 },
     }
   ],
   session: {
-    type: "memory",
+    type: "mongo",
+    url: "mongodb://mongodb:27017/session",
     secret: 'keyboard cat',
+    collection: "sessions",
     ttl: 1 * 24 * 60 * 60, // 1 Day
+    options: { poolSize: 4 },
   },
   port: 8080,
-};
+}

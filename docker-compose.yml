@@ -1,0 +1,61 @@
+version: "3"
+services:
+  couchdb:
+    image: couchdb:1.6.1
+    ports:
+     - "5984:5984"
+    networks:
+      -  testnet
+  mongodb:
+    image: mongo:3.4
+    networks:
+      - testnet
+  postgres:
+    image: postgres:alpine
+    ports:
+     - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=nhiFNsfsRMgP4p94kujC
+      - POSTGRES_DB=repo
+      - POSTGRES_USER=repo
+    networks:
+      - testnet
+  services:
+    image: registry-dev.logitud.fr/gve/services:${CI_COMMIT_REF_NAME}
+    environment:
+      NODE_ENV: "local"
+      TZ: "Europe/Paris"
+    volumes:
+      - "./script/services_config:/srv/services/config"
+    links:
+      - couchdb
+      - mongodb
+    networks:
+      - testnet
+  fill:
+    image: node:8
+    command: node /script/fill.js
+    volumes:
+      - "./script/:/script/"
+    links:
+      - couchdb
+      - mongodb
+      - postgres
+    networks:
+      - testnet
+  repository:
+    image: registry-dev.logitud.fr/recherche/repository:${CI_COMMIT_REF_NAME}
+    ports:
+     - "8080:8080"
+    links:
+      - services
+      - mongodb
+      - postgres
+    volumes:
+      - "./dist/openms.aspects.node/node_modules/repository server:/srv/repository server:ro"
+      - "./dist/openms.aspects.angular/node_modules/repository app:/srv/repository app:ro"
+    networks:
+      - testnet
+networks:
+  testnet:
+    driver: bridge

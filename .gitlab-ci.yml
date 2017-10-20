@@ -1,0 +1,30 @@
+build:
+  image: node:8
+  script:
+    # installation du buildsystem
+    - npm install -g @openmicrostep/msbuildsystem.cli
+    - msbuildsystem modules install @openmicrostep/msbuildsystem.aspects
+    # build
+    - msbuildsystem build -w dist/
+  tags:
+    - node
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+
+build_docker_container:
+  image: docker:git
+  services:
+    - docker:dind
+  dependencies:
+    - build
+  script:
+    # build du conteneur repository
+    - docker build --no-cache -t registry-dev.logitud.fr/recherche/repository:$CI_COMMIT_REF_NAME .
+    # envoi de l'image
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry-dev.logitud.fr
+    - docker push registry-dev.logitud.fr/recherche/repository:$CI_COMMIT_REF_NAME
+  tags:
+    - dind

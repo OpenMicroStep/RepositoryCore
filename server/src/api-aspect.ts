@@ -21,7 +21,7 @@ export function api_aspect(creator: CreateContext) : express.Router {
     db.setQueries(queries);
     if (id === 'session')
       return Promise.resolve(session);
-    if (session.data().isAuthenticated === true) {
+    if (session.data().is_authenticated === true) {
       if (id === 'odb')
         return Promise.resolve(db);
       return Promise.reject('not found');

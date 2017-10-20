@@ -16,7 +16,7 @@ async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
   app.use('/:client_id/:repo_name', async function (req, res, next) {
     try {
       req.multidb_configuration = await multidb_cache.configuration(req.params["client_id"], req.params["repo_name"]);
-      next!();
+      req.multidb_configuration.session(req, res, next);
     }
     catch (err) {
       console.info(`client_id: ${req.params["client_id"]}, repo_name: ${req.params["repo_name"]}`, err);
@@ -57,7 +57,7 @@ export class LazyLoad<T> {
   }
 }
 
-export type MultiDbConfig = { creator: CreateContext };
+export type MultiDbConfig = { creator: CreateContext, client_id: string, repo_name: string, session: express.RequestHandler };
 export class MultiDbCache {
   static readonly cache_time = 10 * 60 * 1000; // 10 min
   _configurations = new Map<string, LazyLoad<MultiDbConfig>>();
@@ -80,7 +80,7 @@ export class MultiDbCache {
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_INT" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_STR" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" TEXT NOT NULL, PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         let creator = await boot(connector);
-        return { creator: creator };
+        return { creator: creator, client_id: client_id, repo_name: repo_name, session: session(`/${client_id}/`) };
       }));
     cfg.invalidate_if_older_than(Date.now() - MultiDbCache.cache_time);
     return cfg.promise();
@@ -98,14 +98,19 @@ declare module "express-serve-static-core" {
 
 export function api_multidb() : express.Router {
   let router = express.Router();
-  router.use(session);
   let transport = new ExpressTransport(router, async (cstor, id, req) => {
     const { session, db } = req.multidb_configuration!.creator();
+    if (req.session.client_id !== req.multidb_configuration!.client_id) {
+      req.session.rights = {};
+      req.session.is_admin = false;
+      req.session.is_authenticated = false;
+    }
+    req.session.client_id = req.multidb_configuration!.client_id;
     session.setData(req.session);
     db.setQueries(queries);
     if (id === 'session')
       return Promise.resolve(session);
-    if (session.data().isAuthenticated === true) {
+    if (session.data().is_authenticated === true) {
       if (id === 'odb')
         return Promise.resolve(db);
       return Promise.reject('not found');

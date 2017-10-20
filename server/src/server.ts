@@ -3,11 +3,12 @@ import * as express from 'express';
 import {config} from './config';
 
 export const modules: { [s: string]: (app: express.Router, module_cfg: any) => Promise<void> } = {};
-export const session: express.RequestHandler = (function() {
+export function session(path = '/') : express.RequestHandler {
   if (config.session.type === "mongo") {
     const session = require('express-session');
     const MongoStore = require('connect-mongo')(session);
     return session({
+      cookie: { path: path },
       saveUninitialized: true,
       store: new MongoStore({ url: config.session.url, mongoOptions: config.session.options }),
       secret: config.session.secret,
@@ -15,7 +16,7 @@ export const session: express.RequestHandler = (function() {
     });
   }
   throw new Error(`unsupported session type ${config.session.type}`);
-})();
+}
 import './api-multidb';
 import './api-aspect';
 

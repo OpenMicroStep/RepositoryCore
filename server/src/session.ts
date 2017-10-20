@@ -14,10 +14,10 @@ Session.category('server', {
 
 Session.category('client', {
   isAuthenticated() {
-    return !!this.data().isAuthenticated;
+    return !!this.data().is_authenticated;
   },
   logout() {
-    this.data().isAuthenticated = false;
+    this.data().is_authenticated = false;
   },
   async loginByPassword({ context: { ccc } }, q) {
     let db = ccc.find('odb') as DataSource.Aspects.server;
@@ -132,7 +132,7 @@ Session.category('client', {
         this.data().is_admin = (computed_rights["repository"] || {})["repository-superadmin"] === "r_superuse";
       }
     }
-    this.data().isAuthenticated = !!authenticated_person;
+    this.data().is_authenticated = !!authenticated_person;
     return Result.fromDiagnosticsAndValue(authenticated_person ? [] : [{ is: "error", msg: `bad login/password` }], !!authenticated_person);
   }
 } as Session.ImplCategories.client<Session.Aspects.server>);

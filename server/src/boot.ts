@@ -99,5 +99,6 @@ export async function boot(connector: DBConnector) {
         return Promise.reject(res.diagnostics());
     });
   }
+  console.info("Repository loaded");
   return creator;
 }

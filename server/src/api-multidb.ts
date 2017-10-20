@@ -11,6 +11,7 @@ import {modules, session} from './server';
 
 async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
   const multidb_cache = new MultiDbCache(m.resolve_customer_uuid_url);
+  console.info(__dirname + "/../../../repository app/");
   app.use('/:client_id/:repo_name', express.static(__dirname + "/../../../repository app/"));
   app.use('/:client_id/:repo_name', async function (req, res, next) {
     try {
@@ -18,6 +19,7 @@ async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
       next!();
     }
     catch (err) {
+      console.info(`client_id: ${req.params["client_id"]}, repo_name: ${req.params["repo_name"]}`, err);
       res.status(403).send();
     }
   }, api_multidb());
@@ -67,7 +69,7 @@ export class MultiDbCache {
         let res = JSON.parse(await request(this._resolve_customer_uuid_url + client_id));
         let repositories = res && res.generals && res.generals.repositories;
         let storages = res && res.generals && res.generals.storages;
-        let repo_config = repositories && repositories[repo_name];
+        let repo_config = repositories && repositories[repo_name.toUpperCase()];
         let db = storages && repo_config && storages[repo_config.storage];
         if (!repo_config || !db || db["type"] !== "postgresql")
           return Promise.reject(`no repository configuration found`);

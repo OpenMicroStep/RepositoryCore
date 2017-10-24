@@ -21,6 +21,7 @@ module.exports =  {
     "repository app=":  {
       is: 'target',
       environments: ["=::openms.aspects.angular::"],
+      components: ["=::openms.aspects.angular.dev::"],
       files: ["=files:app ? tsc", "=files:shared ? tsc"],
       copyFiles: [{ is: "group", elements: ["=files:app ? copy"], dest: "", expand: true }],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
@@ -33,6 +34,8 @@ module.exports =  {
     "repository server=":  {
       is: 'target',
       environments: ["=::openms.aspects.node::"],
+      components: ["=::openms.aspects.node.dev::", "=::aspects obi::"],
+      targets: ["aspects obi"],
       files: ["=files:server ? tsc", "=files:shared ? tsc"],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
       npmPackage: { is: "component",
@@ -45,6 +48,8 @@ module.exports =  {
           "express-session": "^1.15.6",
           "connect-mongo": "^1.3.2",
           "ldapjs": "^1.0.1",
+          "@openmicrostep/msbuildsystem.shared": "^0.6.3",
+          "source-map-support": "^0.4.11",
         },
         devDependencies: { is: "component",
           "@types/ldapjs": "^1.0.0",

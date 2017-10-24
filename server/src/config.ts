@@ -19,11 +19,8 @@ export type SessionMongo = {
 }
 export type SessionMemory = {
   type: "memory",
-  url: string,
   secret: string,
-  collection: string,
   ttl: number,
-  options: any,
 }
 export type Module = ModuleMultiDb | ModuleSingleDb;
 export type Config = {
@@ -33,14 +30,15 @@ export type Config = {
 }
 export const config: Config = {
   modules: [
+    {
+      type: "singledb",
+      path: "/",
+    }
   ],
   session: {
-    type: "mongo",
-    url: "mongodb://localhost:27017/session",
+    type: "memory",
     secret: 'keyboard cat',
-    collection: "sessions",
     ttl: 1 * 24 * 60 * 60, // 1 Day
-    options: { poolSize: 4 },
   },
   port: 8080,
-}
+};

@@ -4,6 +4,10 @@ export type ModuleMultiDb = {
   resolve_customer_uuid_url: string,
   pg_option: any,
 }
+export type ModuleSingleDb = {
+  type: "singledb",
+  path: string,
+}
 export type SessionMongo = {
   type: "mongo",
   url: string,
@@ -12,9 +16,9 @@ export type SessionMongo = {
   ttl: number,
   options: any,
 }
-export type Module = ModuleMultiDb;
+export type Module = ModuleMultiDb | ModuleSingleDb;
 export type Config = {
-  modules: (ModuleMultiDb)[],
+  modules: (ModuleMultiDb | ModuleSingleDb)[],
   session: (SessionMongo),
   port: number,
 }

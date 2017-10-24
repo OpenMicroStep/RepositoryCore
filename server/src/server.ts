@@ -15,26 +15,19 @@ export function session(path = '/') : express.RequestHandler {
       resave: true,
     });
   }
+  else if (config.session.type === "memory") {
+    const session = require('express-session');
+    return session({
+      cookie: { path: path },
+      saveUninitialized: true,
+      secret: config.session.secret,
+      resave: true,
+    });
+  }
   throw new Error(`unsupported session type ${config.session.type}`);
 }
 import './api-multidb';
 import './api-aspect';
-
-/*
-async function boot_sqlite() {
-  const sqlite3 = require('sqlite3').verbose();
-  const connector = SqliteDBConnectorFactory(sqlite3, {
-    filename: ":memory:",
-    // filename: "repository.sqlite",
-    trace: sql => trace && console.info(sql),
-  }, { max: 1 });
-  await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_ID`  (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` bigint(20) NOT NULL  , PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
-  await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_INT` (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` bigint(20) NOT NULL  , PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
-  await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_STR` (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` varchar(144) NOT NULL, PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
-  const creator = await boot(connector);
-  const app = express();
-  app.use('/api/v1', api_v1(creator));
-}*/
 
 (async function boot() {
   console.info(`Starting repository...`);

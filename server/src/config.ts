@@ -16,10 +16,18 @@ export type SessionMongo = {
   ttl: number,
   options: any,
 }
+export type SessionMemory = {
+  type: "memory",
+  url: string,
+  secret: string,
+  collection: string,
+  ttl: number,
+  options: any,
+}
 export type Module = ModuleMultiDb | ModuleSingleDb;
 export type Config = {
   modules: (ModuleMultiDb | ModuleSingleDb)[],
-  session: (SessionMongo),
+  session: (SessionMongo | SessionMemory),
   port: number,
 }
 export const config: Config = {

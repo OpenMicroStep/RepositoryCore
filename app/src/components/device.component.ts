@@ -14,14 +14,27 @@ import { AspectComponent } from '../aspect/aspect.component';
   <div><vo-input-text     label="Serial Number" [object]="this.object" attribute="_r_serial_number" ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Disabled"      [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div><vo-input-checkbox label="Out of order"  [object]="this.object" attribute="_r_out_of_order"  ></vo-input-checkbox></div>
+  <div>
+    <button class="btn btn-default" [disabled]="this.object._disabled" (click)="this.pair()">
+      {{ this._token }}
+    </button>
+  </div>
   <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
 </form>
 `
 })
 export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
+  _token: string = "Code d'appairage";
   constructor(public ctx: AppContext) {
     super(ctx.db);
+  }
+
+  async pair() {
+    let ccc = this._controlCenter.ccc(this);
+    let inv = await ccc.farPromise(this.ctx.session.oneTimePasswordForDevice, this.object);
+    if (inv.hasOneValue())
+      this._token = inv.value().split(/(..)/).filter(s => !!s).join(':');
   }
 
   scope() {

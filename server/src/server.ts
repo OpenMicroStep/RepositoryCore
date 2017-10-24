@@ -24,10 +24,11 @@ export function session(path = '/') : express.RequestHandler {
       resave: true,
     });
   }
-  throw new Error(`unsupported session type ${config.session.type}`);
+  throw new Error(`unsupported session type ${(config.session as any).type}`);
 }
 import './api-multidb';
 import './api-aspect';
+import './api-v1';
 
 (async function boot() {
   console.info(`Starting repository...`);

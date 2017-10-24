@@ -11,7 +11,7 @@ function admin_of(cc: ControlCenter, of: string, suffix: string) {
   return cc.safe(ccc => {
     let session = ccc.findChecked('session') as Session.Aspects.server;
     return { $unionForAlln: "=U(n)",
-      "U(0)=": { $instanceOf: of, _r_administrator: { $has: session.data().person.id } },
+      "U(0)=": { $instanceOf: of, _r_administrator: { $contains: session.data().person.id } },
       "U(n + 1)=": `=U(n):_r_child_${suffix}s`,
     };
   });

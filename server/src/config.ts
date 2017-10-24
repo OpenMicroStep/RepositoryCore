@@ -2,6 +2,7 @@ export type ModuleMultiDb = {
   type: "multidb",
   path: string,
   resolve_customer_uuid_url: string,
+  resolve_customer_name_url: string,
   pg_option: any,
 }
 export type ModuleSingleDb = {

@@ -6,6 +6,7 @@
 #### isAuthenticated(): boolean
 #### loginByPassword(q: { login: string, password: string }): boolean
 #### logout(): void
+#### oneTimePasswordForDevice(device: R_Device): string
 ### aspect server
 #### categories: server client
 ### aspect client
@@ -21,6 +22,15 @@
 ### attributes
 #### `_system_name`: string
 #### `_order`: integer
+### aspect obi
+
+## class R_AuthenticationTicket
+### attributes
+#### `_r_authenticable`: R_Person | R_Application
+#### `_r_device`: R_Device
+#### `_r_token`: string
+#### `_creation_date`: date
+#### `_disabled`: boolean
 ### aspect obi
 
 ## class R_Person

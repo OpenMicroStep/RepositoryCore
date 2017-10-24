@@ -8,9 +8,11 @@ import * as request from 'request-promise-native';
 import {ExpressTransport} from '@openmicrostep/aspects.express';
 import {ModuleMultiDb} from './config';
 import {modules, session} from './server';
+import {api_v1} from './api-v1';
+import {clearSession} from './session';
 
 async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
-  const multidb_cache = new MultiDbCache(m.resolve_customer_uuid_url);
+  const multidb_cache = new MultiDbCache(m);
   console.info(__dirname + "/../../../repository app/");
   app.use('/:client_id/:repo_name', express.static(__dirname + "/../../../repository app/"));
   app.use('/:client_id/:repo_name', async function (req, res, next) {
@@ -19,10 +21,10 @@ async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
       req.multidb_configuration.session(req, res, next);
     }
     catch (err) {
-      console.info(`client_id: ${req.params["client_id"]}, repo_name: ${req.params["repo_name"]}`, err);
+      console.info(`client_id: ${req.params["client_id"]}, repo_name: ${req.params["repo_name"]}`, (err && err.message) || err);
       res.status(403).send();
     }
-  }, api_multidb());
+  }, api_multidb(), api_v1());
 }
 modules['multidb'] = boot_multidb;
 
@@ -61,12 +63,15 @@ export type MultiDbConfig = { creator: CreateContext, client_id: string, repo_na
 export class MultiDbCache {
   static readonly cache_time = 10 * 60 * 1000; // 10 min
   _configurations = new Map<string, LazyLoad<MultiDbConfig>>();
-  constructor(private _resolve_customer_uuid_url: string) {}
+  constructor(private _m: ModuleMultiDb) {}
   async configuration(client_id: string, repo_name: string) : Promise<MultiDbConfig> {
     let cfg = this._configurations.get(client_id);
     if (!cfg)
       this._configurations.set(client_id, cfg = new LazyLoad(async () => {
-        let res = JSON.parse(await request(this._resolve_customer_uuid_url + client_id));
+        let url = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(client_id)
+          ? this._m.resolve_customer_uuid_url + client_id
+          : this._m.resolve_customer_name_url + client_id;
+        let res = JSON.parse(await request(url));
         let repositories = res && res.generals && res.generals.repositories;
         let storages = res && res.generals && res.generals.storages;
         let repo_config = repositories && repositories[repo_name.toUpperCase()];
@@ -90,8 +95,7 @@ export class MultiDbCache {
 declare module "express-serve-static-core" {
   export namespace Express {
     export interface Request {
-      multidb_configuration: MultiDbConfig | undefined;
-      session: any;
+      multidb_configuration: MultiDbConfig;
     }
   }
 }
@@ -99,13 +103,12 @@ declare module "express-serve-static-core" {
 export function api_multidb() : express.Router {
   let router = express.Router();
   let transport = new ExpressTransport(router, async (cstor, id, req) => {
-    const { session, db } = req.multidb_configuration!.creator();
-    if (req.session.client_id !== req.multidb_configuration!.client_id) {
-      req.session.rights = {};
-      req.session.is_admin = false;
-      req.session.is_authenticated = false;
+    const { session, db } = req.multidb_configuration.creator();
+    if (req.session.is_authenticated && req.session.client_id !== req.multidb_configuration.client_id) {
+      clearSession(req.session);
+      console.info(`bad client_id ${req.session.client_id} !== ${req.multidb_configuration.client_id}`);
     }
-    req.session.client_id = req.multidb_configuration!.client_id;
+    req.session.client_id = req.multidb_configuration.client_id;
     session.setData(req.session);
     db.setQueries(queries);
     if (id === 'session')

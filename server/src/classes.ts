@@ -36,7 +36,7 @@ const sub_object_classes = new Map<string, { classname: string, attribute: strin
 function admin_of(ccc: ControlCenterContext, of: string, suffix: string) {
   let session = ccc.findChecked('session') as Session.Aspects.server;
   return { $unionForAlln: "=U(n)",
-    "U(0)=": { $instanceOf: of, _r_administrator: { $has: session.data().person_id } },
+    "U(0)=": { $instanceOf: of, _r_administrator: { $contains: session.data().person_id } },
     "U(n + 1)=": `=U(n):_r_child_${suffix}s`,
   };
 }
@@ -191,28 +191,29 @@ export function buildMaps(ouiDb: OuiDB) {
 export type Context = { cc: ControlCenter, session: Session.Aspects.server, db: DataSource.Aspects.server };
 export type CreateContext = () => Context;
 export const selection = new AspectSelection([
-  interfaces.Session.Aspects.server          ,
-  ObiDataSource.Aspects.server               ,
-  interfaces.R_AuthenticationPK.Aspects.obi  ,
-  interfaces.R_AuthenticationPWD.Aspects.obi ,
-  interfaces.R_AuthenticationLDAP.Aspects.obi,
-  interfaces.R_Person.Aspects.obi            ,
-  interfaces.R_Service.Aspects.obi           ,
-  interfaces.R_DeviceTree.Aspects.obi        ,
-  interfaces.R_AppTree.Aspects.obi           ,
-  interfaces.R_Application.Aspects.obi       ,
-  interfaces.R_Use_Profile.Aspects.obi       ,
-  interfaces.R_Device_Profile.Aspects.obi    ,
-  interfaces.R_License.Aspects.obi           ,
-  interfaces.R_Software_Context.Aspects.obi  ,
-  interfaces.R_Device.Aspects.obi            ,
-  interfaces.R_Authorization.Aspects.obi     ,
-  interfaces.R_Right.Aspects.obi             ,
-  interfaces.R_Element.Aspects.obi           ,
-  interfaces.Parameter.Aspects.obi           ,
-  interfaces.R_LDAPAttribute.Aspects.obi     ,
-  interfaces.R_LDAPGroup.Aspects.obi         ,
-  interfaces.R_LDAPConfiguration.Aspects.obi ,
+  interfaces.Session.Aspects.server            ,
+  ObiDataSource.Aspects.server                 ,
+  interfaces.R_AuthenticationTicket.Aspects.obi,
+  interfaces.R_AuthenticationPK.Aspects.obi    ,
+  interfaces.R_AuthenticationPWD.Aspects.obi   ,
+  interfaces.R_AuthenticationLDAP.Aspects.obi  ,
+  interfaces.R_Person.Aspects.obi              ,
+  interfaces.R_Service.Aspects.obi             ,
+  interfaces.R_DeviceTree.Aspects.obi          ,
+  interfaces.R_AppTree.Aspects.obi             ,
+  interfaces.R_Application.Aspects.obi         ,
+  interfaces.R_Use_Profile.Aspects.obi         ,
+  interfaces.R_Device_Profile.Aspects.obi      ,
+  interfaces.R_License.Aspects.obi             ,
+  interfaces.R_Software_Context.Aspects.obi    ,
+  interfaces.R_Device.Aspects.obi              ,
+  interfaces.R_Authorization.Aspects.obi       ,
+  interfaces.R_Right.Aspects.obi               ,
+  interfaces.R_Element.Aspects.obi             ,
+  interfaces.Parameter.Aspects.obi             ,
+  interfaces.R_LDAPAttribute.Aspects.obi       ,
+  interfaces.R_LDAPGroup.Aspects.obi           ,
+  interfaces.R_LDAPConfiguration.Aspects.obi   ,
 ]);
 export const cfg = new AspectConfiguration(selection);
 export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
@@ -221,7 +222,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     let r = new Map<VersionedObject, string[]>();
     for (let [access_name, objects] of access_lists) {
       let access_names = access_name.split(',');
-      let q: DataSourceInternal.Request = { results: [] };
+      let q: DataSourceInternal.RequestDefinition = { results: [] };
       function apply_access_to(access_name: string, objects: VersionedObject[]) {
         for (let object of objects) {
           let access = r.get(object);

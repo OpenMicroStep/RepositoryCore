@@ -49,7 +49,7 @@ export class DeviceTreeComponent extends VOLoadComponent<R_DeviceTree.Aspects.ob
 
   scope() {
     return {
-      R_AppTree: {
+      R_DeviceTree: {
         '.': ["_label", "_urn", "_disabled", "_r_device", "_r_administrator", "_r_parent_devicetree"],
       },
       R_Person: {

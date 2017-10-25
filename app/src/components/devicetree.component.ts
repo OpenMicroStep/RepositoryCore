@@ -23,7 +23,7 @@ import { DeviceListItemComponent } from './device.component';
     </vo-input-setselect>
   </div>
   <div>
-    <vo-input-setselect label="Appareils" [object]="this.object" attribute="_r_device" query="persons">
+    <vo-input-setselect label="Appareils" [object]="this.object" attribute="_r_device" query="devices">
       <ng-template let-item="$implicit">
         <device-li [object]="item"></device-li>
       </ng-template>
@@ -49,7 +49,7 @@ export class DeviceTreeComponent extends VOLoadComponent<R_DeviceTree.Aspects.ob
 
   scope() {
     return {
-      R_AppTree: {
+      R_DeviceTree: {
         '.': ["_label", "_urn", "_disabled", "_r_device", "_r_administrator", "_r_parent_devicetree"],
       },
       R_Person: {

@@ -9,12 +9,12 @@ import { AspectComponent } from '../aspect/aspect.component';
   selector: 'device',
   template: `
 <form *ngIf="this.object">
-  <div><vo-input-text     label="Label"         [object]="this.object" attribute="_label"           ></vo-input-text    ></div>
   <div><vo-input-text     label="URN"           [object]="this.object" attribute="_urn"             ></vo-input-text    ></div>
+  <div><vo-input-text     label="Label"         [object]="this.object" attribute="_label"           ></vo-input-text    ></div>
   <div><vo-input-text     label="Serial Number" [object]="this.object" attribute="_r_serial_number" ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Disabled"      [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div><vo-input-checkbox label="Out of order"  [object]="this.object" attribute="_r_out_of_order"  ></vo-input-checkbox></div>
-  <div>
+  <div *ngIf="!this.isNew()">
     <button class="btn btn-default" [disabled]="this.object._disabled" (click)="this.pair()">
       {{ this._token }}
     </button>

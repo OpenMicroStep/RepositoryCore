@@ -63,7 +63,7 @@ export async function authenticableFromAuth(ccc: ControlCenterContext, db: DataS
   }
   return Result.fromItemsWithoutValue(inv.items());
 }
-export async function clearSession(session: SessionData) {
+export function clearSession(session: SessionData) {
   session.rights = {};
   session.person = undefined;
   session.device = undefined;
@@ -79,7 +79,7 @@ export async function writeSession(ccc: ControlCenterContext, db: DataSource.Asp
     let res = await ccc.farPromise(db.rawQuery, {
       "A=": {
         $instanceOf: "R_Authorization",
-        r_authenticable: { $contains: authenticated_person_or_app }
+        _r_authenticable: { $contains: authenticated_person_or_app }
       },
       "C=": { $unionForAlln: "=U(n)",
         "U(0)=": "=A:_r_sub_right:_r_application:_r_software_context",

@@ -55,6 +55,9 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
       this._object = this._controlCenter.ccc(this).swapObject(this._object, r.value()[0]);
     }
   }
+  isNew(): boolean {
+    return this.object ? this.object.manager().state() === VersionedObjectManager.State.NEW : true;
+  }
 
   canSave() : boolean {
     return this.object ? this.object.manager().hasChanges() : false;
@@ -70,7 +73,7 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
   }
 
   save() {
-    Invocation.farEvent(this._datasource.save, this.objectsToSave(), VOLoadComponent.saved, this);
+    Invocation.farEvent(this._datasource.save, this.objectsToSave(), VOLoadComponent.saved);
   }
 
   markForDeletion() {

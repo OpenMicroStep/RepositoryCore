@@ -21,7 +21,6 @@ module.exports =  {
     "repository app=":  {
       is: 'target',
       environments: ["=::openms.aspects.angular::"],
-      components: ["=::openms.aspects.angular.dev::"],
       files: ["=files:app ? tsc", "=files:shared ? tsc"],
       copyFiles: [{ is: "group", elements: ["=files:app ? copy"], dest: "", expand: true }],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
@@ -34,8 +33,6 @@ module.exports =  {
     "repository server=":  {
       is: 'target',
       environments: ["=::openms.aspects.node::"],
-      components: ["=::openms.aspects.node.dev::", "=::aspects obi::"],
-      targets: ["aspects obi"],
       files: ["=files:server ? tsc", "=files:shared ? tsc"],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],
       npmPackage: { is: "component",

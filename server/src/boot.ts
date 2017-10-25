@@ -54,12 +54,15 @@ export async function boot(connector: DBConnector) {
     const ent_Parameter = 25;
     const ent_R_AppTree = 10601;
     const ent_R_DeviceTree = 10701;
+    const ent_R_Device = 13101;
     const ent_R_Software_Context = 11301;
     const ent_R_Application = 10901;
     const ent_R_Right = 11701;
     const ent_R_Authorization = 12101;
     const elm_r_superuse = 11999;
+    const elm_r_use = 11990;
     const car_r_administrator = 10564;
+    const car_r_device = 12753;
     const car_r_application = 11763;
     const car_r_software_context = 11133;
     const car_r_authenticable = 12153;
@@ -96,6 +99,20 @@ export async function boot(connector: DBConnector) {
           maker.op(maker.column("TJ_VAL_STR", "VAL"), ConstraintType.Equal, "the r_actions"),
         ]),
       ));
+      let rights = await tr.select(maker.select(
+        [maker.column("R", "VAL_INST", "_id")],
+        maker.from("TJ_VAL_ID", "R"), [
+          maker.join("left", "TJ_VAL_ID", "A", maker.and([
+            maker.compare(maker.column("R", "VAL_INST"), ConstraintType.Equal, maker.column("A", "VAL_INST")),
+            maker.op(maker.column("A", "VAL_CAR"), ConstraintType.Equal, car_r_action), // version
+          ]))
+        ],
+        maker.op(maker.column("A", "VAL"), ConstraintType.Equal, null),
+      )) as { _id: number }[];
+      for (let { _id } of rights) {
+        ouiDb.raw_insert(tr, "ID", _id, car_r_action, elm_r_use);
+      }
+
       console.info("Deleting v1 definition (< 19000)");
       await tr.delete(maker.delete("TJ_VAL_ID", maker.and([
         maker.op(maker.column("TJ_VAL_ID", "VAL_INST"), ConstraintType.LessThan, 19000),
@@ -253,22 +270,6 @@ export async function boot(connector: DBConnector) {
         console.info("Migrate super admin rights")
         {
           {
-            let a_id = await ouiDb.nextObiId(tr);
-            console.info(`R_AppTree`);
-            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AppTree);
-            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
-            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Administrateurs d'applications");
-            await ouiDb.raw_insert(tr, "ID", a_id, car_r_administrator, 19000);
-          }
-          {
-            let a_id = await ouiDb.nextObiId(tr);
-            console.info(`R_DeviceTree`);
-            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_DeviceTree);
-            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
-            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Administrateurs de resources");
-            await ouiDb.raw_insert(tr, "ID", a_id, car_r_administrator, 19000);
-          }
-          {
             let sc_id = await ouiDb.nextObiId(tr);
             let app_id = await ouiDb.nextObiId(tr);
             let r_id = await ouiDb.nextObiId(tr);
@@ -298,6 +299,46 @@ export async function boot(connector: DBConnector) {
             await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Super administrateurs de l'annuaire");
             await ouiDb.raw_insert(tr, "ID", a_id, car_r_authenticable, 19000);
             await ouiDb.raw_insert(tr, "ID", a_id, car_r_sub_right, r_id);
+          }
+          {
+            let a_id = await ouiDb.nextObiId(tr);
+            console.info(`R_AppTree`);
+            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AppTree);
+            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Administrateurs d'applications");
+            await ouiDb.raw_insert(tr, "ID", a_id, car_r_administrator, 19000);
+            let apps = await tr.select(maker.select(
+              [
+                maker.column("A", "VAL_INST", "_id"),
+              ],
+              maker.from("TJ_VAL_ID", "A"), [],
+              maker.and([
+                maker.op(maker.column("A", "VAL_CAR"), ConstraintType.Equal, car_entity),
+                maker.op(maker.column("A", "VAL"), ConstraintType.Equal, ent_R_Application),
+              ])
+            )) as { _id: number }[];
+            for (let { _id } of apps)
+              await ouiDb.raw_insert(tr, "ID", a_id, car_r_application, _id);
+          }
+          {
+            let a_id = await ouiDb.nextObiId(tr);
+            console.info(`R_DeviceTree`);
+            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_DeviceTree);
+            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Administrateurs de resources");
+            await ouiDb.raw_insert(tr, "ID", a_id, car_r_administrator, 19000);
+            let devices = await tr.select(maker.select(
+              [
+                maker.column("D", "VAL_INST", "_id"),
+              ],
+              maker.from("TJ_VAL_ID", "D"), [],
+              maker.and([
+                maker.op(maker.column("D", "VAL_CAR"), ConstraintType.Equal, car_entity),
+                maker.op(maker.column("D", "VAL"), ConstraintType.Equal, ent_R_Device),
+              ])
+            )) as { _id: number }[];
+            for (let { _id } of devices)
+              await ouiDb.raw_insert(tr, "ID", a_id, car_r_device, _id);
           }
         }
 

@@ -73,7 +73,7 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
   }
 
   save() {
-    Invocation.farEvent(this._datasource.save, this.objectsToSave(), VOLoadComponent.saved, this);
+    Invocation.farEvent(this._datasource.save, this.objectsToSave(), VOLoadComponent.saved);
   }
 
   markForDeletion() {

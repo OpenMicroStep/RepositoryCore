@@ -16,6 +16,7 @@ export async function boot(connector: DBConnector) {
       maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.Equal, 9020), // repository version
       maker.op(maker.column("TJ_VAL_INT", "VAL_CAR"), ConstraintType.Equal, 521),
     ]),
+    [maker.sort_column(maker.column("TJ_VAL_INT", "VAL"), true)],
   ));
   let repository_version = rows[0] ? rows[0]["repository_version"] : 0;
   if (repository_version === 0) {
@@ -27,34 +28,71 @@ export async function boot(connector: DBConnector) {
     await ouiDb.injectObis(obis_repo);
   }
   else if (repository_version === 1) {
+    const car_entity = 101;
+    const car_urn = 301;
+    const car_version = 302;
+    const car_label = 232;
+    const car_login = 321;
+    const car_mlogin = 322;
+    const car_int = 521;
+    const car_hashed_password = 323;
+    const car_public_key = 331;
+    const car_private_key = 333;
+    const car_ciphered_private_key = 335;
+    const car_parameter = 501;
+    const car_string = 511;
+    const car_r_authentication = 10020;
+    const car_r_matricule = 10545;
+    const car_next_oid = 401;
+    const car_element = 155;
+    const lst_the_r_actions = 10030;
+    const car_r_action = 11753;
+    const ent_Lst = 15;
+    const ent_R_Person = 10101;
+    const ent_R_AuthenticationPWD = 13701;
+    const ent_R_AuthenticationPK = 13801;
+    const ent_Parameter = 25;
+    const ent_R_AppTree = 10601;
+    const ent_R_DeviceTree = 10701;
+    const ent_R_Software_Context = 11301;
+    const ent_R_Application = 10901;
+    const ent_R_Right = 11701;
+    const ent_R_Authorization = 12101;
+    const elm_r_superuse = 11999;
+    const car_r_administrator = 10564;
+    const car_r_application = 11763;
+    const car_r_software_context = 11133;
+    const car_r_authenticable = 12153;
+    const car_r_sub_right = 12163;
+
     console.info("Upgrading Repository v1 -> v2");
     console.info("Fixing v1 logic");
     {
       let tr = await connector.transaction();
       await tr.update(maker.update(
         "TJ_VAL_ID",
-        [maker.set("VAL_INST", 10030)],
+        [maker.set("VAL_INST", lst_the_r_actions)],
         maker.and([
-          maker.op(maker.column("TJ_VAL_ID", "VAL_INST"), ConstraintType.Equal, 11753),
+          maker.op(maker.column("TJ_VAL_ID", "VAL_INST"), ConstraintType.Equal, car_r_action),
           maker.or([
-            maker.op(maker.column("TJ_VAL_ID", "VAL_CAR"), ConstraintType.Equal, 155),
-            maker.op(maker.column("TJ_VAL_ID", "VAL"), ConstraintType.Equal, 15),
+            maker.op(maker.column("TJ_VAL_ID", "VAL_CAR"), ConstraintType.Equal, car_element),
+            maker.op(maker.column("TJ_VAL_ID", "VAL"), ConstraintType.Equal, ent_Lst),
           ]),
         ]),
       ));
       await tr.update(maker.update(
         "TJ_VAL_ID",
-        [maker.set("VAL", 10030)],
+        [maker.set("VAL", lst_the_r_actions)],
         maker.and([
-          maker.op(maker.column("TJ_VAL_ID", "VAL_INST"), ConstraintType.Equal, 11753),
-          maker.op(maker.column("TJ_VAL_ID", "VAL"), ConstraintType.Equal, 11753),
+          maker.op(maker.column("TJ_VAL_ID", "VAL_INST"), ConstraintType.Equal, car_r_action),
+          maker.op(maker.column("TJ_VAL_ID", "VAL"), ConstraintType.Equal, car_r_action),
         ]),
       ));
       await tr.update(maker.update(
         "TJ_VAL_STR",
-        [maker.set("VAL_INST", 10030)],
+        [maker.set("VAL_INST", lst_the_r_actions)],
         maker.and([
-          maker.op(maker.column("TJ_VAL_STR", "VAL_INST"), ConstraintType.Equal, 11753),
+          maker.op(maker.column("TJ_VAL_STR", "VAL_INST"), ConstraintType.Equal, car_r_action),
           maker.op(maker.column("TJ_VAL_STR", "VAL"), ConstraintType.Equal, "the r_actions"),
         ]),
       ));
@@ -66,7 +104,11 @@ export async function boot(connector: DBConnector) {
         maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.LessThan, 19000),
         maker.op_bind(maker.and([
           maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.Equal, 9020),
-          maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.Equal, 521),
+          maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.Equal, car_int),
+        ]), ConstraintType.Equal, false),
+        maker.op_bind(maker.and([
+          maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.Equal, 9000),
+          maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.Equal, car_next_oid),
         ]), ConstraintType.Equal, false)
       ])));
       await tr.delete(maker.delete("TJ_VAL_STR", maker.and([
@@ -78,9 +120,26 @@ export async function boot(connector: DBConnector) {
     console.info("Inserting v2 definition");
     {
       const reporter = new Reporter();
-      const obis_repo = ouiDb.parseObis(new Parser(reporter, repositoryV2Definition));
+      let obis_repo = ouiDb.parseObis(new Parser(reporter, repositoryV2Definition));
       if (reporter.diagnostics.length > 0)
         return Promise.reject(reporter.diagnostics);
+      obis_repo = obis_repo.filter(obi => {
+        // Remove repository version & next oid
+        if (obi._id === 9000) {
+          let parameter = [...obi.attributes.keys()].find(k => k._id === car_parameter);
+          if (parameter) {
+            let parameters = obi.attributes.get(parameter) as Set<any>;
+            for (let p of parameters) {
+              if (p._id === 9020)
+                parameters.delete(p);
+            }
+          }
+          let next_oid = [...obi.attributes.keys()].find(k => k._id === car_next_oid);
+          if (next_oid)
+            obi.attributes.delete(next_oid);
+        }
+        return obi._id !== 9020;
+      });
       await ouiDb.injectObis(obis_repo);
       await ouiDb.loadSystemObis();
     }
@@ -111,23 +170,6 @@ export async function boot(connector: DBConnector) {
       }
 
       {
-        const car_entity = 101;
-        const car_urn = 301;
-        const car_label = 232;
-        const car_login = 321;
-        const car_mlogin = 322;
-        const car_hashed_password = 323;
-        const car_public_key = 331;
-        const car_private_key = 333;
-        const car_ciphered_private_key = 335;
-        const car_parameter = 501;
-        const car_string = 511;
-        const car_r_authentication = 10020;
-        const car_r_matricule = 10545;
-        const ent_R_Person = 10101;
-        const ent_R_AuthenticationPWD = 13801;
-        const ent_R_AuthenticationPK = 13701;
-        const ent_Parameter = 25;
 
         console.info("migrate r_matricule to R_Person.parameter");
         {
@@ -140,6 +182,7 @@ export async function boot(connector: DBConnector) {
             console.info(`moving r_matricule for: ${_id} matricule=${matricule}`);
             let p_id = await ouiDb.nextObiId(tr);
             await ouiDb.raw_insert(tr, "ID", p_id, car_entity, ent_Parameter);
+            await ouiDb.raw_insert(tr, "INT", p_id, car_version, 1);
             await ouiDb.raw_insert(tr, "STR", p_id, car_label, "matricule");
             await ouiDb.raw_insert(tr, "STR", p_id, car_string, matricule);
             await ouiDb.raw_insert(tr, "ID", _id, car_parameter, p_id);
@@ -179,17 +222,21 @@ export async function boot(connector: DBConnector) {
             ])
           )) as { _id: number, urn: string, login: string, hashed_password: string, public_key: string, private_key: string, ciphered_private_key: string }[];
           for (let { _id, urn, login, hashed_password, public_key, private_key, ciphered_private_key } of persons) {
-            console.info(`moving r_authentication for: ${_id} urn=${urn}, login=${login}, hashed_password=${hashed_password && hashed_password.length}, public_key=${public_key && public_key.length}, private_key=${private_key && private_key.length}, ciphered_private_key=${ciphered_private_key && ciphered_private_key.length}`);
+            console.info(`moving r_authentication for: ${_id} urn=${urn}, login=${login}`);
             if (login && hashed_password) {
               let a_id = await ouiDb.nextObiId(tr);
+              console.info(`R_AuthenticationPWD ${a_id} for: ${_id} login=${login}, hashed_password=${hashed_password && hashed_password.length}`);
               await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AuthenticationPWD);
+              await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
               await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, login);
               await ouiDb.raw_insert(tr, "STR", a_id, car_hashed_password, hashed_password);
               await ouiDb.raw_insert(tr, "ID", _id, car_r_authentication, a_id);
             }
             if (urn && public_key) {
               let a_id = await ouiDb.nextObiId(tr);
+              console.info(`R_AuthenticationPK ${a_id} for: ${_id} urn=${urn}, public_key=${public_key && public_key.length}, private_key=${private_key && private_key.length}, ciphered_private_key=${ciphered_private_key && ciphered_private_key.length}`);
               await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AuthenticationPK);
+              await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
               await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, urn);
               await ouiDb.raw_insert(tr, "STR", a_id, car_public_key, public_key);
               if (private_key)
@@ -205,7 +252,53 @@ export async function boot(connector: DBConnector) {
 
         console.info("Migrate super admin rights")
         {
+          {
+            let a_id = await ouiDb.nextObiId(tr);
+            console.info(`R_AppTree`);
+            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AppTree);
+            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Administrateurs d'applications");
+            await ouiDb.raw_insert(tr, "ID", a_id, car_r_administrator, 19000);
+          }
+          {
+            let a_id = await ouiDb.nextObiId(tr);
+            console.info(`R_DeviceTree`);
+            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_DeviceTree);
+            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Administrateurs de resources");
+            await ouiDb.raw_insert(tr, "ID", a_id, car_r_administrator, 19000);
+          }
+          {
+            let sc_id = await ouiDb.nextObiId(tr);
+            let app_id = await ouiDb.nextObiId(tr);
+            let r_id = await ouiDb.nextObiId(tr);
+            let a_id = await ouiDb.nextObiId(tr);
+            console.info(`R_Application && R_Software_Context`);
+            await ouiDb.raw_insert(tr, "ID", app_id, car_entity, ent_R_Application);
+            await ouiDb.raw_insert(tr, "INT", app_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", app_id, car_urn, "repository");
+            await ouiDb.raw_insert(tr, "STR", app_id, car_label, "Annuaire");
+            await ouiDb.raw_insert(tr, "ID", app_id, car_r_software_context, sc_id);
 
+            await ouiDb.raw_insert(tr, "ID", sc_id, car_entity, ent_R_Software_Context);
+            await ouiDb.raw_insert(tr, "INT", sc_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", sc_id, car_urn, "repository-superadmin");
+            await ouiDb.raw_insert(tr, "STR", sc_id, car_label, "Super administrateurs de l'annuaire");
+
+            await ouiDb.raw_insert(tr, "ID", r_id, car_entity, ent_R_Right);
+            await ouiDb.raw_insert(tr, "INT", r_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", r_id, car_label, "Super administrateurs de l'annuaire");
+            await ouiDb.raw_insert(tr, "ID", r_id, car_r_action, elm_r_superuse);
+            await ouiDb.raw_insert(tr, "ID", r_id, car_r_application, app_id);
+            await ouiDb.raw_insert(tr, "ID", r_id, car_r_software_context, sc_id);
+
+            await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_Authorization);
+            await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
+            await ouiDb.raw_insert(tr, "STR", a_id, car_urn, "repository-superadmin-group");
+            await ouiDb.raw_insert(tr, "STR", a_id, car_label, "Super administrateurs de l'annuaire");
+            await ouiDb.raw_insert(tr, "ID", a_id, car_r_authenticable, 19000);
+            await ouiDb.raw_insert(tr, "ID", a_id, car_r_sub_right, r_id);
+          }
         }
 
         await tr.update(maker.update(

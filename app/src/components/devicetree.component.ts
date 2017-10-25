@@ -23,7 +23,7 @@ import { DeviceListItemComponent } from './device.component';
     </vo-input-setselect>
   </div>
   <div>
-    <vo-input-setselect label="Appareils" [object]="this.object" attribute="_r_device" query="persons">
+    <vo-input-setselect label="Appareils" [object]="this.object" attribute="_r_device" query="devices">
       <ng-template let-item="$implicit">
         <device-li [object]="item"></device-li>
       </ng-template>

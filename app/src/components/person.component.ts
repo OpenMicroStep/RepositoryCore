@@ -4,12 +4,16 @@ import { Notification, VersionedObject, VersionedObjectManager } from '@openmicr
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOLoadComponent, VOComponent } from '../aspect/vo.component';
+import { ServiceListItemComponent } from './service.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
+import { AuthenticationPKComponent } from './authentication.pk.component';
+import { AuthenticationLDAPComponent } from './authentication.ldap.component';
 
 @Component({
   selector: 'person',
   template: `
 <form *ngIf="this.object">
+  <div><vo-input-text     label="URN"          [object]="this.object" attribute="_urn"             ></vo-input-text    ></div>
   <div><vo-input-text     label="Nom"          [object]="this.object" attribute="_last_name"       ></vo-input-text    ></div>
   <div><vo-input-text     label="Prénom"       [object]="this.object" attribute="_first_name"      ></vo-input-text    ></div>
   <div><vo-input-text     label="Deuxième nom" [object]="this.object" attribute="_middle_name"     ></vo-input-text    ></div>
@@ -23,6 +27,13 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
         <authentication-ldap *ngIf="isAuthLDAP(item)" [object]="item"></authentication-ldap>
       </ng-template>
     </vo-input-set>
+  </div>
+  <div>
+    <vo-input-setselect label="Services" [object]="this.object" attribute="_r_services" query="services">
+      <ng-template let-item="$implicit">
+        <service-li [object]="item"></service-li>
+      </ng-template>
+    </vo-input-setselect>
   </div>
   <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
@@ -56,10 +67,11 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
   scope() {
     return {
       R_Person: { '.': ["_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_r_services"] },
+      R_Service: { '_r_services.': ServiceListItemComponent.scope },
       R_AuthenticationPWD: { '_r_authentication.': AuthenticationPWDComponent.scope },
-      R_AuthenticationPK: { '_r_authentication.': ["_mlogin"] },
-      R_AuthenticationLDAP: { '_r_authentication.': ["_mlogin"] },
-    }
+      R_AuthenticationPK: { '_r_authentication.': AuthenticationPKComponent.scope },
+      R_AuthenticationLDAP: { '_r_authentication.': AuthenticationLDAPComponent.scope },
+    };
   }
 
   objectsToSave(): VersionedObject[] {
@@ -77,7 +89,8 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
   template: `{{this.object._first_name}} {{this.object._last_name}}`
 })
 export class PersonListItemComponent extends VOComponent<R_Person.Aspects.obi> {
-  static readonly scope = ['_first_name', '_last_name']
+  static readonly scope = ['_first_name', '_last_name'];
+
   constructor(public ctx: AppContext) {
     super(ctx.cc);
   }

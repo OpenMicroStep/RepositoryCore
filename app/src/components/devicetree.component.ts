@@ -71,7 +71,8 @@ export class DeviceTreeComponent extends VOLoadComponent<R_DeviceTree.Aspects.ob
   template: `{{this.object._label}}`
 })
 export class DeviceTreeListItemComponent extends VOComponent<R_DeviceTree.Aspects.obi> {
-  static readonly scope = ['_label', '_disabled']
+  static readonly scope = ['_label', '_disabled'];
+
   constructor(public ctx: AppContext) {
     super(ctx.cc);
   }

@@ -1,7 +1,7 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_AuthenticationPK } from '../main';
 import { Notification } from '@openmicrostep/aspects';
-import { VOLoadComponent } from '../aspect/vo.component';
+import { VOComponent } from '../aspect/vo.component';
 
 @Component({
   selector: 'authentication-pk',
@@ -10,12 +10,10 @@ import { VOLoadComponent } from '../aspect/vo.component';
   <div><vo-input-text label="Public Key" [object]="this.object" attribute="_public_key"></vo-input-text></div>
 `
 })
-export class AuthenticationPKComponent extends VOLoadComponent<R_AuthenticationPK.Aspects.obi> {
-  constructor(public ctx: AppContext) {
-    super(ctx.db);
-  }
+export class AuthenticationPKComponent extends VOComponent<R_AuthenticationPK.Aspects.obi> {
+  static readonly scope = ["_mlogin", "_public_key"];
 
-  scope() {
-    return ["_mlogin", "_public_key"];
+  constructor(public ctx: AppContext) {
+    super(ctx.cc);
   }
 }

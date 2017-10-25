@@ -9,7 +9,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
 @Component({
   selector: 'software-context-ti',
   template: `
-<li class="list-group-item">
+<li *ngIf="this.object" class="list-group-item">
   <div style="display: flex;align-items: center;justify-content: center;">
     <span *ngIf="this._r_child_contexts.length" class="glyphicon glyphicon"
       [class.glyphicon-menu-right]="!this._expanded"
@@ -149,7 +149,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   <div>
     <div class="form-group has-feedback">
       <label class="control-label">Rights</label>
-      <ul *ngIf="this._rights_loaded" class="list-group">
+      <ul class="list-group">
         <li class="list-group-item" *ngFor="let app of this._applications">
           Application {{app._label}} ({{app._urn}})
           <software-context-ti [object]="app._r_software_context" [app]="app" [auth]="this"></software-context-ti>
@@ -165,7 +165,6 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
 export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspects.obi> {
   _r_authenticabledomains: VOInputSetComponent.Domain[] = [];
   _r_sub_right_domains: VOInputSetComponent.Domain[] = [];
-  _rights_loaded = false;
   _applications: R_Application[] = [];
   _actions: R_Element[] = [];
   _use_profiles: R_Use_Profile[] = [];
@@ -175,13 +174,12 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   constructor(public ctx: AppContext) {
     super(ctx.db);
     this._r_sub_right_domains.push({ label: "right" , create: () => ctx.cc.ccc(this).create<R_Right>("R_Right") });
+    this._controlCenter.ccc(this).farPromise(this.ctx.db.query, { id: "application-tree" }).then(res => this.onTree(res as any));
+    Invocation.farEvent(this.ctx.db.query, { id: "application-tree" }, 'onTree', this);
   }
 
   ngAfterViewInit() {
     super.ngAfterViewInit();
-    this.ctx.cc.notificationCenter().addObserver(this, 'onTree', 'onTree', this);
-    this.ctx.cc.notificationCenter().addObserver(this, 'onRights', 'onRights', this);
-    Invocation.farEvent(this.ctx.db.query, { id: "application-tree" }, 'onTree', this);
   }
 
   isPerson(item) { return item instanceof R_Person; }
@@ -193,29 +191,14 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
       this._controlCenter.ccc(this).swapObjects(this._object ? [...this._object._r_sub_right] : [], s ? [...s._r_sub_right] : []);
     }
     super.loaded(n);
-    this._rights_loaded = false;
-    if (this._object && this._object._r_sub_right.size > 0) {
-      Invocation.farEvent(this.ctx.db.load, {
-        objects: [...this._object._r_sub_right],
-        scope: ["_label", "_r_action", "_r_application", "_r_software_context", "_r_use_profile", "_r_device_profile"]
-      }, "onRights", this);
-    }
-    else {
-      this.onRights();
-    }
   }
 
-  onRights() {
-    this._rights_loaded = true;
-    this._rights_by_ctx = new Map();
-  }
-
-  onTree(notification: Notification<Result<{ "applications": R_Application[], "actions": R_Element[] }>>) {
-    if (!notification.info.hasOneValue()) return;
-    let r = notification.info.value();
-    this._controlCenter.ccc(this).swapObjects(this._applications.map(a => a._r_software_context!), r.applications.map(a => a._r_software_context!));
-    this._applications = this._controlCenter.ccc(this).swapObjects(this._applications, r.applications);
-    this._actions = this._controlCenter.ccc(this).swapObjects(this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
+  onTree(res: Result<{ "applications": R_Application[], "actions": R_Element[] }>) {
+    if (!res.hasOneValue()) return;
+    let r = res.value();
+    let ccc = this._controlCenter.ccc(this);
+    this._applications = ccc.swapObjects(this._applications, r.applications);
+    this._actions = ccc.swapObjects(this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
   }
 
   rightsOnSoftwareContext(sc: R_Software_Context): R_Right[] {

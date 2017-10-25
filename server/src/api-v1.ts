@@ -2,7 +2,6 @@ import {VersionedObject, Identifier, Result} from '@openmicrostep/aspects';
 import {Reporter, AttributePath, AttributeTypes as V, Diagnostic} from '@openmicrostep/msbuildsystem.shared';
 import {MSTE} from '@openmicrostep/mstools';
 import * as express from 'express';
-import 'express-serve-static-core';
 import * as Classes from './classes';
 import {SecureHash, SecurePK} from './securehash';
 import {SessionData, authsByLogin, authenticableFromAuth, writeSession} from './session';
@@ -46,14 +45,14 @@ function ifMSTE(req: express.Request, res: express.Response, next: express.NextF
     req.body = MSTE.parse(req.body);
     next();
   } catch (e) {
-    res.send(400, MSTEEncoded(e));
+    res.status(400).send(MSTEEncoded(e));
   }
 }
 function validate<T>(validator: V.Validator0<T>, req: express.Request, res: express.Response) : T | undefined {
   let reporter = new Reporter();
   let ret = validator.validate(reporter, new AttributePath('req.body'), req.body);
   if (!ret)
-    res.send(400, MSTEEncoded(reporter.diagnostics));
+    res.status(400).send(MSTEEncoded(reporter.diagnostics));
   return ret;
 }
 
@@ -86,7 +85,7 @@ function authOk(ctx: Classes.Context, req: express.Request, res: express.Respons
       if (ok) {
         await writeSession(ccc, ctx.db, a, undefined, req.session);
         res.set("MASH-AUTH-RESPONSE", "SUCCESS");
-        res.send(200, "SUCCESS");
+        res.status(200).send("SUCCESS");
       }
       return ok;
     }
@@ -159,7 +158,7 @@ export function api_v1() : express.Router {
                 if (!save.hasDiagnostics()) {
                   await writeSession(ccc, ctx.db, ticket._r_authenticable, ticket._r_device, req.session);
                   res.set("MASH-AUTH-RESPONSE", "SUCCESS");
-                  res.send(200, "SUCCESS");
+                  res.status(200).send("SUCCESS");
                   ok = true;
                 }
               }
@@ -168,24 +167,24 @@ export function api_v1() : express.Router {
         });
       }
       else if (session.v1_auth) {
-        let password: string, challenge: string;
+        let password: string | undefined, challenge: string | undefined;
         if ((password = req.get('mh-password')) && session.v1_auth.type === 'pwd') {
           ok = await authOk(ctx, req, res, { $instanceOf: Classes.R_AuthenticationPWD, _id: session.v1_auth.id },
-            'hashed password', (hashedPassword) => SecureHash.isChallengeResponseValid(session.v1_auth!.challenge, password, hashedPassword));
+            'hashed password', (hashedPassword) => SecureHash.isChallengeResponseValid(session.v1_auth!.challenge, password!, hashedPassword));
         }
         else if ((challenge = req.get('mh-challenge')) && session.v1_auth.type === 'pk') {
           ok = await authOk(ctx, req, res, { $instanceOf: Classes.R_AuthenticationPK, _id: session.v1_auth.id },
-            'public key', (publickey) => Promise.resolve(SecurePK.isChallengeResponseValid(session.v1_auth!.challenge, challenge, publickey)));
+            'public key', (publickey) => Promise.resolve(SecurePK.isChallengeResponseValid(session.v1_auth!.challenge, challenge!, publickey)));
         }
       }
       else if (!session.is_authenticated) {
-        let login: string, urn: string;
+        let login: string | undefined, urn: string | undefined;
         if ((login = req.get('mh-login'))) {
-          res.send(200, await challengeForLogin(ctx, login, session));
+          res.status(200).send(await challengeForLogin(ctx, login, session));
           ok = true;
         }
         else if ((urn = req.get('mh-urn'))) {
-          res.send(200, await challengeForUrn(ctx, urn, session));
+          res.status(200).send(await challengeForUrn(ctx, urn, session));
           ok = true;
         }
       }
@@ -198,7 +197,7 @@ export function api_v1() : express.Router {
       session.v1_auth = undefined;
       session.is_authenticated = false;
       res.set("MASH-AUTH-RESPONSE", "FAILURE");
-      res.send(403, "FAILURE");
+      res.status(403).send("FAILURE");
     }
   });
   r.get('/logout', ifAuthentified, (req, res) => {
@@ -223,18 +222,18 @@ export function api_v1() : express.Router {
         if (devices.length === 1) {
           let token = await ccc.farPromise(session.oneTimePasswordForDevice, devices[0]);
           if (!token.hasDiagnostics())
-            res.send(200, token.value());
+            res.status(200).send(token.value());
           else
-            res.send(500, "unable to process request");
+            res.status(500).send("unable to process request");
         }
       }
-      res.send(404, "device not found");
+      res.status(404).send("device not found");
     }));
   });
 
   function safe_res<T>(res, p: Promise<void>) {
     p.catch((err) => {
-      res.send(500, "unable to process request");
+      res.status(500).send("unable to process request");
     });
   }
 
@@ -259,9 +258,9 @@ export function api_v1() : express.Router {
         scope: ['urn', 'first name', 'last name', 'middle name'],
       });
       if (inv.hasOneValue())
-        res.send(200, MSTEEncodedVOList(inv.value().persons));
+        res.status(200).send(MSTEEncodedVOList(inv.value().persons));
       else
-        res.send(500, "unable to process request");
+        res.status(500).send("unable to process request");
     }));
   });
 
@@ -304,12 +303,12 @@ export function api_v1() : express.Router {
           services = [...all];
         }
         if (diags.length === 0)
-          res.send(200, MSTEEncodedVOList(services));
+          res.status(200).send(MSTEEncodedVOList(services));
       }
       else
         diags.push(...inv.diagnostics());
       if (diags.length > 0)
-        res.send(500, diags);
+        res.status(500).send(diags);
     }));
   });
 
@@ -370,10 +369,10 @@ export function api_v1() : express.Router {
         ]
       });
       if (inv.hasOneValue()) {
-        res.send(200, MSTEEncodedVOList(inv.value().all));
+        res.status(200).send(MSTEEncodedVOList(inv.value().all));
       }
       else
-        res.send(500, inv.diagnostics());
+        res.status(500).send(inv.diagnostics());
     }));
   });
 
@@ -398,9 +397,9 @@ export function api_v1() : express.Router {
         scope: valid_p.keys,
       });
       if (inv.hasOneValue())
-        res.send(200, MSTEEncodedVOList(inv.value().infos));
+        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
       else
-        res.send(500, "unable to process request");
+        res.status(500).send("unable to process request");
     }));
   });
 
@@ -419,9 +418,9 @@ export function api_v1() : express.Router {
         where: where,
       });
       if (inv.hasOneValue())
-        res.send(200, MSTEEncodedVOList(inv.value().infos));
+        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
       else
-        res.send(500, "unable to process request");
+        res.status(500).send("unable to process request");
     }));
   });
 
@@ -443,9 +442,9 @@ export function api_v1() : express.Router {
         scope: valid_p.keys,
       });
       if (inv.hasOneValue())
-        res.send(200, MSTEEncodedVOList(inv.value().infos));
+        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
       else
-        res.send(500, "unable to process request");
+        res.status(500).send("unable to process request");
     }));
   });
 
@@ -484,9 +483,9 @@ export function api_v1() : express.Router {
       }
       let inv = await ccc.farPromise(db.safeSave, [e]);
       if (inv.hasOneValue())
-        res.send(200, MSTEEncoded({ "urn": e.manager().hasAttributeValue("urn" as any) ? e["urn"] : e.id() }));
+        res.status(200).send(MSTEEncoded({ "urn": e.manager().hasAttributeValue("urn" as any) ? e["urn"] : e.id() }));
       else
-        res.send(400, MSTEEncoded({ "error description": inv.diagnostics() }));
+        res.status(400).send(MSTEEncoded({ "error description": inv.diagnostics() }));
     }));
   });
 
@@ -502,7 +501,7 @@ export function api_v1() : express.Router {
     safe_res(res, cc.safe(async ccc => {
       let inv_q = await ccc.farPromise(db.safeQuery, { name: 'obi', where: { _id: p.ref } });
       if (!inv_q.hasOneValue() || inv_q.value().obi.length !== 1) {
-        res.send(400, MSTEEncoded({ "error description": "entity not found" }));
+        res.status(400).send(MSTEEncoded({ "error description": "entity not found" }));
         return;
       }
       let e = inv_q.value().obi[0];
@@ -513,9 +512,9 @@ export function api_v1() : express.Router {
       }
       let inv_save = await ccc.farPromise(db.safeSave, [e]);
       if (inv_save.hasOneValue())
-        res.send(200, MSTEEncoded(null));
+        res.status(200).send(MSTEEncoded(null));
       else
-        res.send(400, MSTEEncoded({ "error description": inv_save.diagnostics() }));
+        res.status(400).send(MSTEEncoded({ "error description": inv_save.diagnostics() }));
     }));
   });
 
@@ -530,16 +529,16 @@ export function api_v1() : express.Router {
     safe_res(res, cc.safe(async ccc => {
       let invq = await ccc.farPromise(db.safeQuery, { name: 'obi', where: { _id: p.ref } });
       if (!invq.hasOneValue() || invq.value().obi.length !== 1) {
-        res.send(400, MSTEEncoded({ "error description": "entity not found" }));
+        res.status(400).send(MSTEEncoded({ "error description": "entity not found" }));
         return;
       }
       let e = invq.value().obi[0];
       e.manager().delete();
       let invs = await ccc.farPromise(db.safeSave, [e]);
       if (invs.hasOneValue())
-        res.send(200, MSTEEncoded(null));
+        res.status(200).send(MSTEEncoded(null));
       else
-        res.send(400, MSTEEncoded({ "error description": invs.diagnostics() }));
+        res.status(400).send(MSTEEncoded({ "error description": invs.diagnostics() }));
     }));
   });
   return r;

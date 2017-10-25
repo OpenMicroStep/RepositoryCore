@@ -1,6 +1,5 @@
 import {CreateContext} from './classes';
 import * as express from 'express';
-import * as express_s from 'express-serve-static-core';
 import {ExpressTransport} from '@openmicrostep/aspects.express';
 const session = require('express-session');
 

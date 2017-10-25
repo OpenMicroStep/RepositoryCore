@@ -34,6 +34,7 @@ export const config: Config = {
       type: "multidb",
       path: "/",
       resolve_customer_uuid_url: "http://services:8803/admin/resolveCustomerUUID?uuid=",
+      resolve_customer_name_url: "http://services:8803/admin/resolveCustomerName?customer=",
       pg_option: { max: 4 },
     }
   ],

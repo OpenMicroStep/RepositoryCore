@@ -156,16 +156,17 @@ _relation_: `_r_parent_context`
 ### aspect obi
 
 ## class R_Use_Profile
-_sub object_
+_disabled sub object_
 ### attributes
 #### `_label`: string
 ### aspect obi
 
 ## class R_Device_Profile
-_sub object_
+_disabled sub object_
 ### attributes
 #### `_label`: string
 #### `_r_device`: <0,*,R_Device>
+_relation_: `_r_device_profiles`
 ### aspect obi
 
 ## class R_Device
@@ -175,6 +176,8 @@ _sub object_
 #### `_urn`: string
 #### `_r_serial_number`: string
 #### `_r_out_of_order`: boolean
+#### `_r_device_profiles`: <0,*,R_Device_Profile>
+_relation_: `_r_device`
 ### aspect obi
 
 ## class R_Right

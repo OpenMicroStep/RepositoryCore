@@ -6,6 +6,21 @@ import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
 
+
+const labels = {
+  'r_none': { label: 'Aucun', class: 'btn-danger' },
+  'r_authenticate': { label: 'Accès', class: 'btn-info' },
+  'r_use': { label: 'Utilisation', class: 'btn-success' },
+  'r_superuse': { label: 'Admin', class: 'btn-warning' },
+};
+const default_label = { label: 'Aucun', class: 'btn-default' };
+/*
+
+Rights:
+
+ - Application - Device Profile - Use Profile
+  - SC : Right
+ */
 @Component({
   selector: 'software-context-ti',
   template: `
@@ -16,51 +31,17 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
       [class.glyphicon-menu-down]="this._expanded"
       (click)="this._expanded = !this._expanded"></span>
     <span style="flex: 1;margin: 5px;">{{this.object._label}}</span>
-    <div *ngIf="this.allowFastValue()" class="btn-group" role="group">
-      <div class="btn-group" role="group" [class.open]="this._fastIsOpen">
-        <button type="button" class="btn btn-default dropdown-toggle" (click)="this._fastIsOpen = !this._fastIsOpen;">
-          {{this.fastValue()._system_name}}
-          <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" (click)="this._fastIsOpen = false">
-          <li (click)="this.setFastValue(this._UndefinedRight)">
-            <a href="#">{{this._UndefinedRight._system_name}}</a>
-          </li>
-          <li role="separator" class="divider"></li>
-          <li *ngFor="let item of this._auth._actions" (click)="this.setFastValue(item)">
-            <a href="#">{{item._system_name}}</a>
-          </li>
-        </ul>
-      </div>
-      <button type="button" class="btn btn-default"  (click)="this._advanced = !this._advanced;">Advanced</button>
+    <div class="btn-group" role="group">
+      <button type="button"
+       class="btn btn-default" [ngClass]="this.inherited_class()"
+       (click)="this.setValue(this._UndefinedRight)">{{this.inherited()}}</button>
+      <button *ngFor="let item of this._auth._actions" type="button"
+       class="btn" [ngClass]="this.item_class(item)"
+       (click)="this.setValue(item)">{{this.item_name(item)}}</button>
     </div>
   </div>
-  <ul *ngIf="!this.allowFastValue() || this._advanced" class="list-group" style="margin: 0; margin-top: 5px">
-    <li class="list-group-item form-inline" *ngFor="let right of this.rights()">
-      <vo-input-text   label="Label"            [object]="right" attribute="_label"></vo-input-text>
-      <vo-input-select label="Action"           [object]="right" attribute="_r_action"           [items]="this._auth._actions">
-        <ng-template let-item="$implicit">
-          {{item._system_name}}
-        </ng-template>
-      </vo-input-select>
-      <vo-input-select label="Use profile"      [object]="right" attribute="_r_use_profile"      [items]="this._app._r_sub_use_profile">
-        <ng-template let-item="$implicit">
-          {{item._label}}
-        </ng-template>
-      </vo-input-select>
-      <vo-input-select label="Device profile"   [object]="right" attribute="_r_device_profile"   [items]="this._app._r_sub_device_profile">
-        <ng-template let-item="$implicit">
-          {{item._label}}
-        </ng-template>
-      </vo-input-select>
-      <button class="btn btn-warning" type="submit" (click)="this.deleteRight(right)">X</button>
-    </li>
-    <li class="list-group-item">
-      <button class="btn btn-success" type="submit" (click)="this.createRight()">Add right</button>
-    </li>
-  </ul>
   <ul *ngIf="this._expanded !== undefined && this._r_child_contexts.length" [class.hidden]="!this._expanded"  class="list-group" style="margin: 0; margin-top: 5px">
-    <software-context-ti *ngFor="let child of this._r_child_contexts" [object]="child" [app]="this._app" [auth]="this._auth"></software-context-ti>
+    <software-context-ti *ngFor="let child of this._r_child_contexts" [object]="child" [grouped_right]="this._grouped_right" [auth]="this._auth"></software-context-ti>
   </ul>
 </li>
 `
@@ -69,11 +50,11 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   _expanded = undefined;
   _r_child_contexts: R_Software_Context[] = [];
   _auth: AuthorizationComponent;
-  _app: R_Application;
+  _grouped_right: GroupedRights;
   _UndefinedRight = { _system_name: "Undefined" };
 
-  @Input() set app(app) {
-    this._app = app;
+  @Input() set grouped_right(grouped_right) {
+    this._grouped_right = grouped_right;
   }
 
   @Input() set auth(auth) {
@@ -81,7 +62,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   }
 
   _object?: R_Software_Context;
-  get object(): R_Software_Context | undefined {
+  get object() : R_Software_Context | undefined {
     return this._object;
   }
   @Input() set object(item: R_Software_Context | undefined) {
@@ -93,44 +74,65 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
     super(ctx.cc);
   }
 
-  rights() {
-    return this._auth.rightsOnSoftwareContext(this._object!)
-  }
-
-  allowFastValue() {
-    let r = this.rights();
-    return r.length === 0 || (r.length === 1 && !r[0]._r_use_profile && !r[0]._r_device_profile);
-  }
-
-  fastValue() {
-    let r = this.rights();
-    if (r.length > 0)
-      return r[0]._r_action;
-    else
-      return this._UndefinedRight;
-  }
-
-  setFastValue(value: R_Element) {
-    let r = this.rights();
-    if (r.length > 0) {
-      if (value !== this._UndefinedRight)
-        r[0]._r_action = value;
-      else
-        this.deleteRight(r[0]);
+  inherited() {
+    let value: R_Element | undefined = undefined;
+    let sc = this.object!._r_parent_context;
+    while (sc && !value) {
+      let r = this._grouped_right.rights.get(sc);
+      value = r && r._r_action;
+      sc = sc._r_parent_context;
     }
-    else if (value !== this._UndefinedRight)
-      this.createRight()._r_action = value;
+    return `Héritée: ${value ? this.item_name(value) : 'Aucun'}`;
   }
 
-  createRight() {
-    return this._auth.createRight(this.ctx.cc.ccc(this), this._app, this._object!);
+  inherited_class() {
+    let value: R_Element | undefined = undefined;
+    let sc = this.object!._r_parent_context;
+    while (sc && !value) {
+      let r = this._grouped_right.rights.get(sc);
+      value = r && r._r_action;
+      sc = sc._r_parent_context;
+    }
+    return this.item_class(value || this._UndefinedRight, this._UndefinedRight);
   }
 
-  deleteRight(right: R_Right) {
-    this._auth.deleteRight(right)
+  item_class(item: { _system_name: string | undefined }, test_item?: { _system_name: string | undefined }) {
+    let name = item._system_name!;
+    let active = this.value() === (test_item || item);
+    return {
+      [((active && labels[name]) || default_label).class]: true,
+      active: active,
+    };
+  }
+
+  item_name(item: R_Element) {
+    let name = item._system_name!;
+    return labels[name].label || name;
+  }
+
+  right() {
+    return this._grouped_right.rights.get(this._object!) || { _r_action: this._UndefinedRight };
+  }
+
+  value() {
+    return this.right()._r_action;
+  }
+
+  setValue(value: R_Element) {
+    let sc = this._object!;
+    let r = this._grouped_right.rights.get(sc);
+    if (r) {
+      this._auth.deleteRight(this._grouped_right, r);
+    }
+    if (value !== this._UndefinedRight) {
+      r = this._auth.createRight(this.ctx.cc.ccc(this), this._grouped_right, sc);
+      r._r_action = value;
+    }
   }
 }
 
+
+export type GroupedRights = { key: string, app: R_Application, device_profile: R_Device_Profile | undefined, use_profile: R_Use_Profile | undefined, rights: Map<R_Software_Context, R_Right> };
 
 @Component({
   selector: 'authorization',
@@ -150,14 +152,32 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
     <div class="form-group has-feedback">
       <label class="control-label">Rights</label>
       <ul class="list-group">
-        <li class="list-group-item" *ngFor="let app of this._applications">
-          Application {{app._label}} ({{app._urn}})
-          <software-context-ti [object]="app._r_software_context" [app]="app" [auth]="this"></software-context-ti>
+        <li class="list-group-item" *ngFor="let gr of this._grouped_rights">
+          <div>Application {{gr.app._label}} - {{gr.device_profile ? gr.device_profile._label : "Tous les profils d'appareils"}} - {{gr.use_profile ? gr.use_profile._label : "Tous les profils d'utilisation"}}</div>
+          <software-context-ti [object]="gr.app._r_software_context" [grouped_right]="gr" [auth]="this"></software-context-ti>
+        </li>
+        <li class="list-group-item">
+          <input-select [(value)]="selected_app" [items]="_applications">
+            <ng-template let-item="$implicit">
+              <application-li [object]="item"></application-li>
+            </ng-template>
+          </input-select>
+          <input-select [(value)]="_selected_device_profile" [items]="availableDeviceProfiles()">
+            <ng-template let-item="$implicit">
+              {{item._label}}
+            </ng-template>
+          </input-select>
+          <input-select [(value)]="_selected_use_profile" [items]="availableUseProfiles()">
+            <ng-template let-item="$implicit">
+              {{item._label}}
+            </ng-template>
+          </input-select>
+          <button class="btn btn-success" type="submit" [disabled]="!canAdd()" (click)="add()">Ajouter</button>
         </li>
       </ul>
     </div>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
 </form>
 `
@@ -167,9 +187,11 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   _r_sub_right_domains: VOInputSetComponent.Domain[] = [];
   _applications: R_Application[] = [];
   _actions: R_Element[] = [];
-  _use_profiles: R_Use_Profile[] = [];
-  _device_profiles: R_Device_Profile[] = [];
-  _rights_by_ctx = new Map<R_Software_Context, R_Right[]>();
+  _grouped_rights: GroupedRights[] = [];
+  _grouped_rights_by_key = new Map<string, GroupedRights>();
+  _selected_app: R_Application | undefined = undefined;
+  _selected_device_profile: R_Device_Profile | undefined = undefined;
+  _selected_use_profile: R_Use_Profile | undefined = undefined;
 
   constructor(public ctx: AppContext) {
     super(ctx.db);
@@ -185,12 +207,71 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   isPerson(item) { return item instanceof R_Person; }
   isApplication(item) { return item instanceof R_Application; }
 
+  get selected_app() { return this._selected_app; }
+  set selected_app(nv) {
+    this._selected_app = nv;
+    this._selected_device_profile = undefined;
+    this._selected_use_profile = undefined;
+  }
+  availableDeviceProfiles() {
+    return this._selected_app ? [...this._selected_app._r_sub_device_profile].sort((a, b) => a._label! < b._label! ? -1 : +1) : []; // TODO: add a cache
+  }
+  availableUseProfiles() {
+    return this._selected_app ? [...this._selected_app._r_sub_use_profile].sort((a, b) => a._label! < b._label! ? -1 : +1) : []; // TODO: add a cache
+  }
+  add() {
+    let key = this.addKey()!;
+    let g = { key, app: this._selected_app!, device_profile: this._selected_device_profile, use_profile: this._selected_use_profile, rights: new Map() };
+    this._grouped_rights_by_key.set(key, g);
+    this._grouped_rights = [...this._grouped_rights_by_key.values()].sort((a, b) => a.key < b.key ? -1 : +1);
+  }
+
+  addKey() {
+    return this._selected_app && JSON.stringify([this._selected_app!.id(), this._selected_device_profile && this._selected_device_profile.id(), this._selected_use_profile && this._selected_use_profile.id()]);
+  }
+
+  canAdd() : boolean {
+    let key = this.addKey();
+    return key ? !this._grouped_rights_by_key.get(key) : false;
+  }
+
   loaded(n: Notification<Result<R_Authorization.Aspects.obi[]>>) {
     if (n.info.hasOneValue()) {
       let s = n.info.value()[0];
       this._controlCenter.ccc(this).swapObjects(this._object ? [...this._object._r_sub_right] : [], s ? [...s._r_sub_right] : []);
     }
     super.loaded(n);
+    this.buildRightsTree();
+  }
+
+  buildRightsTree() {
+    let invalids: R_Right[] = [];
+    this._grouped_rights_by_key = new Map();
+    for (let right of this.object!._r_sub_right) {
+      let { _r_application: app, _r_device_profile: device_profile, _r_use_profile: use_profile, _r_software_context: sc } = right;
+      if (!app || !sc)
+        invalids.push(right);
+      else {
+        let key = JSON.stringify([app.id(), device_profile && device_profile.id(), use_profile && use_profile.id()]);
+        let g = this._grouped_rights_by_key.get(key);
+        if (!g)
+          this._grouped_rights_by_key.set(key, g = { key, app, device_profile, use_profile, rights: new Map() });
+        let r = g.rights.get(sc!);
+        if (r && r._r_action!._order! < right._r_action!._order!)
+          invalids.push(r);
+        else if (r && right._r_action!._order! < r._r_action!._order!)
+          invalids.push(right);
+        else
+          g.rights.set(sc!, right);
+      }
+    }
+    this._grouped_rights = [...this._grouped_rights_by_key.values()].sort((a, b) => a.key < b.key ? -1 : +1);
+    if (invalids.length > 0) {
+      let nv = new Set(this.object!._r_sub_right);
+      for (let right of invalids)
+        nv.delete(right);
+      this.object!._r_sub_right = nv;
+    }
   }
 
   onTree(res: Result<{ "applications": R_Application[], "actions": R_Element[] }>) {
@@ -201,33 +282,25 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
     this._actions = ccc.swapObjects(this._actions, r.actions).sort((a, b) => a._order! < b._order! ? -1 : 1);
   }
 
-  rightsOnSoftwareContext(sc: R_Software_Context): R_Right[] {
-    let b = this._rights_by_ctx.get(sc);
-    if (b === undefined) {
-      b = [];
-      for (let r of this._object!._r_sub_right) {
-        if (r._r_software_context === sc)
-          b.push(r);
-      }
-      this._rights_by_ctx.set(sc, b);
-    }
-    return b;
-  }
-
-  createRight(ccc: ControlCenterContext, app: R_Application, sc: R_Software_Context) : R_Right {
+  createRight(ccc: ControlCenterContext, key: GroupedRights, sc: R_Software_Context) : R_Right {
     let r = ccc.create<R_Right>("R_Right");
     r._r_action = this._actions[0];
-    r._r_application = app;
+    r._r_application = key.app;
     r._r_software_context = sc;
     this._object!._r_sub_right = new Set(this._object!._r_sub_right).add(r);
-    this._rights_by_ctx.delete(sc);
+    key.rights.set(sc, r);
     return r;
   }
 
-  deleteRight(right: R_Right) {
+  clear() {
+    this.object!.manager().clear();
+    this.buildRightsTree();
+  }
+
+  deleteRight(key: GroupedRights, right: R_Right) {
     let rs = new Set(this._object!._r_sub_right);
     rs.delete(right);
-    this._rights_by_ctx.delete(right._r_software_context!);
+    key.rights.delete(right._r_software_context!);
     this._object!._r_sub_right = rs;
     right.manager().delete();
   }
@@ -249,7 +322,7 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
     };
   }
 
-  objectsToSave(): VersionedObject[] {
+  objectsToSave() : VersionedObject[] {
     return VersionedObjectManager.objectsInScope([this.object!], ["_r_sub_right"]);
   }
 }

@@ -13,7 +13,7 @@ import { VOLoadComponent }  from './vo.component';
 @NgModule({
   imports:      [ CommonModule, FormsModule ],
   declarations: [ VOInputTextComponent, VOInputCheckboxComponent, VOInputSetComponent, VOInputSelectComponent, VOInputSetSelectComponent, InputSelectComponent ],
-  exports:      [ VOInputTextComponent, VOInputCheckboxComponent, VOInputSetComponent, VOInputSelectComponent, VOInputSetSelectComponent ],
+  exports:      [ VOInputTextComponent, VOInputCheckboxComponent, VOInputSetComponent, VOInputSelectComponent, VOInputSetSelectComponent, InputSelectComponent ],
 })
 export class AspectModule {
   static withComponents(components: any[]) {

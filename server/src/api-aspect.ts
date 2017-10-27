@@ -17,15 +17,15 @@ async function boot_singledb(app: express.Router, m: ModuleMultiDb) {
   await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_INT` (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` bigint(20) NOT NULL  , PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
   await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS `TJ_VAL_STR` (`VAL_INST` bigint(20) NOT NULL, `VAL_CAR` bigint(20) NOT NULL, `VAL` varchar(144) NOT NULL, PRIMARY KEY (`VAL_INST`,`VAL_CAR`,`VAL`))', bind: []})
   let creator = await boot(connector);
-  app.use(session);
-  app.use('/', express.static(__dirname + "/../../../repository app/"));
+  app.use('/', session());
+  app.use('/', express.static(__dirname + "/../../../../../openms.aspects.angular/node_modules/repository app/"));
   let transport = new ExpressTransport(app, async (cstor, id, req) => {
-    const {cc, session, db} = creator();
+    const {session, db} = creator();
     session.setData(req.session);
     db.setQueries(queries);
     if (id === 'session')
       return Promise.resolve(session);
-    if (session.data().isAuthenticated === true) {
+    if (session.data().is_authenticated === true) {
       if (id === 'odb')
         return Promise.resolve(db);
       return Promise.reject('not found');

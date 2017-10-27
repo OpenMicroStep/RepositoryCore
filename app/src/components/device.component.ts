@@ -15,17 +15,17 @@ import { DeviceProfileComponent } from './device-profile.component';
   <div><vo-input-text     label="Serial Number" [object]="this.object" attribute="_r_serial_number" ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Disabled"      [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div><vo-input-checkbox label="Out of order"  [object]="this.object" attribute="_r_out_of_order"  ></vo-input-checkbox></div>
-  <div *ngIf="!this.isNew()">
-    <button class="btn btn-default" [disabled]="this.object._disabled" (click)="this.pair()">
-      {{ this._token }}
-    </button>
-  </div>
   <div>
     <vo-input-setselect label="Profiles" [object]="this.object" attribute="_r_device_profiles" query="device-profiles">
       <ng-template let-item="$implicit">
         <device-profile [object]="item"></device-profile>
       </ng-template>
     </vo-input-setselect>
+  </div>
+  <div *ngIf="!this.isNew()">
+    <button class="btn btn-default" [disabled]="this.object._disabled" (click)="this.pair()">
+      {{ this._token }}
+    </button>
   </div>
   <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>

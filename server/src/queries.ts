@@ -97,15 +97,13 @@ queries.set("root-software-contexts", (reporter, query, cc) => ({
   scope: ['_label', '_urn', '_disabled', '_r_parent_context']
 }));
 queries.set("use-profiles", (reporter, query, cc) => ({
-  "application=": ifText({ $instanceOf: "R_Application", _id: query.app_id }, query),
   name: "items",
-  where: "=application:_r_sub_use_profile",
+  where: ifText({ $instanceOf: "R_Use_Profile" }, query),
   scope: ['_label']
 }));
 queries.set("device-profiles", (reporter, query, cc) => ({
-  "application=": ifText({ $instanceOf: "R_Application", _id: query.app_id }, query),
   name: "items",
-  where: "=application:_r_device_profile",
+  where: ifText({ $instanceOf: "R_Device_Profile" }, query),
   scope: ['_label']
 }));
 queries.set("application-tree", (reporter, query, cc) => ({

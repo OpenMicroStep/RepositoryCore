@@ -164,6 +164,9 @@ export async function boot(connector: DBConnector) {
     console.info("Migrating data");
     {
       const tr = await connector.transaction();
+      let nid = await ouiDb.nextObiId(tr);
+      if (nid < 50000)
+        throw new Error("next oid < 50000");
 
       console.info("adding version attribute");
       {

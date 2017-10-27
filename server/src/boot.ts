@@ -267,7 +267,7 @@ export async function boot(connector: DBConnector) {
           }
         }
 
-        console.info("Migrate super admin rights")
+        console.info("Migrate super admin rights");
         {
           {
             let sc_id = await ouiDb.nextObiId(tr);
@@ -341,27 +341,21 @@ export async function boot(connector: DBConnector) {
               await ouiDb.raw_insert(tr, "ID", a_id, car_r_device, _id);
           }
         }
-
-        await tr.update(maker.update(
-          "TJ_VAL_INT",
-          [maker.set("VAL", 2)],
-          maker.and([
-            maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.NotEqual, 9020),
-            maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.NotEqual, 521),
-          ]),
-        ));
       }
 
       console.info("set repository version to 2");
       {
-        await tr.update(maker.update(
+        let sql_update = maker.update(
           "TJ_VAL_INT",
           [maker.set("VAL", 2)],
           maker.and([
-            maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.NotEqual, 9020),
-            maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.NotEqual, 521),
+            maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.Equal, 9020),
+            maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.Equal, 521),
           ]),
-        ));
+        );
+        let nb = await tr.update(sql_update);
+        if (nb !== 1)
+          throw new Error("unable to update repository version");
       }
 
       console.info("commit");

@@ -42,7 +42,7 @@ export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
     let ccc = this._controlCenter.ccc(this);
     let inv = await ccc.farPromise(this.ctx.session.oneTimePasswordForDevice, this.object);
     if (inv.hasOneValue())
-      this._token = inv.value().split(/(..)/).filter(s => !!s).join(':');
+      this._token = inv.value();
   }
 
   scope() {

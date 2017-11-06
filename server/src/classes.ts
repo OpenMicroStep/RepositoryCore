@@ -406,6 +406,16 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       aspectAttribute_to_ObiCar: (a: string) => mapAttributes[a] || a,
       aspectClassname_to_ObiEntity: (c) => mapClasses[c] || c,
       obiEntity_to_aspectClassname: (c) => mapClassesR[c] || c,
+      aspectValue_to_obiValue: (value, attribute: string) => {
+        if (attribute === "_creation_date")
+          return Math.floor(value.getTime() / 1000);
+        return value;
+      },
+      obiValue_to_aspectValue: (value, attribute: string) => {
+        if (attribute === "_creation_date")
+          return new Date(value * 1000);
+        return value;
+      },
     });
     db.setSafeValidators(safeValidators);
     session.manager().setId("session");

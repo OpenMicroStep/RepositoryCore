@@ -66,7 +66,7 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
 
   scope() {
     return {
-      R_Person: { '.': ["_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_r_services"] },
+      R_Person: { '.': ["_urn", "_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_r_services"] },
       R_Service: { '_r_services.': ServiceListItemComponent.scope },
       R_AuthenticationPWD: { '_r_authentication.': AuthenticationPWDComponent.scope },
       R_AuthenticationPK: { '_r_authentication.': AuthenticationPKComponent.scope },

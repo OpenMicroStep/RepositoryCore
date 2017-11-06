@@ -13,7 +13,7 @@ const labels = {
   'r_use': { label: 'Utilisation', class: 'btn-success' },
   'r_superuse': { label: 'Admin', class: 'btn-warning' },
 };
-const default_label = { label: 'Aucun', class: 'btn-default' };
+const default_label = { label: 'Aucun', class: 'btn-danger' };
 /*
 
 Rights:
@@ -51,7 +51,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
   _r_child_contexts: R_Software_Context[] = [];
   _auth: AuthorizationComponent;
   _grouped_right: GroupedRights;
-  _UndefinedRight = { _system_name: "Undefined" };
+  _UndefinedRight = { _system_name: "Undefined", _order: -1 };
 
   @Input() set grouped_right(grouped_right) {
     this._grouped_right = grouped_right;
@@ -74,7 +74,7 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
     super(ctx.cc);
   }
 
-  inherited() {
+  inherited_right() {
     let value: R_Element | undefined = undefined;
     let sc = this.object!._r_parent_context;
     while (sc && !value) {
@@ -82,17 +82,16 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
       value = r && r._r_action;
       sc = sc._r_parent_context;
     }
+    return value;
+  }
+
+  inherited() {
+    let value = this.inherited_right();
     return `Héritée: ${value ? this.item_name(value) : 'Aucun'}`;
   }
 
   inherited_class() {
-    let value: R_Element | undefined = undefined;
-    let sc = this.object!._r_parent_context;
-    while (sc && !value) {
-      let r = this._grouped_right.rights.get(sc);
-      value = r && r._r_action;
-      sc = sc._r_parent_context;
-    }
+    let value = this.inherited_right();
     return this.item_class(value || this._UndefinedRight, this._UndefinedRight);
   }
 
@@ -100,8 +99,8 @@ export class SoftwareContextTreeItemComponent extends AspectComponent {
     let name = item._system_name!;
     let active = this.value() === (test_item || item);
     return {
-      [((active && labels[name]) || default_label).class]: true,
-      active: active,
+      [active ? (labels[name] || default_label).class : "btn-default"]: true,
+      active: !test_item && active,
     };
   }
 

@@ -436,6 +436,7 @@ export async function boot(connector: DBConnector) {
       ]);
       if (res.hasDiagnostics())
         return Promise.reject(res.diagnostics());
+      return Promise.resolve();
     });
   }
   console.info("Repository loaded");

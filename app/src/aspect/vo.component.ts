@@ -60,7 +60,7 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
   }
 
   canSave() : boolean {
-    return this.object ? this.object.manager().hasChanges() : false;
+    return this.object ? this.object.manager().hasChanges() || true : false; // TODO: fix subobjects
   }
 
   canDelete() : boolean {

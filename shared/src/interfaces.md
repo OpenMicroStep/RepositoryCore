@@ -39,7 +39,9 @@
 #### `_urn`: string
 #### `_login`: <0,*,string>
 #### `_r_authentication`: <0,*,R_AuthenticationPWD | R_AuthenticationPK | R_AuthenticationLDAP>
+_sub object_
 #### `_parameter`: <0,*,Parameter>
+_sub object_
 #### `_first_name`: string
 #### `_middle_name`: string
 #### `_last_name`: string
@@ -126,11 +128,16 @@ _sub object_
 #### `_urn`: string
 #### `_login`: <0,*,string>
 #### `_r_authentication`: <0,*,R_AuthenticationPWD | R_AuthenticationPK>
+_sub object_
 #### `_parameter`: <0,*,Parameter>
+_sub object_
 #### `_r_sub_license`: <0,*,R_License>
+_sub object_
 #### `_r_software_context`: R_Software_Context
 #### `_r_sub_use_profile`: <0,*,R_Use_Profile>
+_sub object_
 #### `_r_sub_device_profile`: <0,*,R_Device_Profile>
+_sub object_
 ### aspect obi
 
 ## class R_License
@@ -156,13 +163,13 @@ _relation_: `_r_parent_context`
 ### aspect obi
 
 ## class R_Use_Profile
-_disabled sub object_
+_sub object_
 ### attributes
 #### `_label`: string
 ### aspect obi
 
 ## class R_Device_Profile
-_disabled sub object_
+_sub object_
 ### attributes
 #### `_label`: string
 #### `_r_device`: <0,*,R_Device>
@@ -198,6 +205,7 @@ _sub object_
 #### `_urn`: string
 #### `_r_authenticable`: <0,*,R_Person | R_Application>
 #### `_r_sub_right`: <0,*,R_Right>
+_sub object_
 ### aspect obi
 
 ## class R_LDAPAttribute
@@ -223,5 +231,7 @@ _sub object_
 #### `_ldap_user_base`: string
 #### `_ldap_user_filter`: string
 #### `_ldap_attribute_map`: <0,*,R_LDAPAttribute>
+_sub object_
 #### `_ldap_group_map`: <0,*,R_LDAPGroup>
+_sub object_
 ### aspect obi

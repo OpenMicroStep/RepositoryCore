@@ -22,7 +22,7 @@ import { AspectComponent } from './aspect/aspect.component';
       <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
     </li>
   </ul>
-  <button class="btn btn-success" style="position: absolute;bottom: 15px;right: 20px;" type="submit" (click)="create()">Create</button>
+  <button class="btn btn-success" style="position: absolute;bottom: 15px;right: 20px;" type="submit" (click)="create()">Ajouter</button>
 </div>
 `
 })

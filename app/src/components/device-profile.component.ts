@@ -8,10 +8,17 @@ import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
   selector: 'device-profile',
   template: `
   <div><vo-input-text label="Label"      [object]="this.object" attribute="_label"   ></vo-input-text></div>
+  <div>
+    <vo-input-setselect label="Appareils" [object]="this.object" attribute="_r_device" query="devices">
+      <ng-template let-item="$implicit">
+        <device-li [object]="item"></device-li>
+      </ng-template>
+    </vo-input-setselect>
+  </div>
 `
 })
 export class DeviceProfileComponent extends VOComponent<R_Use_Profile.Aspects.obi> {
-  static readonly scope = ["_label"];
+  static readonly scope = ["_label", "_r_device"];
   _r_device_domains: VOInputSetComponent.Domain[] = [];
   constructor(public ctx: AppContext) {
     super(ctx.cc);

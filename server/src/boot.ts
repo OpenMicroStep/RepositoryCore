@@ -37,7 +37,6 @@ export async function boot(connector: DBConnector) {
     const car_int = 521;
     const car_hashed_password = 323;
     const car_public_key = 331;
-    const car_private_key = 333;
     const car_ciphered_private_key = 335;
     const car_parameter = 501;
     const car_string = 511;
@@ -61,7 +60,7 @@ export async function boot(connector: DBConnector) {
     const ent_R_Authorization = 12101;
     const elm_r_superuse = 11999;
     const elm_r_use = 11990;
-    const car_r_administrator = 10564;
+    const car_r_administrator = 10563;
     const car_r_device = 12753;
     const car_r_application = 11763;
     const car_r_software_context = 11133;

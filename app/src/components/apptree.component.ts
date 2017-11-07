@@ -12,9 +12,9 @@ import { ApplicationListItemComponent } from './application.component';
   selector: 'apptree',
   template: `
 <form *ngIf="this.object">
-  <div><vo-input-text     label="Label"       [object]="this.object" attribute="_label"           ></vo-input-text    ></div>
   <div><vo-input-text     label="URN"         [object]="this.object" attribute="_urn"             ></vo-input-text    ></div>
-  <div><vo-input-checkbox label="Disabled"    [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
+  <div><vo-input-text     label="Nom"         [object]="this.object" attribute="_label"           ></vo-input-text    ></div>
+  <div><vo-input-checkbox label="Désactivé"   [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div>
     <vo-input-setselect label="Administrateurs" [object]="this.object" attribute="_r_administrator" query="persons">
       <ng-template let-item="$implicit">
@@ -36,8 +36,8 @@ import { ApplicationListItemComponent } from './application.component';
       </ng-template>
     </vo-input-select>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
-  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Annuler</button>
+  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
 })

@@ -137,9 +137,9 @@ export type GroupedRights = { key: string, app: R_Application, device_profile: R
   selector: 'authorization',
   template: `
 <form *ngIf="this.object">
-  <div><vo-input-text     label="Urn"         [object]="this.object" attribute="_urn"        ></vo-input-text    ></div>
-  <div><vo-input-text     label="Label"       [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
-  <div><vo-input-checkbox label="Disabled"    [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
+  <div><vo-input-text     label="URN"         [object]="this.object" attribute="_urn"        ></vo-input-text    ></div>
+  <div><vo-input-text     label="Libéllé"     [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
+  <div><vo-input-checkbox label="Désactiver"  [object]="this.object" attribute="_disabled"   ></vo-input-checkbox></div>
   <div>
     <vo-input-setselect label="Personnes" [object]="this.object" attribute="_r_authenticable" query="persons">
       <ng-template let-item="$implicit">
@@ -176,8 +176,8 @@ export type GroupedRights = { key: string, app: R_Application, device_profile: R
       </ul>
     </div>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="clear()">Undo</button>
-  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="clear()">Annuler</button>
+  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
 })

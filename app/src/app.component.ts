@@ -17,8 +17,8 @@ import { Invocation, ControlCenterContext } from '@openmicrostep/aspects';
       </div>
       <div class="collapse navbar-collapse">
         <ul class="nav navbar-nav">
-          <li role="presentation" (click)="_tab = 'persons'"        [class.active]="_tab == 'persons'"       ><a href="#" role="tab">Persons</a></li>
-          <li role="presentation" (click)="_tab = 'devices'"        [class.active]="_tab == 'devices'"       ><a href="#" role="tab">Devices</a></li>
+          <li role="presentation" (click)="_tab = 'persons'"        [class.active]="_tab == 'persons'"       ><a href="#" role="tab">Utilisateurs</a></li>
+          <li role="presentation" (click)="_tab = 'devices'"        [class.active]="_tab == 'devices'"       ><a href="#" role="tab">Appareils</a></li>
           <li role="presentation" (click)="_tab = 'applications'"   [class.active]="_tab == 'applications'"  ><a href="#" role="tab">Applications</a></li>
           <li role="presentation" (click)="_tab = 'authorizations'" [class.active]="_tab == 'authorizations'"><a href="#" role="tab">Autorisations</a></li>
           <li role="presentation" (click)="_tab = 'settings'"       [class.active]="_tab == 'settings'"      ><a href="#" role="tab">Administration</a></li>
@@ -52,15 +52,15 @@ import { Invocation, ControlCenterContext } from '@openmicrostep/aspects';
         <img class="navbar-logo" alt="Logo Logitud" src="images/logo_logitud_@2x.png">
       </div>
       <div class="form-group">
-        <label class="control-label">Login</label>
+        <label class="control-label">Nom d'utilisateur</label>
         <input class="form-control" type="text" name="login" [(ngModel)]="this._login">
       </div>
       <div class="form-group">
-        <label class="control-label">Password</label>
+        <label class="control-label">Mot de passe</label>
         <input class="form-control" type="password" name="password" [(ngModel)]="this._password">
       </div>
       <div class="form-group">
-        <button class="btn btn-primary" type="submit" (click)="this.logIn()">Log me in</button>
+        <button class="btn btn-primary" type="submit" (click)="this.logIn()">Se connecter</button>
       </div>
     </form>
   </div>

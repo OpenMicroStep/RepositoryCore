@@ -233,7 +233,6 @@ export async function boot(connector: DBConnector) {
               join_car("TJ_VAL_STR", "P", "L", car_login),
               join_car("TJ_VAL_STR", "P", "HP", car_hashed_password),
               join_car("TJ_VAL_STR", "P", "PK", car_public_key),
-              join_car("TJ_VAL_STR", "P", "SK", car_private_key),
               join_car("TJ_VAL_STR", "P", "CSK", car_ciphered_private_key),
             ],
             maker.and([
@@ -250,21 +249,19 @@ export async function boot(connector: DBConnector) {
               await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
               await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, login);
               await ouiDb.raw_insert(tr, "STR", a_id, car_hashed_password, hashed_password);
+              if (ciphered_private_key)
+                await ouiDb.raw_insert(tr, "STR", a_id, car_ciphered_private_key, ciphered_private_key);
               await ouiDb.raw_insert(tr, "ID", _id, car_r_authentication, a_id);
             }
-            if (urn && public_key) {
+            if ((urn || login)&& public_key) {
               let a_id = await ouiDb.nextObiId(tr);
               console.info(`R_AuthenticationPK ${a_id} for: ${_id} urn=${urn}, public_key=${public_key && public_key.length}, private_key=${private_key && private_key.length}, ciphered_private_key=${ciphered_private_key && ciphered_private_key.length}`);
               await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AuthenticationPK);
               await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
-              await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, urn);
+              await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, login || urn);
               await ouiDb.raw_insert(tr, "STR", a_id, car_public_key, public_key);
-              if (private_key)
-                await ouiDb.raw_insert(tr, "STR", a_id, car_private_key, private_key);
-              if (ciphered_private_key)
-                await ouiDb.raw_insert(tr, "STR", a_id, car_ciphered_private_key, ciphered_private_key);
               await ouiDb.raw_insert(tr, "ID", _id, car_r_authentication, a_id);
-              if (urn !== login)
+              if (!login && urn !== login)
                 await ouiDb.raw_insert(tr, "STR", _id, car_login, urn);
             }
           }

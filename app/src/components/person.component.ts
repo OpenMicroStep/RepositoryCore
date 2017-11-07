@@ -1,5 +1,5 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD, R_AuthenticationLDAP } from '../main';
+import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD, R_AuthenticationLDAP, Parameter } from '../main';
 import { Notification, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
@@ -8,6 +8,7 @@ import { ServiceListItemComponent } from './service.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
 import { AuthenticationPKComponent } from './authentication.pk.component';
 import { AuthenticationLDAPComponent } from './authentication.ldap.component';
+import { ParameterComponent } from './parameter.component';
 
 @Component({
   selector: 'person',
@@ -35,6 +36,13 @@ import { AuthenticationLDAPComponent } from './authentication.ldap.component';
       </ng-template>
     </vo-input-setselect>
   </div>
+  <div>
+    <vo-input-set label="Paramètres" [object]="this.object" attribute="_parameter" [domains]="this._parameter_domains">
+      <ng-template let-item="$implicit">
+        <parameter [object]="item"></parameter>
+      </ng-template>
+    </vo-input-set>
+  </div>
   <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
   <button class="btn btn-warning" [disabled]="!this.canDelete()" type="submit" (click)="this.delete()">Delete</button>
@@ -43,9 +51,11 @@ import { AuthenticationLDAPComponent } from './authentication.ldap.component';
 })
 export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
   _r_authentication_domains: VOInputSetComponent.Domain[] = [];
+  _parameter_domains: VOInputSetComponent.Domain[] = [];
 
   constructor(public ctx: AppContext) {
     super(ctx.db);
+    let ccc = ctx.cc.ccc(this);
     this._r_authentication_domains.push({
       label: "by password",
       create: () => R_AuthenticationPWD.create(ctx.cc.ccc(this))
@@ -58,6 +68,7 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
       label: "by ldap",
       create: () => R_AuthenticationLDAP.create(ctx.cc.ccc(this))
     });
+    this._parameter_domains           .push({ label: "parameter"     , create: () => Parameter.create(ccc)           });
   }
 
   isAuthPWD(item) { return item instanceof R_AuthenticationPWD; }
@@ -66,16 +77,17 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
 
   scope() {
     return {
-      R_Person: { '.': ["_urn", "_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_r_services"] },
+      R_Person: { '.': ["_urn", "_first_name", "_middle_name", "_last_name", "_disabled", "_mail", "_r_authentication", "_r_services", "_parameter"] },
       R_Service: { '_r_services.': ServiceListItemComponent.scope },
       R_AuthenticationPWD: { '_r_authentication.': AuthenticationPWDComponent.scope },
       R_AuthenticationPK: { '_r_authentication.': AuthenticationPKComponent.scope },
       R_AuthenticationLDAP: { '_r_authentication.': AuthenticationLDAPComponent.scope },
+      Parameter: { '_parameter.': ParameterComponent.scope },
     };
   }
 
   objectsToSave(): VersionedObject[] {
-    return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication"]);
+    return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication", "_parameter"]);
   }
 
   markForDeletion() {

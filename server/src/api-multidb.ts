@@ -14,6 +14,8 @@ import {clearSession} from './session';
 async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
   const multidb_cache = new MultiDbCache(m);
   console.info(__dirname + "/../../../repository app/");
+  let api_v1_r = express.Router();
+  api_v1_r.use('/v1', api_v1());
   app.use('/:client_id/:repo_name', express.static(__dirname + "/../../../repository app/"));
   app.use('/:client_id/:repo_name', async function (req, res, next) {
     try {
@@ -24,7 +26,7 @@ async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
       console.info(`client_id: ${req.params["client_id"]}, repo_name: ${req.params["repo_name"]}`, (err && err.message) || err);
       res.status(403).send();
     }
-  }, api_multidb(), api_v1());
+  }, api_multidb(), api_v1_r);
 }
 modules['multidb'] = boot_multidb;
 

@@ -12,9 +12,9 @@ import {SecureHash} from './securehash';
 export * from '../../shared/src/classes';
 import './session';
 
-const mapClasses = {};
+export const mapClasses = {};
 const mapClassesR = {};
-const mapAttributes = {};
+export const mapAttributes = {};
 type AttributeRights = {
   read: Set<string>,
   create: Set<string>,
@@ -406,14 +406,18 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       aspectAttribute_to_ObiCar: (a: string) => mapAttributes[a] || a,
       aspectClassname_to_ObiEntity: (c) => mapClasses[c] || c,
       obiEntity_to_aspectClassname: (c) => mapClassesR[c] || c,
-      aspectValue_to_obiValue: (value, attribute: string) => {
-        if (attribute === "_creation_date")
+      aspectValue_to_obiValue: (value, attribute: Aspect.InstalledAttribute) => {
+        if (attribute.name === "_creation_date")
           return Math.floor(value.getTime() / 1000);
+        if (attribute.type.type === "primitive" && attribute.type.name === "boolean")
+          return value ? 1 : 0;
         return value;
       },
-      obiValue_to_aspectValue: (value, attribute: string) => {
-        if (attribute === "_creation_date")
+      obiValue_to_aspectValue: (value, attribute: Aspect.InstalledAttribute) => {
+        if (attribute.name === "_creation_date")
           return new Date(value * 1000);
+        if (attribute.type.type === "primitive" && attribute.type.name === "boolean")
+          return value ? true : false;
         return value;
       },
     });

@@ -5,7 +5,8 @@ import * as express from 'express';
 import * as Classes from './classes';
 import {SecureHash, SecurePK} from './securehash';
 import {SessionData, authsByLogin, authenticableFromAuth, writeSession} from './session';
-
+const bodyParser = require('body-parser');
+const raw_parser = bodyParser.text({ type: () => true });
 declare module "express-serve-static-core" {
   interface Request {
     session: SessionData;
@@ -19,34 +20,64 @@ const validateInteger = { validate: function validateInteger(reporter: Reporter,
   return undefined;
 }, traverse: () => 'integer' };
 
-function mapValue(v) {
-  return v instanceof VersionedObject ? v.id() : v;
+function urnOrId(vo: VersionedObject) : string {
+  return (vo.manager().aspect().attributes.has('_urn') && vo.manager().attributeValue("_urn")) || vo.id().toString();
 }
-function MSTEEncodedVOList(vo: VersionedObject[]) : any {
+function VOList(vo: VersionedObject[]) {
+  let encoded = new Set<VersionedObject>();
   let dico = {};
   for (let o of vo) {
-    let r = dico[o.id()] = {};
-    let m = o.manager();
-    for (let [k, v] of m.versionAttributes()) {
-      if (!(v instanceof Set))
-        r[k] = v === undefined ? [] : [mapValue(v)];
-      else
-        r[k] = [...v].map(v => mapValue(v));
-    }
+    encode(o);
   }
-  return MSTEEncoded(dico);
+  return dico;
+
+  function encode(o: VersionedObject) {
+    if (!encoded.has(o)) {
+      encoded.add(o);
+      let m = o.manager();
+      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.name()]]};
+      for (let [k, v] of m.versionAttributes()) {
+        let v1k = Classes.mapAttributes[k] as string;
+        if (v1k === "r_action" && v)
+          v = (v as any as Classes.R_Element)._system_name as any;
+        if (v1k === "parameter" && o instanceof Classes.R_Person) {
+          v1k = "r_matricule";
+          r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
+        }
+        else if (v1k === "r_authentication") {
+          v1k = "r_matricule";
+          r["login"] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD).map(a => a._mlogin);
+          r["ciphered private key"] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPK && a._mlogin === (o as Classes.R_Person)._urn && a._ciphered_private_key).map(a => a._ciphered_private_key);
+        }
+        else if (!(v instanceof Set))
+          r[v1k] = v === undefined ? [] : [mapValue(v)];
+        else
+          r[v1k] = [...v].map(v => mapValue(v));
+      }
+    }
+    return o;
+  }
+
+  function mapValue(v) {
+    return v instanceof VersionedObject ? urnOrId(encode(v)) : v;
+  }
+}
+function MSTEEncodedVOList(vo: VersionedObject[]) : any {
+  return MSTEEncoded(VOList(vo));
 }
 
 function MSTEEncoded(o) : any {
   return MSTE.stringify(o);
 }
 function ifMSTE(req: express.Request, res: express.Response, next: express.NextFunction) {
-  try {
-    req.body = MSTE.parse(req.body);
-    next();
-  } catch (e) {
-    res.status(400).send(MSTEEncoded(e));
-  }
+  raw_parser(req, res, (err) => {
+    try {
+      req.body = MSTE.parse(req.body);
+      next();
+    } catch (e) {
+      res.status(400).send(MSTEEncoded(e));
+    }
+  });
 }
 function validate<T>(validator: V.Validator0<T>, req: express.Request, res: express.Response) : T | undefined {
   let reporter = new Reporter();
@@ -312,6 +343,57 @@ export function api_v1() : express.Router {
     }));
   });
 
+  const validateSmartCardCertificate = V.objectValidator({
+    "publicKey": V.validateString,
+    "uid": V.validateString,
+  }, V.validateAnyToUndefined);
+  r.post('/smartCardCertificate', ifAuthentified, ifMSTE, async (req, res) => {
+    let p = validate(validateSmartCardCertificate, req, res);
+    if (!p) return;
+    let { uid: matricule, publicKey: public_key } = p;
+    let {db, cc} = req.multidb_configuration.creator();
+    safe_res(res, cc.safe(async ccc => {
+      let inv = await ccc.farPromise(db.safeQuery, {
+        name: 'user',
+        where: {
+          $out: "=u",
+          "u=": { $elementOf: { $instanceOf: Classes.R_Person } },
+          "p=": { $elementOf: { $instanceOf: Classes.Parameter, _label: "matricule", _string: matricule } },
+          "=u._parameter": { $contains: "=p" },
+        },
+        scope: {
+          R_Person: {
+            '.': ['_urn', '_r_authentication'],
+          },
+          R_AuthenticationPK: {
+            '_r_authentication.': ['_mlogin', '_public_key'],
+          },
+        },
+      });
+      if (!inv.hasOneValue())
+        res.status(400).send(MSTEEncoded({ "error description": inv.diagnostics() }));
+      else {
+        let { user: [user] } = inv.value() as { user: Classes.R_Person[] };
+        if (!user)
+          res.status(400).send(MSTEEncoded({ "error description": "unable to find matching person" }));
+        else {
+          let pk = [...user._r_authentication].find(a => a instanceof Classes.R_AuthenticationPK && a._mlogin === user._urn) as Classes.R_AuthenticationPK | undefined;
+          if (!pk) {
+            pk = Classes.R_AuthenticationPK.create(ccc);
+            pk._mlogin = user._urn;
+            user._r_authentication = new Set([...user._r_authentication, pk]);
+          }
+          pk._public_key = public_key;
+          let inv_save = await ccc.farPromise(db.safeSave, [user, pk]);
+          if (inv_save.hasOneValue())
+            res.status(200).send(MSTEEncoded(null));
+          else
+            res.status(400).send(MSTEEncoded({ "error description": inv_save.diagnostics() }));
+        }
+      }
+    }));
+  });
+
   r.get('/authorizationBunchsForDeviceSN', ifAuthentified, async (req, res) => {
     let {db, cc} = req.multidb_configuration.creator();
     safe_res(res, cc.safe(async ccc => {
@@ -340,17 +422,12 @@ export function api_v1() : express.Router {
           "r=": { $elementOf: "=rights" },
           "=a._r_sub_right": { $contains: "=r" }
         },
-        "applications=": {
-          $out: "=A",
-          "A=": { $elementOf: { $instanceOf: Classes.R_Application } },
-          "a=": { $elementOf: "=authorizations" },
-          "=a._r_authenticable": { $contains: "=A" },
-        },
+        "applications=": "=rights:_r_application",
         "persons=": {
-          $out: "=A",
-          "A=": { $elementOf: { $instanceOf: Classes.R_Person } },
+          $out: "=u",
+          "u=": { $elementOf: { $instanceOf: Classes.R_Person } },
           "a=": { $elementOf: "=authorizations" },
-          "=a._r_authenticable": { $contains: "=A" }
+          "=a._r_authenticable": { $contains: "=u" },
         },
         results: [
           { name: "all",
@@ -359,17 +436,29 @@ export function api_v1() : express.Router {
               "=use_profiles"   , "=authorizations" , "=applications"   , "=persons"        ,
             ]},
             scope: {
+              R_Right: { '.': ["_label", "_r_action", "_r_application", "_r_software_context", "_r_use_profile", "_r_device_profile"] },
               R_Device: { '.': ["_urn", "_label", "_disabled", "_r_out_of_order", "_r_serial_number"] },
               R_Element: { '.': ["_system_name"] },
               R_Authorization: { '.': ["_urn", "_label", "_disabled", "_r_authenticable", "_r_sub_right"] },
-              R_Person: { '.': ['_urn', '_disabled', "_first_name", "_middle_name", "_last_name", "_mail"] },
-              R_Application: { '.': ["_urn", "_label", "_disabled"] },
+              R_Person: { '.': ['_urn', '_disabled', "_first_name", "_middle_name", "_last_name", "_mail", "_parameter", "_r_authentication"] },
+              R_AuthenticationPWD: { '_r_authentication.': ['_mlogin'] },
+              R_AuthenticationPK: { '_r_authentication.': ['_mlogin', '_ciphered_private_key'] },
+              R_Application: { '.': ["_urn", "_label", "_disabled", "_parameter"] },
+              R_Software_Context: { '_r_software_context.': ["_urn", "_label", "_disabled"] },
+              Parameter: {
+                '_parameter.': ["_label", "_string"],
+              },
             }
           }
         ]
       });
       if (inv.hasOneValue()) {
-        res.status(200).send(MSTEEncodedVOList(inv.value().all));
+        res.status(200).send(MSTEEncoded({
+          protocolVersion: 1,
+          modelVersion: 1,
+          mode: 1,
+          objects: VOList(inv.value().all)
+        }));
       }
       else
         res.status(500).send(inv.diagnostics());

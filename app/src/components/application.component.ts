@@ -8,6 +8,7 @@ import { AuthenticationPWDComponent } from './authentication.pwd.component';
 import { SoftwareContextListItemComponent } from './software-context.component';
 import { UseProfileComponent } from './use-profile.component';
 import { DeviceProfileComponent } from './device-profile.component';
+import { DeviceListItemComponent } from './device.component';
 import { ParameterComponent } from './parameter.component';
 
 @Component({
@@ -93,6 +94,9 @@ export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.
       },
       R_Device_Profile: {
         '_r_sub_device_profile.': DeviceProfileComponent.scope
+      },
+      R_Device: {
+        '_r_sub_device_profile._r_device.': DeviceListItemComponent.scope
       },
     };
   }

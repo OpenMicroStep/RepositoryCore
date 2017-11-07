@@ -15,13 +15,6 @@ import { DeviceProfileComponent } from './device-profile.component';
   <div><vo-input-text     label="Serial Number" [object]="this.object" attribute="_r_serial_number" ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Disabled"      [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div><vo-input-checkbox label="Out of order"  [object]="this.object" attribute="_r_out_of_order"  ></vo-input-checkbox></div>
-  <div>
-    <vo-input-setselect label="Profiles" [object]="this.object" attribute="_r_device_profiles" query="device-profiles">
-      <ng-template let-item="$implicit">
-        <device-profile [object]="item"></device-profile>
-      </ng-template>
-    </vo-input-setselect>
-  </div>
   <div *ngIf="!this.isNew()">
     <button class="btn btn-default" [disabled]="this.object._disabled" (click)="this.pair()">
       {{ this._token }}
@@ -47,8 +40,7 @@ export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
 
   scope() {
     return {
-      R_Device: { '.': ["_label", "_disabled", "_r_out_of_order", "_urn", "_r_serial_number", "_r_device_profiles"] },
-      R_Device_Profile: { '_r_device_profiles.': DeviceProfileComponent.scope },
+      R_Device: { '.': ["_label", "_disabled", "_r_out_of_order", "_urn", "_r_serial_number"] },
     };
   }
 }

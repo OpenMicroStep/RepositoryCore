@@ -15,9 +15,9 @@ import { ParameterComponent } from './parameter.component';
   selector: 'application',
   template: `
 <form *ngIf="this.object">
-  <div><vo-input-text     label="Urn"         [object]="this.object" attribute="_urn"        ></vo-input-text    ></div>
-  <div><vo-input-text     label="Label"       [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
-  <div><vo-input-checkbox label="Disabled"    [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
+  <div><vo-input-text     label="URN"       [object]="this.object" attribute="_urn"        ></vo-input-text    ></div>
+  <div><vo-input-text     label="Nom"       [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
+  <div><vo-input-checkbox label="Désactivé" [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div>
     <vo-input-set label="Authentification" [object]="this.object" attribute="_r_authentication" [domains]="this._r_authentication_domains">
        <ng-template let-item="$implicit">
@@ -27,14 +27,14 @@ import { ParameterComponent } from './parameter.component';
     </vo-input-set>
   </div>
   <div>
-    <vo-input-select label="Software Context" [object]="this.object" attribute="_r_software_context" query="root-software-contexts">
+    <vo-input-select label="Contexte applicatif racine" [object]="this.object" attribute="_r_software_context" query="root-software-contexts">
       <ng-template let-item="$implicit">
         <software-context-li [object]="item"></software-context-li>
       </ng-template>
     </vo-input-select>
   </div>
   <div>
-    <vo-input-set label="Parameters" [object]="this.object" attribute="_parameter" [domains]="this._parameter_domains">
+    <vo-input-set label="Paramètres" [object]="this.object" attribute="_parameter" [domains]="this._parameter_domains">
       <ng-template let-item="$implicit">
         <parameter [object]="item"></parameter>
       </ng-template>
@@ -54,8 +54,8 @@ import { ParameterComponent } from './parameter.component';
       </ng-template>
     </vo-input-set>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
-  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Annuler</button>
+  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
 })

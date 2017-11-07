@@ -6,7 +6,7 @@ import { VOComponent } from '../aspect/vo.component';
 @Component({
   selector: 'authentication-ldap',
   template: `
-  <div><vo-input-text label="Login"      [object]="this.object" attribute="_mlogin"  ></vo-input-text></div>
+  <div><vo-input-text label="Nom d'utilisateur"      [object]="this.object" attribute="_mlogin"  ></vo-input-text></div>
   <div><vo-input-text label="DN"         [object]="this.object" attribute="_ldap_dn"></vo-input-text></div>
 `
 })

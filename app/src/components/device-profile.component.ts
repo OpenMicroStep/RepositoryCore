@@ -7,7 +7,7 @@ import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 @Component({
   selector: 'device-profile',
   template: `
-  <div><vo-input-text label="Label"      [object]="this.object" attribute="_label"   ></vo-input-text></div>
+  <div><vo-input-text label="Libéllé"      [object]="this.object" attribute="_label"   ></vo-input-text></div>
   <div>
     <vo-input-setselect label="Appareils" [object]="this.object" attribute="_r_device" query="devices">
       <ng-template let-item="$implicit">

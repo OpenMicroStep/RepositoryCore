@@ -12,9 +12,9 @@ import { DeviceListItemComponent } from './device.component';
   selector: 'devicetree',
   template: `
 <form *ngIf="this.object">
-  <div><vo-input-text     label="Label"       [object]="this.object" attribute="_label"           ></vo-input-text    ></div>
   <div><vo-input-text     label="URN"         [object]="this.object" attribute="_urn"             ></vo-input-text    ></div>
-  <div><vo-input-checkbox label="Disabled"    [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
+  <div><vo-input-text     label="Nom"         [object]="this.object" attribute="_label"           ></vo-input-text    ></div>
+  <div><vo-input-checkbox label="Désactivé"   [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div>
     <vo-input-setselect label="Administrateurs" [object]="this.object" attribute="_r_administrator" query="persons">
       <ng-template let-item="$implicit">

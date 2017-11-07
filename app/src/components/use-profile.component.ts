@@ -6,7 +6,7 @@ import { VOComponent } from '../aspect/vo.component';
 @Component({
   selector: 'use-profile',
   template: `
-  <div><vo-input-text label="Label"      [object]="this.object" attribute="_label"     ></vo-input-text></div>
+  <div><vo-input-text label="Libéllé"      [object]="this.object" attribute="_label"     ></vo-input-text></div>
 `
 })
 export class UseProfileComponent extends VOComponent<R_Use_Profile.Aspects.obi> {

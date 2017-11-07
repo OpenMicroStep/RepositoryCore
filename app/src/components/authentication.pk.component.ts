@@ -6,8 +6,8 @@ import { VOComponent } from '../aspect/vo.component';
 @Component({
   selector: 'authentication-pk',
   template: `
-  <div><vo-input-text label="Login"      [object]="this.object" attribute="_mlogin"     ></vo-input-text></div>
-  <div><vo-input-text label="Public Key" [object]="this.object" attribute="_public_key"></vo-input-text></div>
+  <div><vo-input-text label="Nom d'utilisateur"      [object]="this.object" attribute="_mlogin"     ></vo-input-text></div>
+  <div><vo-input-text label="Clé publique (PEM)" [object]="this.object" attribute="_public_key"></vo-input-text></div>
 `
 })
 export class AuthenticationPKComponent extends VOComponent<R_AuthenticationPK.Aspects.obi> {

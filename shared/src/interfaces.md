@@ -55,8 +55,6 @@ _sub object_
 ### attributes
 #### `_mlogin`: string
 #### `_public_key`: string
-#### `_private_key`: string
-#### `_ciphered_private_key`: string
 ### aspect obi
 
 ## class R_AuthenticationPWD
@@ -65,6 +63,7 @@ _sub object_
 #### `_mlogin`: string
 #### `_hashed_password`: string
 #### `_must_change_password`: boolean
+#### `_ciphered_private_key`: string
 ### aspect obi
 
 ## class R_AuthenticationLDAP

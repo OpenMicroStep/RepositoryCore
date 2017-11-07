@@ -2017,6 +2017,12 @@ pattern:
   characteristic: must change password
   cardinality: one
   _end:
+pattern:
+  Gab
+  _id: 13790
+  characteristic: ciphered private key
+  cardinality: one
+  _end:
 _end:
 
 ENT
@@ -2053,12 +2059,6 @@ pattern:
   Gab
   _id: 13850
   characteristic: private key
-  cardinality: one
-  _end:
-pattern:
-  Gab
-  _id: 13860
-  characteristic: ciphered private key
   cardinality: one
   _end:
 _end:

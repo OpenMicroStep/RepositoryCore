@@ -45,9 +45,9 @@ function VOList(vo: VersionedObject[]) {
           r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
         }
         else if (v1k === "r_authentication") {
-          v1k = "r_matricule";
-          r["login"] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD).map(a => a._mlogin);
-          r["ciphered private key"] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPK && a._mlogin === (o as Classes.R_Person)._urn && a._ciphered_private_key).map(a => a._ciphered_private_key);
+          let exportables: Classes.R_AuthenticationPWD[] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD && a._ciphered_private_key);
+          r["login"] = exportables.map(a => a._mlogin);
+          r["ciphered private key"] = exportables.map(a => a._ciphered_private_key);
         }
         else if (!(v instanceof Set))
           r[v1k] = v === undefined ? [] : [mapValue(v)];
@@ -441,8 +441,8 @@ export function api_v1() : express.Router {
               R_Element: { '.': ["_system_name"] },
               R_Authorization: { '.': ["_urn", "_label", "_disabled", "_r_authenticable", "_r_sub_right"] },
               R_Person: { '.': ['_urn', '_disabled', "_first_name", "_middle_name", "_last_name", "_mail", "_parameter", "_r_authentication"] },
-              R_AuthenticationPWD: { '_r_authentication.': ['_mlogin'] },
-              R_AuthenticationPK: { '_r_authentication.': ['_mlogin', '_ciphered_private_key'] },
+              R_AuthenticationPWD: { '_r_authentication.': ['_mlogin', '_ciphered_private_key'] },
+              R_AuthenticationPK: { '_r_authentication.': ['_mlogin'] },
               R_Application: { '.': ["_urn", "_label", "_disabled", "_parameter"] },
               R_Software_Context: { '_r_software_context.': ["_urn", "_label", "_disabled"] },
               Parameter: {

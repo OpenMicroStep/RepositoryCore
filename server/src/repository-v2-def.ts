@@ -882,7 +882,7 @@ pattern:  // ENT-R_Service-r_administrator
     _end:
   r_internal right:
     R_Internal Right
-    _id: 10563
+    _id: 10564
     r_operation: create
     r_operation: update
     r_operation: delete
@@ -2347,7 +2347,7 @@ domain entity: R_DeviceTree
 _end:
 
 Car
-_id: 10564
+_id: 10563
 system name: r_administrator
 type: ID
 domain entity: R_Person

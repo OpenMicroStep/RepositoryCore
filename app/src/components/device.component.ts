@@ -38,6 +38,11 @@ export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
       this._token = inv.value();
   }
 
+  setObject(object: R_Device.Aspects.obi | undefined) {
+    super.setObject(object);
+    this._token = "Code d'appairage";
+  }
+
   scope() {
     return {
       R_Device: { '.': ["_label", "_disabled", "_r_out_of_order", "_urn", "_r_serial_number"] },

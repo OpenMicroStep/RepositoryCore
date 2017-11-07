@@ -225,7 +225,6 @@ export async function boot(connector: DBConnector) {
               maker.column("L", "VAL", "login"),
               maker.column("HP", "VAL", "hashed_password"),
               maker.column("PK", "VAL", "public_key"),
-              maker.column("SK", "VAL", "private_key"),
               maker.column("CSK", "VAL", "ciphered_private_key"),
             ],
             maker.from("TJ_VAL_ID", "P"), [

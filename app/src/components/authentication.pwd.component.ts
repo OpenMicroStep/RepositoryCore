@@ -20,6 +20,10 @@ import { VOComponent } from '../aspect/vo.component';
     <span *ngIf="this.class()['has-warning']" class="glyphicon glyphicon-warning-sign form-control-feedback" aria-hidden="true"></span>
     <span *ngIf="this.class()['has-success']" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
   </div>
+  <div class="form-group has-feedback" [ngClass]="this.class()">
+    <label class="control-label">Autoriser sur les appareils</label>
+    <input type="checkbox" class="form-control" [readonly]="!this._object._hashed_password" [(ngModel)]="this._ciphered_private_key">
+  </div>
 </ng-template>
 `
 })
@@ -29,7 +33,14 @@ export class AuthenticationPWDComponent extends VOComponent<R_AuthenticationPWD.
     super(ctx.cc);
   }
 
-  static readonly scope = ["_mlogin", "_hashed_password"];
+  static readonly scope = ["_mlogin", "_hashed_password", "_ciphered_private_key"];
+
+  get _ciphered_private_key() {
+    return this._object!._ciphered_private_key === "";
+  }
+  set _ciphered_private_key(v) {
+    this._object!._ciphered_private_key = v ? "" : undefined;
+  }
 
   class() {
     let isnew = this._object!.manager().state() === VersionedObjectManager.State.NEW;

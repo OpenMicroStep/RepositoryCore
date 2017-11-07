@@ -9,6 +9,8 @@ import {Reporter} from '@openmicrostep/msbuildsystem.shared';
 import {R_AuthenticationPWD, Session} from '../../shared/src/classes';
 import * as interfaces from '../../shared/src/classes';
 import {SecureHash} from './securehash';
+import {exec} from 'child_process';
+import * as crypto from 'crypto';
 export * from '../../shared/src/classes';
 import './session';
 
@@ -368,6 +370,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
   const R_AuthenticationPWD_safe_post_load_context = {
     for_each(vo: R_AuthenticationPWD) {
       vo.manager().filter_anonymize("_hashed_password", "");
+      vo.manager().filter_anonymize("_ciphered_private_key", "");
     },
     finalize() { return Promise.resolve(); }
   };
@@ -379,21 +382,47 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     };
     if (class_name === "R_AuthenticationPWD") {
       v.safe_post_load.push(() => R_AuthenticationPWD_safe_post_load_context);
-      v.safe_pre_save.push(() => {
-        let changes: VersionedObjectManager<R_AuthenticationPWD>[] = [];
+      v.safe_pre_save.push((reporter, datasource) => {
+        let changes: R_AuthenticationPWD[] = [];
         return {
           for_each(vo: R_AuthenticationPWD) {
             if (vo.manager().hasChanges(["_hashed_password"]))
-              changes.push(vo.manager());
+              changes.push(vo);
           },
-          async finalize() : Promise<void> {
-            for (let m of changes) {
-              let hashed_password = await SecureHash.hashedPassword(m.attributeValue("_hashed_password"));
+          async finalize() : Promise<void> { return datasource.controlCenter().safe(async ccc => {
+            let inv = await ccc.farPromise(datasource.rawLoad, { objects: changes, scope: ["_hashed_password", "_ciphered_private_key"] });
+            if (!inv.hasOneValue())
+              return Promise.reject(inv.diagnostics());
+            for (let vo of changes) {
+              let m = vo.manager();
+              let password = m.attributeValue("_hashed_password");
+              let hashed_password = await SecureHash.hashedPassword(password);
               m.setAttributeValue("_hashed_password", hashed_password);
+              let has_weak_pk = m.attributeValue("_ciphered_private_key");
+              if (has_weak_pk) {
+                let hashed_sk_password = await SecureHash.hashedPassword(m.attributeValue("_hashed_password"));
+                let private_key = await new Promise<string>((resolve, reject) => {
+                  exec("openssl genrsa 2048", (err, stdout) => {
+                    if (err) return reject(err);
+                    resolve(stdout);
+                  });
+                });
+                const aes = crypto.createCipher('AES-256-CBC', hashed_sk_password);
+                let encrypted = aes.update(private_key, 'utf8', 'base64');
+                encrypted += aes.final('base64');
+                let [algorithm, hardness, salt] = (hashed_sk_password.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>([a-zA-Z0-9+\/=]+)$/) || []) as string[];
+                let ciphered_private_key = `${algorithm}:${hardness}<${salt}>${encrypted}`;
+                m.setAttributeValue("_ciphered_private_key", ciphered_private_key);
+              }
+              else {
+                m.setAttributeValue("_ciphered_private_key", undefined);
+              }
             }
-          }
+            return Promise.resolve();
+          }); }
         };
       });
+      v.safe_post_save.push(() => R_AuthenticationPWD_safe_post_load_context);
     }
     safeValidators.set(class_name, v);
   }

@@ -45,7 +45,6 @@ module.exports =  {
           "express-session": "^1.15.6",
           "connect-mongo": "^1.3.2",
           "ldapjs": "^1.0.1",
-          "body-parser": "^1.18.2",
           "@openmicrostep/msbuildsystem.shared": "^0.6.3",
           "source-map-support": "^0.4.11",
         },

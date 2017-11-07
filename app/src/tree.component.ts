@@ -53,7 +53,7 @@ export class AdminTreeItemComponent extends VOComponent<VersionedObject> {
       </ng-template>
     </admin-tree-item>
     <li class="list-group-item">
-      <button class="btn btn-success" type="submit" (click)="create()">Create</button>
+      <button class="btn btn-success" type="submit" (click)="create()">Ajouter un groupe d'administration</button>
     </li>
   </ul>
 </div>

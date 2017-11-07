@@ -14,7 +14,7 @@ import { VOInputComponent } from './vo.input.component';
         <button type="button" class="btn btn-danger" (click)="this.delete(item)">X</button>
       </li>
       <li class="list-group-item">
-        <button  *ngFor="let t of this.domains" class="btn btn-success" type="submit" (click)="create(t)">Create {{t.label}}</button>
+        <button  *ngFor="let t of this.domains" class="btn btn-success" type="submit" (click)="create(t)">Créer: {{t.label}}</button>
       </li>
     </ul>
   </div>

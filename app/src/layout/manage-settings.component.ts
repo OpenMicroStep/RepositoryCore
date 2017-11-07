@@ -42,7 +42,7 @@ import { VOLoadComponent }  from '../aspect/vo.component';
     <button class="btn btn-default" [disabled]="!object.manager().hasChanges()" type="submit" (click)="object.manager().clear()">Undo</button>
     <button class="btn btn-primary" [disabled]="!object.manager().hasChanges()" type="submit" (click)="this.saveLDAPConfiguration(object)">Save</button>
   </form>
-  <button class="btn btn-success" type="submit" (click)="createLDAPConfiguration()">Create</button>
+  <button class="btn btn-success" type="submit" (click)="createLDAPConfiguration()">Ajouter une configuration LDAP</button>
 </div>
 `
 })

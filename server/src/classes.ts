@@ -52,7 +52,7 @@ function admin_of_services(ccc: ControlCenterContext) { return admin_of(ccc, "R_
 function admin_of_apptree(ccc: ControlCenterContext) { return admin_of(ccc, "R_AppTree", "apptree"); }
 function admin_of_devicetree(ccc: ControlCenterContext) { return admin_of(ccc, "R_DeviceTree", "devicetree"); }
 function is_super_admin(cc: ControlCenter) {
-  return cc.safe(ccc => (ccc.findChecked('session') as Session.Aspects.server).data().is_super_admin === true);
+  return cc.safe(ccc => (ccc.findChecked('session') as Session.Aspects.server).data().is_admin === true);
 }
 const rights_queries: {
   [s: string]: (ccc: ControlCenterContext, objects: VersionedObject[]) => true | false | DataSourceInternal.ObjectSetDefinition,
@@ -261,6 +261,16 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     return Promise.all(p).then(() => r);
   }
 
+  function safe_is_admin(reporter: Reporter, dataSource: DataSource.Categories.raw) : SafePostLoadContext & SafePreSaveContext {
+    let is_admin = is_super_admin(dataSource.controlCenter());
+    return {
+      for_each(vo, path) {},
+      finalize() {
+        return is_admin ? Promise.resolve() : Promise.reject("not an admin");
+      }
+    };
+  }
+
   function safe_post_load(reporter: Reporter, dataSource: DataSource.Categories.raw) : SafePostLoadContext {
     let all_objects = new Set<VersionedObject>();
     let access_lists = new Map<string, VersionedObject[]>();
@@ -376,8 +386,8 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
   };
   for (let class_name in rights_by_classname) {
     let v: SafeValidator = {
-      safe_post_load: [],
-      safe_pre_save: [],
+      safe_post_load: [safe_is_admin],
+      safe_pre_save: [safe_is_admin],
       safe_post_save: [],
     };
     if (class_name === "R_AuthenticationPWD") {

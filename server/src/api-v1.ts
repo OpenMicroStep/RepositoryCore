@@ -277,7 +277,8 @@ export function api_v1() : express.Router {
   r.post('/matchingPersons', ifAuthentified, ifMSTE, (req, res) => {
     let p = validate(validateMatchingPersons, req, res);
     if (!p) return;
-    let {cc, db} = req.multidb_configuration.creator();
+    let {cc, db, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     let where = {};
     if (p.login)         where["r_authenticable"] = { $contains: { login: p.login }};
     if (p["first name"]) where["first name"]      = { $eq: p["first name"] };
@@ -303,7 +304,8 @@ export function api_v1() : express.Router {
     let p = validate(validateManagedServices, req, res);
     if (!p) return;
     let valid_p = p;
-    let {cc, db} = req.multidb_configuration.creator();
+    let {cc, db, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
       let diags: Diagnostic[] = [];
       let inv = await ccc.farPromise(db.safeQuery, {
@@ -351,7 +353,8 @@ export function api_v1() : express.Router {
     let p = validate(validateSmartCardCertificate, req, res);
     if (!p) return;
     let { uid: matricule, publicKey: public_key } = p;
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'user',
@@ -395,7 +398,8 @@ export function api_v1() : express.Router {
   });
 
   r.get('/authorizationBunchsForDeviceSN', ifAuthentified, async (req, res) => {
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         "devices=": {

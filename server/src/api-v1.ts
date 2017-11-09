@@ -363,7 +363,7 @@ export function api_v1() : express.Router {
         },
         scope: {
           R_Person: {
-            '.': ['_urn', '_r_authentication'],
+            '.': ['_urn', '_r_authentication', '_login'],
           },
           R_AuthenticationPK: {
             '_r_authentication.': ['_mlogin', '_public_key'],
@@ -385,7 +385,7 @@ export function api_v1() : express.Router {
           }
           pk._public_key = public_key;
           let inv_save = await ccc.farPromise(db.safeSave, [user, pk]);
-          if (inv_save.hasOneValue())
+          if (!inv_save.hasDiagnostics())
             res.status(200).send(MSTEEncoded(null));
           else
             res.status(400).send(MSTEEncoded({ "error description": inv_save.diagnostics() }));

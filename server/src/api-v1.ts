@@ -92,19 +92,19 @@ function authOk(ctx: Classes.Context, req: express.Request, res: express.Respons
     let inv = await ccc.farPromise(ctx.db.rawQuery, {
       'auths=': auths,
       'applications=': {
-        $out: '=a',
+        $out: '=app',
         "app=": { $elementOf: { $instanceOf: Classes.R_Application } },
         "auth=": { $elementOf: "=auths" },
         '=app._r_authentication': { $contains: '=auth' },
       },
       'persons=': {
-        $out: '=a',
+        $out: '=person',
         "person=": { $elementOf: { $instanceOf: Classes.R_Person } },
         "auth=": { $elementOf: "=auths" },
         '=person._r_authentication': { $contains: '=auth' },
       },
       results: [
-        {name: 'auths', where: '=auths', scope: ['_login', attr] },
+        {name: 'auths', where: '=auths', scope: ['_mlogin', attr] },
         {name: 'authenticables', where: { $union: ['=applications', '=persons'] }, scope: ['_disabled'] },
       ]
     });
@@ -201,11 +201,11 @@ export function api_v1() : express.Router {
         let password: string | undefined, challenge: string | undefined;
         if ((password = req.get('mh-password')) && session.v1_auth.type === 'pwd') {
           ok = await authOk(ctx, req, res, { $instanceOf: Classes.R_AuthenticationPWD, _id: session.v1_auth.id },
-            'hashed password', (hashedPassword) => SecureHash.isChallengeResponseValid(session.v1_auth!.challenge, password!, hashedPassword));
+            '_hashed_password', (hashedPassword) => SecureHash.isChallengeResponseValid(session.v1_auth!.challenge, password!, hashedPassword));
         }
         else if ((challenge = req.get('mh-challenge')) && session.v1_auth.type === 'pk') {
           ok = await authOk(ctx, req, res, { $instanceOf: Classes.R_AuthenticationPK, _id: session.v1_auth.id },
-            'public key', (publickey) => Promise.resolve(SecurePK.isChallengeResponseValid(session.v1_auth!.challenge, challenge!, publickey)));
+            '_public_key', (publickey) => Promise.resolve(SecurePK.isChallengeResponseValid(session.v1_auth!.challenge, challenge!, publickey)));
         }
       }
       else if (!session.is_authenticated) {

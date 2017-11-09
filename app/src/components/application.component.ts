@@ -5,6 +5,8 @@ import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOComponent, VOLoadComponent } from '../aspect/vo.component';
 import { AuthenticationPWDComponent } from './authentication.pwd.component';
+import { AuthenticationPKComponent } from './authentication.pk.component';
+import { AuthenticationLDAPComponent } from './authentication.ldap.component';
 import { SoftwareContextListItemComponent } from './software-context.component';
 import { UseProfileComponent } from './use-profile.component';
 import { DeviceProfileComponent } from './device-profile.component';
@@ -83,6 +85,9 @@ export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.
       R_Application: {
         '.': ["_label", "_urn", "_r_authentication", "_parameter", "_r_software_context", "_r_sub_use_profile", "_r_sub_device_profile"],
       },
+      R_AuthenticationPWD: { '_r_authentication.': AuthenticationPWDComponent.scope },
+      R_AuthenticationPK: { '_r_authentication.': AuthenticationPKComponent.scope },
+      R_AuthenticationLDAP: { '_r_authentication.': AuthenticationLDAPComponent.scope },
       R_Software_Context: {
         '_r_software_context.': SoftwareContextListItemComponent.scope,
       },

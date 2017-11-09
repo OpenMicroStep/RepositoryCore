@@ -235,7 +235,7 @@ export async function boot(connector: DBConnector) {
             ],
             maker.and([
               maker.op(maker.column("P", "VAL_CAR"), ConstraintType.Equal, car_entity),
-              maker.op(maker.column("P", "VAL"), ConstraintType.Equal, ent_R_Person),
+              maker.op(maker.column("P", "VAL"), ConstraintType.In, [ent_R_Application, ent_R_Person]),
             ])
           )) as { _id: number, urn: string, login: string, hashed_password: string, public_key: string, private_key: string, ciphered_private_key: string }[];
           for (let { _id, urn, login, hashed_password, public_key, private_key, ciphered_private_key } of persons) {

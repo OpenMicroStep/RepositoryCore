@@ -251,15 +251,15 @@ export async function boot(connector: DBConnector) {
                 await ouiDb.raw_insert(tr, "STR", a_id, car_ciphered_private_key, ciphered_private_key);
               await ouiDb.raw_insert(tr, "ID", _id, car_r_authentication, a_id);
             }
-            if ((urn || login)&& public_key) {
+            if (urn && public_key) {
               let a_id = await ouiDb.nextObiId(tr);
               console.info(`R_AuthenticationPK ${a_id} for: ${_id} urn=${urn}, public_key=${public_key && public_key.length}, private_key=${private_key && private_key.length}, ciphered_private_key=${ciphered_private_key && ciphered_private_key.length}`);
               await ouiDb.raw_insert(tr, "ID", a_id, car_entity, ent_R_AuthenticationPK);
               await ouiDb.raw_insert(tr, "INT", a_id, car_version, 1);
-              await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, login || urn);
+              await ouiDb.raw_insert(tr, "STR", a_id, car_mlogin, urn);
               await ouiDb.raw_insert(tr, "STR", a_id, car_public_key, public_key);
               await ouiDb.raw_insert(tr, "ID", _id, car_r_authentication, a_id);
-              if (!login && urn !== login)
+              if (urn !== login)
                 await ouiDb.raw_insert(tr, "STR", _id, car_login, urn);
             }
           }

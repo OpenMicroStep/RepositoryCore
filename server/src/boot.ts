@@ -372,7 +372,7 @@ export async function boot(connector: DBConnector) {
     let {cc, db, session} = creator();
     await cc.safe(async ccc => {
       session.setData({
-        is_super_admin: true,
+        is_admin: true,
       });
 
       let actions = await ccc.farPromise(db.safeQuery, {

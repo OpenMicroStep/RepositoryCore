@@ -397,6 +397,54 @@ export function api_v1() : express.Router {
     }));
   });
 
+  r.get('/allowedApplicationUrnsForAuthenticable', ifAuthentified, (req, res) => {
+    let urn = req.get('mh-urn');
+    if (urn) {
+      let {db, cc, session} = req.multidb_configuration.creator();
+      session.setData(req.session);
+      safe_res(res, cc.safe(async ccc => {
+
+        let inv = await ccc.farPromise(db.rawQuery, {
+          "P=": {
+            $instanceOf: "R_Person",
+            _urn: urn,
+          },
+          "A=": {
+            $out: "=a",
+            "a=": { $elementOf: { $instanceOf: "R_Authorization" } },
+            "p=": { $elementOf: "=P" },
+            "=a._r_authenticable": { $contains: "=p" }
+          },
+          results: [
+            { name: "authorizations", where: "=A", scope: {
+              R_Authorization: { '.': ['_r_sub_right'] },
+              R_Right: { '_r_sub_right.': ['_r_action', '_r_application'] },
+              R_Element: { '_r_sub_right._r_action.': ['_system_name', '_order'] },
+              R_Application: { '_r_sub_right._r_application.': ['_urn', '_r_software_context'] },
+            }},
+          ]
+        });
+        if (inv.hasOneValue()) {
+          let { authorizations } = inv.value() as { authorizations: Classes.R_Authorization[] };
+          let applications = new Set<string>();
+          for (let a of authorizations) {
+            for (let r of a._r_sub_right) {
+              if (r._r_application && r._r_application._urn && r._r_action && r._r_action._system_name !== 'r_none')
+                applications.add(r._r_application._urn);
+            }
+          }
+          res.status(200).send(MSTEEncoded([...applications]));
+        }
+        else {
+          res.status(500).send(inv.diagnostics());
+        }
+      }));
+    }
+    else {
+      res.status(400).send(`header 'mh-urn' was expected`);
+    }
+  });
+
   r.get('/authorizationBunchsForDeviceSN', ifAuthentified, async (req, res) => {
     let {db, cc, session} = req.multidb_configuration.creator();
     session.setData(req.session);

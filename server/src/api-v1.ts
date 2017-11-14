@@ -449,7 +449,7 @@ export function api_v1() : express.Router {
     let {db, cc, session} = req.multidb_configuration.creator();
     session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
-      let inv = await ccc.farPromise(db.safeQuery, {
+      let inv = await ccc.farPromise(db.rawQuery, {
         "devices=": {
           $instanceOf: Classes.R_Device,
           _r_serial_number: req.query.deviceSN,

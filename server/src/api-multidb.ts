@@ -30,30 +30,41 @@ async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
 }
 modules['multidb'] = boot_multidb;
 
+function has_timedout(start_time: number, timeout: number) {
+  return start_time === 0 || start_time + timeout < Date.now();
+}
+
 export class LazyLoad<T> {
+  static readonly work_timeout = 60 * 1000; // 60s timeout
   last_resolve_time = 0;
-  private _wip = false;
+  private _work_start_time = 0;
   private _promise: Promise<T> | undefined = undefined;
   constructor(private get_work: () => Promise<T>) {}
   invalidate_if_older_than(time_in_ms: number) {
-    if (!this._wip && this.last_resolve_time < time_in_ms)
-      this._promise = undefined;
+    if (this.last_resolve_time < time_in_ms)
+      this.invalidate();
   }
   invalidate() {
-    if (!this._wip)
+    if (has_timedout(this._work_start_time, LazyLoad.work_timeout))
       this._promise = undefined;
   }
-  promise() {
+  promise(label = "") {
     if (!this._promise) {
-      this._wip = true;
+      this._work_start_time = Date.now();
       this._promise = (async () => {
         try {
+          console.info(`lazy load ${label} start`);
           let r = await this.get_work();
+          console.info(`lazy load ${label} done`);
           this.last_resolve_time = Date.now();
           return r;
         }
+        catch (e) {
+          console.warn(`lazy load ${label} error`, e);
+          throw e;
+        }
         finally {
-          this._wip = false;
+          this._work_start_time = 0;
         }
       })();
     }
@@ -68,7 +79,7 @@ export class MultiDbCache {
   constructor(private _m: ModuleMultiDb) {}
   async configuration(client_id: string, repo_name: string) : Promise<MultiDbConfig> {
     let cfg = this._configurations.get(client_id);
-    if (!cfg)
+    if (!cfg) {
       this._configurations.set(client_id, cfg = new LazyLoad(async () => {
         let url = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(client_id)
           ? this._m.resolve_customer_uuid_url + client_id
@@ -89,8 +100,9 @@ export class MultiDbCache {
         let creator = await boot(connector);
         return { creator: creator, client_id: client_id, repo_name: repo_name, session: session(`/${client_id}/`) };
       }));
+    }
     cfg.invalidate_if_older_than(Date.now() - MultiDbCache.cache_time);
-    return cfg.promise();
+    return cfg.promise(`${client_id}/${repo_name}`);
   }
 }
 

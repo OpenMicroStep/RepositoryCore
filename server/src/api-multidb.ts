@@ -38,33 +38,48 @@ export class LazyLoad<T> {
   static readonly work_timeout = 60 * 1000; // 60s timeout
   last_resolve_time = 0;
   private _work_start_time = 0;
+  private _work_id = {};
+  private _destroy: () => void = () => {};
   private _promise: Promise<T> | undefined = undefined;
-  constructor(private get_work: () => Promise<T>) {}
+  constructor(private create: () => Promise<{ data: T, destroy(): void }>) {
+
+  }
   invalidate_if_older_than(time_in_ms: number) {
     if (this.last_resolve_time < time_in_ms)
       this.invalidate();
   }
   invalidate() {
-    if (has_timedout(this._work_start_time, LazyLoad.work_timeout))
+    if (has_timedout(this._work_start_time, LazyLoad.work_timeout)) {
+      this._destroy();
+      this._destroy = () => {};
       this._promise = undefined;
+      this._work_id = {};
+    }
   }
   promise(label = "") {
     if (!this._promise) {
       this._work_start_time = Date.now();
+      let work_id = this._work_id = {};
       this._promise = (async () => {
         try {
           console.info(`lazy load ${label} start`);
-          let r = await this.get_work();
-          console.info(`lazy load ${label} done`);
-          this.last_resolve_time = Date.now();
-          return r;
+          let r = await this.create();
+          if (work_id !== this._work_id) {
+            console.info(`lazy load ${label} timedout`);
+            r.destroy();
+          }
+          else {
+            this.last_resolve_time = Date.now();
+            this._work_start_time = 0;
+            this._destroy = r.destroy;
+            console.info(`lazy load ${label} done`);
+          }
+          return r.data;
         }
         catch (e) {
+          this._work_start_time = 0;
           console.warn(`lazy load ${label} error`, e);
           throw e;
-        }
-        finally {
-          this._work_start_time = 0;
         }
       })();
     }
@@ -103,7 +118,10 @@ export class MultiDbCache {
         console.info(`lazy load ${client_id}/${repo_name}: booting`);
         let creator = await boot(connector);
         console.info(`lazy load ${client_id}/${repo_name}: booted`);
-        return { creator: creator, client_id: client_id, repo_name: repo_name, session: session(`/${client_id}/`) };
+        return {
+          data: { creator: creator, client_id: client_id, repo_name: repo_name, session: session(`/${client_id}/`) },
+          destroy: () => connector.close()
+        };
       }));
     }
     cfg.invalidate_if_older_than(Date.now() - MultiDbCache.cache_time);

@@ -517,33 +517,6 @@ export function api_v1() : express.Router {
     }));
   });
 
-  const validateInformationsWithKeysForRefs = V.objectValidator({
-    "keys": V.validateStringList,
-    "refs": V.listValidator(validateInteger),
-  }, V.validateAnyToUndefined);
-  r.post('/informationsWithKeysForRefs', ifAuthentified, ifMSTE, async (req, res) => {
-    let p = validate(validateInformationsWithKeysForRefs, req, res);
-    if (!p) return;
-    let valid_p = p;
-    let {db, cc} = req.multidb_configuration.creator();
-    safe_res(res, cc.safe(async ccc => {
-      let inv = await ccc.farPromise(db.safeQuery, {
-        name: 'infos',
-        where: {
-          $or: {
-            _id: { $in: valid_p.refs },
-            _urn: { $in: valid_p.refs },
-          }
-        },
-        scope: valid_p.keys,
-      });
-      if (inv.hasOneValue())
-        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
-      else
-        res.status(500).send("unable to process request");
-    }));
-  });
-
   function build_where(entity, cars) {
     let where = { $instanceOf: entity };
     for (let car in cars) {
@@ -557,8 +530,38 @@ export function api_v1() : express.Router {
   }
 
   function build_scope(scope) {
-    return scope.map(car => Classes.mapAttributesR[car]);
+    let s = scope.map(car => Classes.mapAttributesR[car]);
+    s.push('_urn');
+    return s;
   }
+
+  const validateInformationsWithKeysForRefs = V.objectValidator({
+    "keys": V.validateStringList,
+    "refs": V.listValidator(validateInteger),
+  }, V.validateAnyToUndefined);
+  r.post('/informationsWithKeysForRefs', ifAuthentified, ifMSTE, async (req, res) => {
+    let p = validate(validateInformationsWithKeysForRefs, req, res);
+    if (!p) return;
+    let valid_p = p;
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
+    safe_res(res, cc.safe(async ccc => {
+      let inv = await ccc.farPromise(db.safeQuery, {
+        name: 'infos',
+        where: {
+          $or: {
+            _id: { $in: valid_p.refs },
+            _urn: { $in: valid_p.refs },
+          }
+        },
+        scope: build_scope(valid_p.keys),
+      });
+      if (inv.hasOneValue())
+        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
+      else
+        res.status(500).send(MSTEEncoded({ "error description": inv.diagnostics() }));
+    }));
+  });
 
   const validateQueryInstancesOfEntityWithCars = V.objectValidator({
     "entity": V.validateString,
@@ -567,17 +570,19 @@ export function api_v1() : express.Router {
   r.post('/queryInstancesOfEntityWithCars', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateQueryInstancesOfEntityWithCars, req, res);
     if (!p) return;
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     let where = build_where(p.entity, p.cars);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'infos',
         where: where,
+        scope: ['_urn'],
       });
       if (inv.hasOneValue())
         res.status(200).send(MSTEEncodedVOList(inv.value().infos));
       else
-        res.status(500).send("unable to process request");
+        res.status(500).send(MSTEEncoded({ "error description": inv.diagnostics() }));
     }));
   });
 
@@ -590,7 +595,8 @@ export function api_v1() : express.Router {
     let p = validate(validateInformationsWithKeysForInstancesOfEntityWithCars, req, res);
     if (!p) return;
     let valid_p = p;
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     let where = build_where(p.entity, p.cars);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
@@ -601,7 +607,7 @@ export function api_v1() : express.Router {
       if (inv.hasOneValue())
         res.status(200).send(MSTEEncodedVOList(inv.value().infos));
       else
-        res.status(500).send("unable to process request");
+        res.status(500).send(MSTEEncoded({ "error description": inv.diagnostics() }));
     }));
   });
 
@@ -622,7 +628,8 @@ export function api_v1() : express.Router {
     let unsafe_p = validate(validateCreateEntityWithCarsWithUpRef, req, res);
     if (!unsafe_p) return;
     let p = unsafe_p;
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
       let e: VersionedObject = ccc.create(p.entity!);
       for (let k in p.cars) {
@@ -654,7 +661,8 @@ export function api_v1() : express.Router {
     let unsafe_p = validate(validateUpdateRefWithCars, req, res);
     if (!unsafe_p) return;
     let p = unsafe_p;
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
       let inv_q = await ccc.farPromise(db.safeQuery, { name: 'obi', where: { _id: p.ref } });
       if (!inv_q.hasOneValue() || inv_q.value().obi.length !== 1) {
@@ -682,7 +690,8 @@ export function api_v1() : express.Router {
     let unsafe_p = validate(validateDeleteRef, req, res);
     if (!unsafe_p) return;
     let p = unsafe_p;
-    let {db, cc} = req.multidb_configuration.creator();
+    let {db, cc, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
       let invq = await ccc.farPromise(db.safeQuery, { name: 'obi', where: { _id: p.ref } });
       if (!invq.hasOneValue() || invq.value().obi.length !== 1) {

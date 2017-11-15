@@ -85,9 +85,10 @@ export namespace SecureHash {
   }
 
   export async function isChallengeResponseValid(challenge: string, response: string, hashedPassword: string): Promise<boolean> {
-    let matches = challenge.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>$/);
-    if(matches) {
-      let expect = await computeHash(hashedPassword, +matches[4], +matches[5], matches[6]);
+    let matches_res = challenge.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>$/);
+    let matches_db = hashedPassword.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>(.+)$/);
+    if (matches_res && matches_db) {
+      let expect = await computeHash(matches_db[4], +matches_res[4], +matches_res[5], matches_res[6]);
       return response === expect;
     }
     return Promise.reject(`bad challenge format`);
@@ -95,7 +96,7 @@ export namespace SecureHash {
 
   export async function hashedPasswordFromRequest(password, hashInfo): Promise<string> {
     var matches = hashInfo.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>$/);
-    if(matches) {
+    if (matches) {
       let algorithm = +matches[1];
       let hardness = +matches[2];
       let salt = matches[3];

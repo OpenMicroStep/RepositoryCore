@@ -546,18 +546,19 @@ export function api_v1() : express.Router {
     let {db, cc, session} = req.multidb_configuration.creator();
     session.setData(req.session);
     safe_res(res, cc.safe(async ccc => {
-      let inv = await ccc.farPromise(db.safeQuery, {
+      let inv: Result = await ccc.farPromise(db.safeQuery, {
         name: 'infos',
         where: {
           $or: [
             { _id: { $in: valid_p.refs } },
             { _urn: { $in: valid_p.refs } },
           ]
-        },
-        scope: build_scope(valid_p.keys),
+        }
       });
       if (inv.hasOneValue())
-        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
+        inv = await ccc.farPromise(db.safeLoad, { objects: inv.value().infos, scope: build_scope(valid_p.keys) });
+      if (inv.hasOneValue())
+        res.status(200).send(MSTEEncodedVOList(inv.value()));
       else
         res.status(500).send(MSTEEncoded({ "error description": inv.diagnostics() }));
     }));

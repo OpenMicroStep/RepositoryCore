@@ -129,11 +129,11 @@ async function challengeForLogin(ctx: Classes.Context, login: string, session: S
     let inv = await authsByLogin(ccc, ctx.db, login);
     let challenge: string | undefined;
     if (inv.hasOneValue()) {
-      let auths = inv.value();
-      if (auths.length === 1 && auths[0] instanceof Classes.R_AuthenticationPWD) {
-        challenge = await SecureHash.challenge(auths[0]["hashed password"]);
+      let [auth] = inv.value();
+      if (auth instanceof Classes.R_AuthenticationPWD && auth._hashed_password) {
+        challenge = await SecureHash.challenge(auth._hashed_password!);
         if (challenge)
-          session.v1_auth = { type: 'pwd', id: auths[0].id(), challenge: challenge };
+          session.v1_auth = { type: 'pwd', id: auth.id(), challenge: challenge };
       }
     }
     return challenge || SecureHash.fakeChallenge();

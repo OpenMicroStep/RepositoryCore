@@ -549,10 +549,10 @@ export function api_v1() : express.Router {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'infos',
         where: {
-          $or: {
-            _id: { $in: valid_p.refs },
-            _urn: { $in: valid_p.refs },
-          }
+          $or: [
+            { _id: { $in: valid_p.refs } },
+            { _urn: { $in: valid_p.refs } },
+          ]
         },
         scope: build_scope(valid_p.keys),
       });

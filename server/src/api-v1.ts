@@ -580,7 +580,7 @@ export function api_v1() : express.Router {
         scope: ['_urn'],
       });
       if (inv.hasOneValue())
-        res.status(200).send(MSTEEncodedVOList(inv.value().infos));
+        res.status(200).send(MSTEEncoded(Object.keys(VOList(inv.value().infos))));
       else
         res.status(500).send(MSTEEncoded({ "error description": inv.diagnostics() }));
     }));

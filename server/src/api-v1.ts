@@ -1,4 +1,4 @@
-import {VersionedObject, Identifier, Result} from '@openmicrostep/aspects';
+import {VersionedObject, ControlCenter, Result} from '@openmicrostep/aspects';
 import {Reporter, AttributePath, AttributeTypes as V, Diagnostic} from '@openmicrostep/msbuildsystem.shared';
 import {MSTE} from '@openmicrostep/mstools';
 import * as express from 'express';
@@ -517,13 +517,15 @@ export function api_v1() : express.Router {
     }));
   });
 
-  function build_where(entity, cars) {
+  function build_where(cc: ControlCenter, entity, cars) {
+    let aspect = cc.aspectChecked(entity);
     let where = { $instanceOf: entity };
     for (let car in cars) {
       let v = cars[car];
       let _car = Classes.mapAttributesR[car];
       if (_car) {
-        where[_car] = v;
+        let a = aspect.attributes.get(_car)!;
+        where[_car] = a.contains_vo ? (typeof v === "string" ? { _urn: v } : { _id: v }) : v;
       }
     }
     return where;
@@ -537,7 +539,7 @@ export function api_v1() : express.Router {
 
   const validateInformationsWithKeysForRefs = V.objectValidator({
     "keys": V.validateStringList,
-    "refs": V.listValidator(validateInteger),
+    "refs": V.validateArray,
   }, V.validateAnyToUndefined);
   r.post('/informationsWithKeysForRefs', ifAuthentified, ifMSTE, async (req, res) => {
     let p = validate(validateInformationsWithKeysForRefs, req, res);
@@ -573,7 +575,7 @@ export function api_v1() : express.Router {
     if (!p) return;
     let {db, cc, session} = req.multidb_configuration.creator();
     session.setData(req.session);
-    let where = build_where(p.entity, p.cars);
+    let where = build_where(cc, p.entity, p.cars);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'infos',
@@ -598,7 +600,7 @@ export function api_v1() : express.Router {
     let valid_p = p;
     let {db, cc, session} = req.multidb_configuration.creator();
     session.setData(req.session);
-    let where = build_where(p.entity, p.cars);
+    let where = build_where(cc, p.entity, p.cars);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'infos',

@@ -81,23 +81,28 @@ export class MultiDbCache {
     let cfg = this._configurations.get(client_id);
     if (!cfg) {
       this._configurations.set(client_id, cfg = new LazyLoad(async () => {
+        console.info(`lazy load ${client_id}/${repo_name}: begin`);
         let url = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(client_id)
           ? this._m.resolve_customer_uuid_url + client_id
           : this._m.resolve_customer_name_url + client_id;
         let res = JSON.parse(await request(url));
+        console.info(`lazy load ${client_id}/${repo_name}: resolved`);
         let repositories = res && res.generals && res.generals.repositories;
         let storages = res && res.generals && res.generals.storages;
         let repo_config = repositories && repositories[repo_name.toUpperCase()];
         let db = storages && repo_config && storages[repo_config.storage];
         if (!repo_config || !db || db["type"] !== "postgresql")
           return Promise.reject(`no repository configuration found`);
+        console.info(`lazy load ${client_id}/${repo_name}: pg`);
         const pg = require('pg');
         pg.types.setTypeParser(20, val => parseInt(val)); // BIGINT as number not string
         const connector = PostgresDBConnectorFactory(pg, db, { max: 4 });
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_ID"  ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_INT" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_STR" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" TEXT NOT NULL, PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
+        console.info(`lazy load ${client_id}/${repo_name}: booting`);
         let creator = await boot(connector);
+        console.info(`lazy load ${client_id}/${repo_name}: booted`);
         return { creator: creator, client_id: client_id, repo_name: repo_name, session: session(`/${client_id}/`) };
       }));
     }

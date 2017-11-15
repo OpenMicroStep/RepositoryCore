@@ -15,8 +15,9 @@ export * from '../../shared/src/classes';
 import './session';
 
 export const mapClasses = {};
-const mapClassesR = {};
+export const mapClassesR = {};
 export const mapAttributes = {};
+export const mapAttributesR = {};
 type AttributeRights = {
   read: Set<string>,
   create: Set<string>,
@@ -97,6 +98,7 @@ const valid_entity_operations = new Set(['read', 'create', 'update', 'delete']);
 const valid_attribute__operations = new Set(['read', 'create', 'update', 'delete']);
 export function buildMaps(ouiDb: OuiDB) {
   mapAttributes['_version'] = 'version';
+  mapAttributesR['version'] = '_version';
   let will_build: [string, ObiDefinition][] = [];
   for (let obi of ouiDb.systemObiByName.values()) {
     if (obi.is.system_name === "ENT") {
@@ -108,6 +110,7 @@ export function buildMaps(ouiDb: OuiDB) {
     if (obi.is.system_name === "Car") {
       let n = '_' + obi.system_name.replace(/[ -]/g, '_');
       mapAttributes[n] = obi.system_name;
+      mapAttributesR[obi.system_name] = n;
     }
   }
   for (let [n, obi] of will_build)

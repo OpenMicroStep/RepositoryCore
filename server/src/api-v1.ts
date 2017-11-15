@@ -159,7 +159,7 @@ export function api_v1() : express.Router {
   let r = express.Router();
   let ifAuthentified = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.session.is_authenticated) next();
-    else res.send(403);
+    else res.sendStatus(403);
   };
   r.get('/auth', async (req, res) => {
     let session = req.session;
@@ -544,6 +544,22 @@ export function api_v1() : express.Router {
     }));
   });
 
+  function build_where(entity, cars) {
+    let where = { $instanceOf: entity };
+    for (let car in cars) {
+      let v = cars[car];
+      let _car = Classes.mapAttributesR[car];
+      if (_car) {
+        where[_car] = v;
+      }
+    }
+    return where;
+  }
+
+  function build_scope(scope) {
+    return scope.map(car => Classes.mapAttributesR[car]);
+  }
+
   const validateQueryInstancesOfEntityWithCars = V.objectValidator({
     "entity": V.validateString,
     "cars": V.objectValidator({}, V.validateAny),
@@ -552,7 +568,7 @@ export function api_v1() : express.Router {
     let p = validate(validateQueryInstancesOfEntityWithCars, req, res);
     if (!p) return;
     let {db, cc} = req.multidb_configuration.creator();
-    let where = Object.assign({ $instanceOf: p.entity }, p.cars);
+    let where = build_where(p.entity, p.cars);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'infos',
@@ -575,12 +591,12 @@ export function api_v1() : express.Router {
     if (!p) return;
     let valid_p = p;
     let {db, cc} = req.multidb_configuration.creator();
-    let where = Object.assign({ $instanceOf: p.entity }, p.cars);
+    let where = build_where(p.entity, p.cars);
     safe_res(res, cc.safe(async ccc => {
       let inv = await ccc.farPromise(db.safeQuery, {
         name: 'infos',
         where: where,
-        scope: valid_p.keys,
+        scope: build_scope(valid_p.keys),
       });
       if (inv.hasOneValue())
         res.status(200).send(MSTEEncodedVOList(inv.value().infos));

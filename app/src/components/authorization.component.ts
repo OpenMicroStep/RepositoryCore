@@ -286,6 +286,8 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
     r._r_action = this._actions[0];
     r._r_application = key.app;
     r._r_software_context = sc;
+    r._r_device_profile = key.device_profile;
+    r._r_use_profile = key.use_profile;
     this._object!._r_sub_right = new Set(this._object!._r_sub_right).add(r);
     key.rights.set(sc, r);
     return r;

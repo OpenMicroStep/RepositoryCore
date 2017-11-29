@@ -35,27 +35,24 @@ function VOList(vo: VersionedObject[]) {
     if (!encoded.has(o)) {
       encoded.add(o);
       let m = o.manager();
-      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.classname()]]};
-      for (let attribute of m.aspect().attributes_by_index) {
-        if (m.isAttributeSavedFast(attribute)) {
-          let v = m.savedAttributeValueFast(attribute);
-          let v1k = Classes.mapAttributes[attribute.name] as string;
-          if (v1k === "r_action" && v)
-            v = (v as any as Classes.R_Element)._system_name as any;
-          if (v1k === "parameter" && o instanceof Classes.R_Person) {
-            v1k = "r_matricule";
-            r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
-          }
-          else if (v1k === "r_authentication") {
-            let exportables: Classes.R_AuthenticationPWD[] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD && a._ciphered_private_key);
-            r["login"] = exportables.map(a => a._mlogin);
-            r["ciphered private key"] = exportables.map(a => a._ciphered_private_key);
-          }
-          else if (!(v instanceof Set))
-            r[v1k] = v === undefined ? [] : [mapValue(v)];
-          else
-            r[v1k] = [...v].map(v => mapValue(v));
+      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.name()]]};
+      for (let [k, v] of m.versionAttributes()) {
+        let v1k = Classes.mapAttributes[k] as string;
+        if (v1k === "r_action" && v)
+          v = (v as any as Classes.R_Element)._system_name as any;
+        if (v1k === "parameter" && o instanceof Classes.R_Person) {
+          v1k = "r_matricule";
+          r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
         }
+        else if (v1k === "r_authentication") {
+          let exportables: Classes.R_AuthenticationPWD[] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD && a._ciphered_private_key);
+          r["login"] = exportables.map(a => a._mlogin);
+          r["ciphered private key"] = exportables.map(a => a._ciphered_private_key);
+        }
+        else if (!(v instanceof Set))
+          r[v1k] = v === undefined ? [] : [mapValue(v)];
+        else
+          r[v1k] = [...v].map(v => mapValue(v));
       }
     }
     return o;

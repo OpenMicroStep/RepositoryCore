@@ -35,24 +35,27 @@ function VOList(vo: VersionedObject[]) {
     if (!encoded.has(o)) {
       encoded.add(o);
       let m = o.manager();
-      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.name()]]};
-      for (let [k, v] of m.versionAttributes()) {
-        let v1k = Classes.mapAttributes[k] as string;
-        if (v1k === "r_action" && v)
-          v = (v as any as Classes.R_Element)._system_name as any;
-        if (v1k === "parameter" && o instanceof Classes.R_Person) {
-          v1k = "r_matricule";
-          r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
+      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.classname()]]};
+      for (let attribute of m.aspect().attributes_by_index) {
+        if (m.isAttributeSavedFast(attribute)) {
+          let v = m.savedAttributeValueFast(attribute);
+          let v1k = Classes.mapAttributes[attribute.name] as string;
+          if (v1k === "r_action" && v)
+            v = (v as any as Classes.R_Element)._system_name as any;
+          if (v1k === "parameter" && o instanceof Classes.R_Person) {
+            v1k = "r_matricule";
+            r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
+          }
+          else if (v1k === "r_authentication") {
+            let exportables: Classes.R_AuthenticationPWD[] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD && a._ciphered_private_key);
+            r["login"] = exportables.map(a => a._mlogin);
+            r["ciphered private key"] = exportables.map(a => a._ciphered_private_key);
+          }
+          else if (!(v instanceof Set))
+            r[v1k] = v === undefined ? [] : [mapValue(v)];
+          else
+            r[v1k] = [...v].map(v => mapValue(v));
         }
-        else if (v1k === "r_authentication") {
-          let exportables: Classes.R_AuthenticationPWD[] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD && a._ciphered_private_key);
-          r["login"] = exportables.map(a => a._mlogin);
-          r["ciphered private key"] = exportables.map(a => a._ciphered_private_key);
-        }
-        else if (!(v instanceof Set))
-          r[v1k] = v === undefined ? [] : [mapValue(v)];
-        else
-          r[v1k] = [...v].map(v => mapValue(v));
       }
     }
     return o;
@@ -162,6 +165,10 @@ export function api_v1() : express.Router {
     else res.sendStatus(403);
   };
   r.get('/auth', async (req, res) => {
+    if (req.session.is_authenticated) {
+      res.sendStatus(200);
+      return;
+    }
     let session = req.session;
     let ctx = req.multidb_configuration.creator();
     let ok = false;
@@ -519,13 +526,21 @@ export function api_v1() : express.Router {
 
   function build_where(cc: ControlCenter, entity, cars) {
     let aspect = cc.aspectChecked(entity);
-    let where = { $instanceOf: entity };
+    let where = { $out: "=x", "x=": { $elementOf: { $instanceOf: entity } } };
+    let n = 0;
     for (let car in cars) {
       let v = cars[car];
       let _car = Classes.mapAttributesR[car];
       if (_car) {
         let a = aspect.attributes.get(_car)!;
-        where[_car] = a.contains_vo ? (typeof v === "string" ? { _urn: v } : { _id: v }) : v;
+        if (a.contains_vo && typeof v === "string") { // _urn
+          let y = `v${++n}`;
+          where[`${y}=`] = { $elementOf: { _urn: v } };
+          where[`=x.${_car}`] = { $contains: `=${y}` };
+        }
+        else {
+          where[`=x.${_car}`] = v;
+        }
       }
     }
     return where;
@@ -552,8 +567,8 @@ export function api_v1() : express.Router {
         name: 'infos',
         where: {
           $or: [
-            { _id: { $in: valid_p.refs } },
-            { _urn: { $in: valid_p.refs } },
+            { _id: { $in: valid_p.refs!.filter(v => typeof v === "number") } },
+            { _urn: { $in: valid_p.refs!.filter(v => typeof v === "string") } },
           ]
         }
       });

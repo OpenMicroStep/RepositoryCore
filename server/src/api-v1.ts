@@ -656,8 +656,7 @@ export function api_v1() : express.Router {
         let lnk = entitiesParentCar[p.entity!];
         if (!lnk)
           throw `no parent for ${p.entity!}`;
-        let pe: VersionedObject = ccc.create(lnk.entity);
-        pe.manager().setId(p.upRef);
+        let pe: VersionedObject = ccc.findOrCreate(p.upRef, lnk.entity);
         e[lnk.car] = e[lnk.car] instanceof Set ? new Set().add(pe) : pe;
       }
       let inv = await ccc.farPromise(db.safeSave, [e]);

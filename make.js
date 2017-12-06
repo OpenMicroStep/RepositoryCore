@@ -21,7 +21,7 @@ module.exports =  {
     "repository app=":  {
       is: 'target',
       environments: ["=::openms.aspects.angular::"],
-      components: ["={::openms.aspects.angular.dev::} - targets"],
+      components: ["=::openms.aspects.angular.dev::"],
       files: ["=files:app ? tsc", "=files:shared ? tsc"],
       copyFiles: [{ is: "group", elements: ["=files:app ? copy"], dest: "", expand: true }],
       interfaces: [{ is: "group", elements: ['=files:shared ? interface'] }],

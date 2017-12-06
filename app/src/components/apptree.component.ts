@@ -36,7 +36,7 @@ import { ApplicationListItemComponent } from './application.component';
       </ng-template>
     </vo-input-select>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Annuler</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="this.object.manager().clearAllModifiedAttributes()">Annuler</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
@@ -59,10 +59,6 @@ export class AppTreeComponent extends VOLoadComponent<R_AppTree.Aspects.obi> {
         '_r_application.': ApplicationListItemComponent.scope,
       },
     };
-  }
-
-  objectsToSave(): VersionedObject[] {
-    return [this.object!];
   }
 }
 

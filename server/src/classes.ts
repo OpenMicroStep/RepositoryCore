@@ -6,10 +6,11 @@ import {
 } from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, ObiDefinition} from '@openmicrostep/aspects.obi';
 import {Reporter} from '@openmicrostep/msbuildsystem.shared';
-import {R_AuthenticationPWD, Session} from '../../shared/src/classes';
+import {R_AuthenticationPWD, Session, R_Person, R_Application} from '../../shared/src/classes';
 import * as interfaces from '../../shared/src/classes';
 import {SecureHash} from './securehash';
 import {exec} from 'child_process';
+import * as uuidv4 from 'uuid/v4';
 import * as crypto from 'crypto';
 export * from '../../shared/src/classes';
 import './session';
@@ -114,7 +115,7 @@ export function buildMaps(ouiDb: OuiDB) {
     }
   }
   for (let [n, obi] of will_build)
-    if (n !== "R_Element")
+    if (cfg.aspect(n))
       rights_by_classname[n] = buildRights(obi);
 
   function buildRights(obi: ObiDefinition) {
@@ -281,9 +282,9 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       for_each(vo, path) {
         let manager = vo.manager();
         if (!manager.isSubObject()) {
-          let access_name = rights_by_classname[manager.name()].read_key;
+          let access_name = rights_by_classname[manager.classname()].read_key;
           if (!access_name)
-            reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.name()})` });
+            reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.classname()})` });
           else {
             let objects = access_lists.get(access_name);
             if (!objects)
@@ -301,25 +302,24 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
           if (!access)
             reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
           else {
-            let r = rights_by_classname[manager.name()];
-            for (let a of manager.localAttributes().keys())
-              check_access(r, a, manager, access, vo);
-            for (let a of manager.versionAttributes().keys())
-              check_access(r, a, manager, access, vo);
+            let r = rights_by_classname[manager.classname()];
+            for (let attribute of manager.aspect().attributes_by_index) {
+              if (manager.hasAttributeValueFast(attribute))
+                check_access(r, attribute, manager, access, vo);
+            }
           }
         }
       }),
     };
 
-    function check_access(r: ClassRights, a: string, manager: VersionedObjectManager<VersionedObject>, access: string[], vo: VersionedObject) {
-      let ra = r.attributes[a];
+    function check_access(r: ClassRights, attribute: Aspect.InstalledAttribute, manager: VersionedObjectManager<VersionedObject>, access: string[], vo: VersionedObject) {
+      let ra = r.attributes[attribute.name];
       if (!ra) {
-        let attr = manager.aspect().attributes.get(a)!;
-        if (attr && attr.relation)
-          ra = rights_by_classname[attr.relation.class.name].attributes[attr.relation.attribute.name];
+        if (attribute && attribute.relation)
+          ra = rights_by_classname[attribute.relation.class.classname].attributes[attribute.relation.attribute.name];
       }
       if (!ra || !access.some(a => ra.read.has(a)))
-        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${a}' on '${vo.id()}'` });
+        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${attribute}' on '${vo.id()}'` });
     }
   }
 
@@ -332,18 +332,16 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       for_each(vo, set) {
         let manager = vo.manager();
         if (!manager.isSubObject()) {
-          let r = rights_by_classname[manager.name()];
+          let r = rights_by_classname[manager.classname()];
           let access_name: string;
-          switch (manager.state()) {
-            case VersionedObjectManager.State.NEW: access_name = r.create_key; break;
-            case VersionedObjectManager.State.MODIFIED: access_name = r.update_key; break;
-            case VersionedObjectManager.State.DELETED: access_name = r.delete_key; break;
-            default:
-              reporter.diagnostic({ is: "error", msg: `invalid save object state (${manager.id})` });
-              return;
-          }
+          if (manager.isPendingDeletion())
+            access_name = r.delete_key;
+          else if (manager.isNew())
+            access_name = r.create_key;
+          else
+            access_name = r.update_key;
           if (!access_name)
-            reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.name()})` });
+            reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.classname()})` });
           else {
             let objects = access_lists.get(access_name);
             if (!objects)
@@ -361,17 +359,14 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
           if (!access)
             reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
           else {
-            let r = rights_by_classname[manager.name()];
+            let r = rights_by_classname[manager.classname()];
             // TODO: handle create & delete rights
-            for (let a of manager.localAttributes().keys()) {
-              let ra = r.attributes[a];
-              if (!access.some(a => ra.update.has(a)))
-                reporter.diagnostic({ is: "error", msg: `you don't have update access to '${a}' on '${vo.id()}'` });
-            }
-            for (let a of manager.versionAttributes().keys()) {
-              let ra = r.attributes[a];
-              if (!access.some(a => ra.update.has(a)))
-                reporter.diagnostic({ is: "error", msg: `you don't have update access to '${a}' on '${vo.id()}'` });
+            for (let attribute of manager.aspect().attributes_by_index) {
+              if (manager.hasAttributeValueFast(attribute)) {
+                let ra = r.attributes[attribute.name];
+                if (!access.some(a => ra.update.has(a)))
+                  reporter.diagnostic({ is: "error", msg: `you don't have update access to '${attribute.name}' on '${vo.id()}'` });
+              }
             }
           }
         }
@@ -387,19 +382,35 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     },
     finalize() { return Promise.resolve(); }
   };
-  for (let class_name in rights_by_classname) {
+  for (let classname in rights_by_classname) {
+    let aspect = cfg.aspectChecked(classname);
     let v: SafeValidator = {
       safe_post_load: [safe_is_admin],
       safe_pre_save: [safe_is_admin],
       safe_post_save: [],
     };
-    if (class_name === "R_AuthenticationPWD") {
+    if (aspect.attributes.has("_urn")) {
+      v.safe_pre_save.push((reporter, datasource) => {
+        return {
+          for_each(vo) {
+            let manager = vo.manager();
+            if (manager.isNew() && !manager.attributeValue("_urn")) {
+              manager.setAttributeValue("_urn", uuidv4())
+            }
+          },
+          async finalize() {
+
+          }
+        }
+      });
+    }
+    if (classname === "R_AuthenticationPWD") {
       v.safe_post_load.push(() => R_AuthenticationPWD_safe_post_load_context);
       v.safe_pre_save.push((reporter, datasource) => {
         let changes: R_AuthenticationPWD[] = [];
         return {
           for_each(vo: R_AuthenticationPWD) {
-            if (vo.manager().hasChanges(["_hashed_password"]))
+            if (vo.manager().isAttributeModified("_hashed_password"))
               changes.push(vo);
           },
           async finalize() : Promise<void> { return datasource.controlCenter().safe(async ccc => {
@@ -437,7 +448,35 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       });
       v.safe_post_save.push(() => R_AuthenticationPWD_safe_post_load_context);
     }
-    safeValidators.set(class_name, v);
+    if (classname === "R_Person" || classname === "R_Application") {
+      v.safe_pre_save.push((reporter, datasource) => {
+        let modified: (R_Person | R_Application)[] = [];
+        return {
+          for_each(o: R_Person | R_Application) {
+            let m: VersionedObjectManager<interfaces.R_Person | interfaces.R_Application> = o.manager();
+            if (["_login", "_r_authentication"].some(a => m.isAttributeModified(a)))
+              modified.push(o);
+          },
+          async finalize() {
+            let res = await datasource.controlCenter().safe(ccc => ccc.farPromise(datasource.rawLoad, {
+              objects: modified,
+              scope: ["_login", "_r_authentication"],
+            }));
+            if (res.hasDiagnostics()) {
+              for (let d of res.diagnostics())
+                reporter.diagnostic(d);
+            }
+            else {
+              for (let o of modified) {
+                let m = o.manager();
+                o._login = new Set([...o._r_authentication].map(a => a._mlogin!));
+              }
+            }
+          }
+        };
+      });
+    }
+    safeValidators.set(classname, v);
   }
 
   return function createControlCenter() {

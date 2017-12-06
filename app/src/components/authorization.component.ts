@@ -141,14 +141,14 @@ export type GroupedRights = { key: string, app: R_Application, device_profile: R
   <div><vo-input-text     label="Libéllé"     [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Désactiver"  [object]="this.object" attribute="_disabled"   ></vo-input-checkbox></div>
   <div>
-    <vo-input-setselect label="Personnes" [object]="this.object" attribute="_r_authenticable" query="persons">
+    <vo-input-setselect label="Personnes" [object]="this.object" attribute="_r_authenticable" query="persons" sort="_first_name,_last_name">
       <ng-template let-item="$implicit">
         <person-li [object]="item"></person-li>
       </ng-template>
     </vo-input-setselect>
   </div>
   <div>
-    <div class="form-group has-feedback">
+    <div class="form-group">
       <label class="control-label">Rights</label>
       <ul class="list-group">
         <li class="list-group-item" *ngFor="let gr of this._grouped_rights">
@@ -176,7 +176,7 @@ export type GroupedRights = { key: string, app: R_Application, device_profile: R
       </ul>
     </div>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="clear()">Annuler</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="clear()">Annuler</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
@@ -294,7 +294,7 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
   }
 
   clear() {
-    this.object!.manager().clear();
+    this.object!.manager().clearAllModifiedAttributes();
     this.buildRightsTree();
   }
 
@@ -303,7 +303,6 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
     rs.delete(right);
     key.rights.delete(right._r_software_context!);
     this._object!._r_sub_right = rs;
-    right.manager().delete();
   }
 
   scope() {
@@ -321,10 +320,6 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
         '_r_sub_right.': ["_label", "_r_action", "_r_application",  "_r_software_context",  "_r_use_profile",  "_r_device_profile"],
       }
     };
-  }
-
-  objectsToSave() : VersionedObject[] {
-    return VersionedObjectManager.objectsInScope([this.object!], ["_r_sub_right"]);
   }
 }
 

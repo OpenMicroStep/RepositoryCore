@@ -6,8 +6,10 @@ import { VOComponent } from '../aspect/vo.component';
 @Component({
   selector: 'parameter',
   template: `
-  <div><vo-input-text label="Clé"         [object]="this.object" attribute="_label"     ></vo-input-text></div>
-  <div><vo-input-text label="Valeur"      [object]="this.object" attribute="_string"     ></vo-input-text></div>
+  <div class="form-inline">
+    <vo-input-text label="Clé"         [object]="this.object" attribute="_label"     ></vo-input-text>
+    <vo-input-text label="Valeur"      [object]="this.object" attribute="_string"     ></vo-input-text>
+  </div>
 `
 })
 export class ParameterComponent extends VOComponent<Parameter.Aspects.obi> {

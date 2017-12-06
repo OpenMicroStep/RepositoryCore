@@ -19,7 +19,7 @@ import { ParameterComponent } from './parameter.component';
 <form *ngIf="this.object">
   <div><vo-input-text     label="URN"       [object]="this.object" attribute="_urn"        ></vo-input-text    ></div>
   <div><vo-input-text     label="Nom"       [object]="this.object" attribute="_label"      ></vo-input-text    ></div>
-  <div><vo-input-checkbox label="Désactivé" [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
+  <div><vo-input-checkbox label="Désactivé" [object]="this.object" attribute="_disabled"   ></vo-input-checkbox></div>
   <div>
     <vo-input-set label="Authentification" [object]="this.object" attribute="_r_authentication" [domains]="this._r_authentication_domains">
        <ng-template let-item="$implicit">
@@ -56,7 +56,7 @@ import { ParameterComponent } from './parameter.component';
       </ng-template>
     </vo-input-set>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Annuler</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="this.object.manager().clearAllModifiedAttributes()">Annuler</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
@@ -70,11 +70,11 @@ export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.
   constructor(public ctx: AppContext) {
     super(ctx.db);
     let ccc = ctx.cc.ccc(this);
-    this._r_authentication_domains    .push({ label: "by password"   , create: () => R_AuthenticationPWD.create(ccc) });
-    this._r_authentication_domains    .push({ label: "by public key" , create: () => R_AuthenticationPK.create(ccc)  });
-    this._parameter_domains           .push({ label: "parameter"     , create: () => Parameter.create(ccc)           });
-    this._r_sub_use_profile_domains   .push({ label: "use profile"   , create: () => R_Use_Profile.create(ccc)       });
-    this._r_sub_device_profile_domains.push({ label: "device profile", create: () => R_Device_Profile.create(ccc)    });
+    this._r_authentication_domains    .push({ label: "par mot de passe", create: () => R_AuthenticationPWD.create(ccc) });
+    this._r_authentication_domains    .push({ label: "par clé publique", create: () => R_AuthenticationPK.create(ccc)  });
+    this._parameter_domains           .push({ label: "paramètre"       , create: () => Parameter.create(ccc)           });
+    this._r_sub_use_profile_domains   .push({ label: "profil d'utilisation", create: () => R_Use_Profile.create(ccc)   });
+    this._r_sub_device_profile_domains.push({ label: "profil d'appareil", create: () => R_Device_Profile.create(ccc)   });
   }
 
   isAuthPWD(item) { return item instanceof R_AuthenticationPWD; }
@@ -104,10 +104,6 @@ export class ApplicationComponent extends VOLoadComponent<R_Application.Aspects.
         '_r_sub_device_profile._r_device.': DeviceListItemComponent.scope
       },
     };
-  }
-
-  objectsToSave(): VersionedObject[] {
-    return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication", "_parameter", "_r_sub_use_profile", "_r_sub_device_profile"]);
   }
 }
 

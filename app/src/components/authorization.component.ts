@@ -176,8 +176,12 @@ export type GroupedRights = { key: string, app: R_Application, device_profile: R
       </ul>
     </div>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="clear()">Annuler</button>
+  <ng-template ngFor let-item="$implicit" [ngForOf]="this.diagnostics" let-i="index">
+    <div class="alert alert-warning" role="alert">{{item.path}}: {{item.msg}}</div>
+  </ng-template>
+  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="this.object.manager().clearAllModifiedAttributes()">Annuler les modifications</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
+  <button class="btn btn-warning" [disabled]="!this.canDelete()" type="submit" (click)="this.delete()">Supprimer</button>
 </form>
 `
 })

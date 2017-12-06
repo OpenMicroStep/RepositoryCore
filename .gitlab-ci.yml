@@ -10,7 +10,7 @@ build_modules:
     - npm install -g @openmicrostep/msbuildsystem.cli
     - msbuildsystem modules install @openmicrostep/msbuildsystem.aspects
     # build
-    - msbuildsystem build -w dist/
+    - msbuildsystem build -w dist/ --env openms.aspects.angular --env openms.aspects.node
   tags:
     - node
   artifacts:

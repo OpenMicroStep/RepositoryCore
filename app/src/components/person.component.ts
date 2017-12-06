@@ -30,11 +30,14 @@ import { ParameterComponent } from './parameter.component';
     </vo-input-set>
   </div>
   <div>
-    <vo-input-setselect label="Services" [object]="this.object" attribute="_r_services" query="services">
-      <ng-template let-item="$implicit">
-        <service-li [object]="item"></service-li>
-      </ng-template>
-    </vo-input-setselect>
+    <div class="form-group">
+      <label class="control-label">Membre de</label>
+      <ul class="list-group">
+        <li class="list-group-item" *ngFor="let item of this.object._r_services">
+          <service-li [object]="item"></service-li>
+        </li>
+      </ul>
+    </div>
   </div>
   <div>
     <vo-input-set label="Paramètres" [object]="this.object" attribute="_parameter" [domains]="this._parameter_domains">
@@ -43,6 +46,9 @@ import { ParameterComponent } from './parameter.component';
       </ng-template>
     </vo-input-set>
   </div>
+  <template ngFor let-item="$implicit" [ngForOf]="this.diagnostics" let-i="index">
+    <div class="alert alert-warning" role="alert">{{item.path}}: {{item.msg}}</div>
+  </template>
   <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="this.object.manager().clearAllModifiedAttributes()">Annuler les modifications</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
   <button class="btn btn-warning" [disabled]="!this.canDelete()" type="submit" (click)="this.delete()">Supprimer</button>

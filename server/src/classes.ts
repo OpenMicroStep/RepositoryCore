@@ -503,8 +503,8 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       },
     });
     db.setSafeValidators(safeValidators);
-    session.manager().setId("session");
-    db.manager().setId("odb");
+    session.manager().setSavedIdVersion("session", VersionedObjectManager.UndefinedVersion);
+    db.manager().setSavedIdVersion("odb", VersionedObjectManager.UndefinedVersion);
     return { cc: cc, session: session, db: db };
   };
 }

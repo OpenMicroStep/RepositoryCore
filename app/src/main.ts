@@ -1,4 +1,4 @@
-import { ControlCenter, DataSource, AspectConfiguration, AspectSelection } from '@openmicrostep/aspects';
+import { ControlCenter, DataSource, AspectConfiguration, AspectSelection, VersionedObjectManager } from '@openmicrostep/aspects';
 import { XHRTransport } from '@openmicrostep/aspects.xhr';
 import {Session} from '../../shared/src/classes';
 import * as interfaces from '../../shared/src/classes';
@@ -115,5 +115,5 @@ export class AppModule { }
 
 platformBrowserDynamic().bootstrapModule(AppModule);
 
-dataSource.manager().setId('odb');
-session.manager().setId('session');
+dataSource.manager().setSavedIdVersion('odb', VersionedObjectManager.UndefinedVersion);
+session.manager().setSavedIdVersion('session', VersionedObjectManager.UndefinedVersion);

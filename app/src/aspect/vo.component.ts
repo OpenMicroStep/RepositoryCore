@@ -65,13 +65,7 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
 
   saved(n: Notification<Result<T[]>>) {
     let r = n.info;
-    if (r.hasDiagnostics()) {
-      for (let d of r.diagnostics())
-        console.info(d);
-      this.diagnostics = r.diagnostics();
-    }
-    if (this._object!.manager().isDeleted())
-      this.object = undefined;
+
   }
 
   isNew(): boolean {
@@ -89,8 +83,22 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
     return [this._object!];
   }
   save() {
-    let objects = this.objectsToSave();
-    Invocation.farEvent(this._datasource.save, objects, VOLoadComponent.saved);
+    this._controlCenter.safe(async ccc => {
+      let objects = this.objectsToSave();
+      let r = await ccc.farPromise(this._datasource.save, objects);
+      this.diagnostics = r.diagnostics();
+      if (r.hasDiagnostics()) {
+        for (let d of r.diagnostics())
+          console.info(d);
+      }
+      if (this._object!.manager().isDeleted())
+        this.object = undefined;
+      ccc.controlCenter().notificationCenter().postNotification({
+        name: VOLoadComponent.saved,
+        object: this._datasource,
+        info: r,
+      })
+    });
   }
 
   delete() {

@@ -10,13 +10,13 @@ import { VOComponent } from '../aspect/vo.component';
   <vo-input-text label="Nom d'utilisateur" [object]="this.object" attribute="_mlogin"></vo-input-text>
   <div class="form-group" [ngClass]="this.class()">
     <label class="control-label">Mot de passe</label>
-    <input type="name" class="form-control" [(ngModel)]="this._object._hashed_password">
+    <input type="password" class="form-control" [(ngModel)]="this._object._hashed_password">
     <span *ngIf="this.class()['has-warning']" class="glyphicon glyphicon-warning-sign form-control-feedback" aria-hidden="true"></span>
     <span *ngIf="this.class()['has-success']" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
   </div>
   <div class="form-group" [ngClass]="this.class()">
     <label class="control-label">Vérification</label>
-    <input type="name" class="form-control" [(ngModel)]="this.password2">
+    <input type="password" class="form-control" [(ngModel)]="this.password2">
     <span *ngIf="this.class()['has-warning']" class="glyphicon glyphicon-warning-sign form-control-feedback" aria-hidden="true"></span>
     <span *ngIf="this.class()['has-success']" class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
   </div>

@@ -43,9 +43,9 @@ import { ParameterComponent } from './parameter.component';
       </ng-template>
     </vo-input-set>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Undo</button>
-  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Save</button>
-  <button class="btn btn-warning" [disabled]="!this.canDelete()" type="submit" (click)="this.delete()">Delete</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="this.object.manager().clearAllModifiedAttributes()">Annuler les modifications</button>
+  <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
+  <button class="btn btn-warning" [disabled]="!this.canDelete()" type="submit" (click)="this.delete()">Supprimer</button>
 </form>
 `
 })
@@ -57,15 +57,15 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
     super(ctx.db);
     let ccc = ctx.cc.ccc(this);
     this._r_authentication_domains.push({
-      label: "by password",
+      label: "par mot de passe",
       create: () => R_AuthenticationPWD.create(ctx.cc.ccc(this))
     });
     this._r_authentication_domains.push({
-      label: "by public key",
+      label: "par clé publique",
       create: () => R_AuthenticationPK.create(ctx.cc.ccc(this))
     });
     this._r_authentication_domains.push({
-      label: "by ldap",
+      label: "par LDAP",
       create: () => R_AuthenticationLDAP.create(ctx.cc.ccc(this))
     });
     this._parameter_domains           .push({ label: "parameter"     , create: () => Parameter.create(ccc)           });
@@ -85,23 +85,17 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
       Parameter: { '_parameter.': ParameterComponent.scope },
     };
   }
-
-  objectsToSave(): VersionedObject[] {
-    return VersionedObjectManager.objectsInScope([this.object!], ["_r_authentication", "_parameter"]);
-  }
-
-  markForDeletion() {
-    for (let a of this.objectsToSave())
-      a.manager().delete();
-  }
 }
 
 @Component({
   selector: 'person-li',
-  template: `{{this.object._first_name}} {{this.object._last_name}}`
+  template: `
+  <span *ngIf="this._object._disabled" class="glyphicon pull-right glyphicon-off text-warning" aria-hidden="true"></span>
+  {{this.object._first_name}} {{this.object._last_name}}
+  `
 })
 export class PersonListItemComponent extends VOComponent<R_Person.Aspects.obi> {
-  static readonly scope = ['_first_name', '_last_name'];
+  static readonly scope = ['_first_name', '_last_name', '_disabled'];
 
   constructor(public ctx: AppContext) {
     super(ctx.cc);

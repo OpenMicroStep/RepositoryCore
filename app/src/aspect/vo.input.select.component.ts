@@ -57,7 +57,7 @@ export class InputSelectComponent<T> extends AspectComponent {
   selector: 'vo-input-select',
   template:
   `
-  <div class="form-group has-feedback" [ngClass]="this.class()">
+  <div class="form-group" [ngClass]="this.class()">
     <label class="control-label">{{this.label}}</label>
     <input-select [(value)]="this.value" [items]="this._items">
       <ng-template let-item="$implicit">
@@ -99,15 +99,6 @@ export class VOInputSelectComponent extends VOInputComponent<VersionedObject> {
   onItems(notification: Notification<Result<{ items: VersionedObject[] }>>) {
     let items = notification.info.value().items;
     this._items = this._controlCenter.ccc(this).swapObjects(this._items, items);
-  }
-
-  class() {
-    let state = this.state();
-    return {
-      'has-warning': state === VersionedObjectManager.AttributeState.INCONFLICT
-                  || state === VersionedObjectManager.AttributeState.NOTLOADED,
-      'has-success': state === VersionedObjectManager.AttributeState.MODIFIED,
-    }
   }
 }
 

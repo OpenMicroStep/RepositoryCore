@@ -1,17 +1,24 @@
 import { Component, Input, ContentChild, Type, OnInit, TemplateRef } from '@angular/core';
 import { Invocation, VersionedObject, VersionedObjectManager, DataSource, Notification, Result } from '@openmicrostep/aspects';
-import { VOInputComponent } from './vo.input.component';
+import { VOInputComponent, sort } from './vo.input.component';
 
 @Component({
   selector: 'vo-input-setselect',
   template:
   `
-  <div class="form-group has-feedback">
+  <div class="form-group">
     <label class="control-label">{{this.label}}</label>
     <ul class="list-group">
-      <li class="list-group-item" *ngFor="let item of this.value; let i = index">
+      <li class="list-group-item" *ngFor="let item of this.valueItems(); let i = index">
         <ng-container [ngTemplateOutlet]="template" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
-        <button type="button" class="btn btn-danger" (click)="this.delete(item)">X</button>
+        <span (click)="this.delete(item)" class="btn btn-danger glyphicon glyphicon-remove" style="
+            position: absolute;
+            top: 50%;
+            right: 2px;
+            border-radius: 30px;
+            margin-top: -17px;
+            padding: 6px 9px;
+        "></span>
       </li>
       <li class="list-group-item">
         <input-select [(value)]="_value" [items]="this.availableItems()">
@@ -38,6 +45,8 @@ export class VOInputSetSelectComponent<T extends VersionedObject> extends VOInpu
     this._items = [...items];
   }
 
+  @Input() sort: string;
+
   @Input() set query(query: string | { id: string, [s: string]: any }) {
     if (this._query === query)
       return;
@@ -62,16 +71,12 @@ export class VOInputSetSelectComponent<T extends VersionedObject> extends VOInpu
 
   availableItems() {
     let v = this.value;
-    return v ? this._items.filter(i => !v!.has(i)) : this._items;
+    return v ? this._sort(this._items.filter(i => !v!.has(i))) : this._items;
   }
 
-  class() {
-    let state = this.state();
-    return {
-      'has-warning': state === VersionedObjectManager.AttributeState.INCONFLICT
-                  || state === VersionedObjectManager.AttributeState.NOTLOADED,
-      'has-success': state === VersionedObjectManager.AttributeState.MODIFIED,
-    }
+  valueItems() {
+    let v = this.value;
+    return v ? this._sort([...v]) : [];
   }
 
   add(t: T) {
@@ -82,6 +87,10 @@ export class VOInputSetSelectComponent<T extends VersionedObject> extends VOInpu
     let s = new Set(this.value || []);
     s.delete(item);
     this.value = s;
+  }
+
+  private _sort(items: T[]) {
+    return sort(this.sort, items);
   }
 }
 export namespace VOInputSetComponent {

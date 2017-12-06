@@ -39,8 +39,8 @@ import { VOLoadComponent }  from '../aspect/vo.component';
         </ng-template>
       </vo-input-set>
     </div>
-    <button class="btn btn-default" [disabled]="!object.manager().hasChanges()" type="submit" (click)="object.manager().clear()">Undo</button>
-    <button class="btn btn-primary" [disabled]="!object.manager().hasChanges()" type="submit" (click)="this.saveLDAPConfiguration(object)">Save</button>
+    <button class="btn btn-default" [disabled]="!object.manager().isModified()" type="submit" (click)="object.manager().clearAllModifiedAttributes()">Annuler les modifications</button>
+    <button class="btn btn-primary" [disabled]="!object.manager().isModified()" type="submit" (click)="this.saveLDAPConfiguration(object)">Enregistrer</button>
   </form>
   <button class="btn btn-success" type="submit" (click)="createLDAPConfiguration()">Ajouter une configuration LDAP</button>
 </div>
@@ -75,6 +75,6 @@ export class ManageSettingsComponent extends AspectComponent {
   }
 
   saveLDAPConfiguration(object: R_LDAPConfiguration) {
-    Invocation.farEvent(this.ctx.db.save, VersionedObjectManager.objectsInScope([object], ["_ldap_attribute_map", "_ldap_group_map"]), VOLoadComponent.saved, this);
+    Invocation.farEvent(this.ctx.db.save, [object], VOLoadComponent.saved, this);
   }
 }

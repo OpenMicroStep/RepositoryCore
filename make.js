@@ -50,11 +50,13 @@ module.exports =  {
           "ldapjs": "^1.0.1",
           "@openmicrostep/msbuildsystem.shared": "^0.6.3",
           "source-map-support": "^0.4.11",
+          "uuid": "^3.1.0",
         },
         devDependencies: { is: "component",
           "@types/ldapjs": "^1.0.0",
           "@types/express-session": "^1.15.3",
           "@types/request-promise-native": "^1.0.8",
+          "@types/uuid": "^3.4.3",
         },
       },
     }

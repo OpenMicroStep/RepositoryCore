@@ -15,12 +15,12 @@ import { DeviceProfileComponent } from './device-profile.component';
   <div><vo-input-text     label="Numéro de série" [object]="this.object" attribute="_r_serial_number" ></vo-input-text    ></div>
   <div><vo-input-checkbox label="Désactiver"      [object]="this.object" attribute="_disabled"        ></vo-input-checkbox></div>
   <div><vo-input-checkbox label="Hors service"    [object]="this.object" attribute="_r_out_of_order"  ></vo-input-checkbox></div>
-  <div *ngIf="!this.isNew()">
+  <div *ngIf="!this.isNew()" class="form-group">
     <button class="btn btn-default" [disabled]="this.object._disabled" (click)="this.pair()">
       {{ this._token }}
     </button>
   </div>
-  <button class="btn btn-default" [disabled]="!this.object.manager().hasChanges()" type="submit" (click)="this.object.manager().clear()">Annuler</button>
+  <button class="btn btn-default" [disabled]="!this.object.manager().isModified()" type="submit" (click)="this.object.manager().clearAllModifiedAttributes()">Annuler</button>
   <button class="btn btn-primary" [disabled]="!this.canSave()" type="submit" (click)="this.save()">Enregistrer</button>
 </form>
 `
@@ -52,10 +52,14 @@ export class DeviceComponent extends VOLoadComponent<R_Device.Aspects.obi> {
 
 @Component({
   selector: 'device-li',
-  template: `{{this.object._label}}`
+  template: `
+<span *ngIf="this._object._disabled" class="glyphicon pull-right glyphicon-off text-warning" aria-hidden="true"></span>
+<span *ngIf="this._object._r_out_of_order" class="glyphicon pull-right glyphicon-wrench text-danger" aria-hidden="true"></span>
+{{this.object._label}}
+  `
 })
 export class DeviceListItemComponent extends VOComponent<R_Device.Aspects.obi> {
-  static readonly scope = ['_label'];
+  static readonly scope = ['_label', "_disabled", "_r_out_of_order"];
   constructor(public ctx: AppContext) {
     super(ctx.cc);
   }

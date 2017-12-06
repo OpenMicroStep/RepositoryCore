@@ -74,7 +74,7 @@ queries.set("devicetrees", (reporter, query, cc) => ({
 queries.set("devices", (reporter, query, cc) => ({
   name: "items",
   where: ifText(visible_devices(cc), query),
-  scope: ['_urn', '_label', '_disabled']
+  scope: ['_urn', '_label', '_disabled', '_r_out_of_order']
 }));
 queries.set("applications", (reporter, query, cc) => ({
   name: "items",

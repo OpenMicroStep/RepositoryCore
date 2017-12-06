@@ -35,9 +35,10 @@ function VOList(vo: VersionedObject[]) {
     if (!encoded.has(o)) {
       encoded.add(o);
       let m = o.manager();
-      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.name()]]};
-      for (let [k, v] of m.versionAttributes()) {
-        let v1k = Classes.mapAttributes[k] as string;
+      let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.classname()]]};
+      for (let attribute of m.attributes()) {
+        let v = m.attributeValueFast(attribute);
+        let v1k = Classes.mapAttributes[attribute.name] as string;
         if (v1k === "r_action" && v)
           v = (v as any as Classes.R_Element)._system_name as any;
         if (v1k === "parameter" && o instanceof Classes.R_Person) {
@@ -170,7 +171,6 @@ export function api_v1() : express.Router {
     let ctx = req.multidb_configuration.creator();
     let ok = false;
     // ?ticket=
-
     try {
       if (req.query.ticket) {
         await ctx.cc.safe(async ccc => {
@@ -714,7 +714,7 @@ export function api_v1() : express.Router {
         return;
       }
       let e = invq.value().obi[0];
-      e.manager().delete();
+      e.manager().setPendingDeletion(true);
       let invs = await ccc.farPromise(db.safeSave, [e]);
       if (invs.hasOneValue())
         res.status(200).send(MSTEEncoded(null));

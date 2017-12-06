@@ -56,31 +56,22 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
     }
   }
   isNew(): boolean {
-    return this.object ? this.object.manager().state() === VersionedObjectManager.State.NEW : true;
+    return this.object ? this.object.manager().isNew() : true;
   }
 
   canSave() : boolean {
-    return this.object ? this.object.manager().hasChanges() || true : false; // TODO: fix subobjects
+    return this.object ? this.object.manager().isModified() : false;
   }
 
   canDelete() : boolean {
-    let state = this.object ? this.object.manager().state() : VersionedObjectManager.State.NEW;
-    return state !== VersionedObjectManager.State.NEW && state !== VersionedObjectManager.State.DELETED;
+    return true
   }
-
-  objectsToSave(): VersionedObject[] {
-    return [this._object!];
-  }
-
   save() {
-    Invocation.farEvent(this._datasource.save, this.objectsToSave(), VOLoadComponent.saved);
+    Invocation.farEvent(this._datasource.save, [this._object!], VOLoadComponent.saved);
   }
 
-  markForDeletion() {
-    this._object!.manager().delete();
-  }
   delete() {
-    this.markForDeletion();
+    this._object!.manager().setPendingDeletion(true);
     this.save();
     this._object = undefined;
   }

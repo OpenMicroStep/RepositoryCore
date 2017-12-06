@@ -5,7 +5,7 @@ import { VOInputComponent } from './vo.input.component';
 @Component({
   selector: 'vo-input-text',
   template: `
-  <div class="form-group has-feedback" [ngClass]="this.class()">
+  <div class="form-group" [ngClass]="this.class()">
     <label class="control-label">{{this.label}}</label>
     <input type="name" class="form-control" [(ngModel)]="this.value">
     <span *ngIf="this.class()['has-warning']" class="glyphicon glyphicon-warning-sign form-control-feedback" aria-hidden="true"></span>
@@ -20,13 +20,5 @@ export class VOInputTextComponent extends VOInputComponent<string> {
 
   setValue(newValue: string | undefined) {
     super.setValue(newValue || undefined); // empty string -> undefined
-  }
-  class() {
-    let state = this.state();
-    return {
-      'has-warning': state === VersionedObjectManager.AttributeState.INCONFLICT
-                  || state === VersionedObjectManager.AttributeState.NOTLOADED,
-      'has-success': state === VersionedObjectManager.AttributeState.MODIFIED,
-    }
   }
 }

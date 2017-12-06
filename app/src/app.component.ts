@@ -51,6 +51,26 @@ import { Invocation, ControlCenterContext } from '@openmicrostep/aspects';
       <div class="form-group text-center">
         <img class="navbar-logo" alt="Logo Logitud" src="images/logo_logitud_@2x.png">
       </div>
+      <div *ngIf="_state === 'bad login'" class="form-group">
+        <div class="alert alert-danger" role="alert">
+          Mauvais nom d'utilisateur ou mot de passe
+        </div>
+      </div>
+      <div *ngIf="_state === 'bad network'" class="form-group">
+        <div class="alert alert-warning" role="alert">
+          Problème de communication avec le serveur
+        </div>
+      </div>
+      <div *ngIf="_state === 'loggingout'" class="form-group">
+        <div class="alert alert-info" role="alert">
+          Déconnexion
+        </div>
+      </div>
+      <div *ngIf="_state === 'loggedout'" class="form-group">
+        <div class="alert alert-success" role="alert">
+          Déconnecté
+        </div>
+      </div>
       <div class="form-group">
         <label class="control-label">Nom d'utilisateur</label>
         <input class="form-control" type="text" name="login" [(ngModel)]="this._login">
@@ -76,7 +96,8 @@ export class AppComponent extends AspectComponent {
   constructor(public ctx: AppContext, ref: ApplicationRef) {
     super(ctx.cc);
     this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onLogged', this);
-    this._controlCenter.notificationCenter().addObserver(this, 'onLogged', 'onIsAuthenticated', this);
+    this._controlCenter.notificationCenter().addObserver(this, 'onIsAuthenticated', 'onIsAuthenticated', this);
+    this._controlCenter.notificationCenter().addObserver(this, 'onLoggedOut', 'onLoggedOut', this);
     Invocation.farEvent(this.ctx.session.isAuthenticated, undefined, 'onIsAuthenticated', this);
     let destroy = ControlCenterContext.prototype.destroy;
     Object.defineProperty(ControlCenterContext.prototype, "destroy",
@@ -96,17 +117,38 @@ export class AppComponent extends AspectComponent {
   }
 
   logOut() {
-    Invocation.farEvent(this.ctx.session.logout, undefined, 'loggedout');
+    Invocation.farEvent(this.ctx.session.logout, undefined, 'onLoggedOut', this);
+    this._state = 'loggingout';
+    this._login = '';
+    this._password = '';
+  }
+
+  onLoggedOut(n) {
     this._state = 'loggedout';
   }
 
-  onLogged(n) {
-    if (n.info.hasOneValue() && n.info.value() === true) {
+  onIsAuthenticated(n) {
+    this._is_logged(n);
+  }
+
+  private _is_logged(n: any) {
+    let r = n.info.hasOneValue() && n.info.value() === true;
+    if (r) {
       let redirect = document.location.search.match(/[&?]url=(.+?)(?:&|$)/);
       if (redirect)
         document.location.href = redirect[1];
       else
         this._state = 'logged';
+    }
+    return r;
+  }
+
+  onLogged(n) {
+    if (!this._is_logged(n)) {
+      if (n.info.hasOneValue())
+        this._state = 'bad login';
+      else
+        this._state = 'bad network';
     }
   }
 }

@@ -190,7 +190,7 @@ Session.category('client', {
       }
     }
     await writeSession(ccc, db, authenticated_person, undefined, this.data());
-    return Result.fromDiagnosticsAndValue(authenticated_person ? [] : [{ is: "error", msg: `bad login/password` }], !!authenticated_person);
+    return Result.fromDiagnosticsAndValue(authenticated_person ? [] : [{ is: "error", msg: `mauvais nom d'utilisateur/mot de passe` }], !!authenticated_person);
   },
   async oneTimePasswordForDevice({ context: { ccc } }, device) : Promise<Result<string>> {
     let db = ccc.find('odb') as DataSource.Aspects.server;

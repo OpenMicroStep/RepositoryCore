@@ -8,7 +8,7 @@ build_modules:
   script:
     # installation du buildsystem
     - npm install -g @openmicrostep/msbuildsystem.cli
-    - msbuildsystem modules install @openmicrostep/msbuildsystem.aspects
+    - msbuildsystem modules install @openmicrostep/msbuildsystem.aspects@0.8.4
     # build
     - msbuildsystem build -w dist/
   tags:

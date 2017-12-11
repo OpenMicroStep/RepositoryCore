@@ -2,7 +2,7 @@ import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/
 import {
   Notification, Result, Invocation, Event,
   VersionedObject, VersionedObjectManager, traverseAllScope,
-  DataSource, DataSourceInternal, Diagnostic, ImmutableList
+  DataSource, DataSourceInternal, Diagnostic, ImmutableList,
 } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect.component';
 import { VOInputSetComponent }  from './vo.input.set.component';
@@ -59,7 +59,10 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
   loaded(n: Notification<Result<T[]>>) {
     let r = n.info;
     if (r.hasOneValue()) {
-      this._object = this._controlCenter.ccc(this).swapObject(this._object, r.value()[0]);
+      let olds = this._object ? traverseAllScope([this._object], this.scope()) : [];
+      let news = traverseAllScope(r.value(), this.scope());
+      this._controlCenter.ccc(this).swapObjects(olds, news);
+      this._object = r.value()[0];
     }
   }
 

@@ -6,7 +6,7 @@ module.exports =  {
       { is: 'group', name: 'app', path: 'app/src/', elements: [
         { is: 'file', name: 'main.ts', tags: ['tsc'] },
         { is: 'file', name: 'index.html', tags: ['copy'] },
-        { is: 'file', name: 'styles.css', tags: ['copy'] },
+        { is: 'file', name: 'bootstrap.min.css', tags: ['copy'] },
         { is: 'file', name: 'systemjs.config.js', tags: ['copy'] },
         { is: 'file', name: 'images/*.png', tags: ['copy'] },
       ]},

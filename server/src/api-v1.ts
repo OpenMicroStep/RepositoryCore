@@ -37,6 +37,7 @@ function VOList(vo: VersionedObject[]) {
       let m = o.manager();
       let r = dico[urnOrId(o)] = { entity: [Classes.mapClasses[m.classname()]]};
       for (let attribute of m.attributes()) {
+        if (!m.hasAttributeValueFast(attribute)) continue;
         let v = m.attributeValueFast(attribute);
         let v1k = Classes.mapAttributes[attribute.name] as string;
         if (v1k === "r_action" && v)
@@ -391,7 +392,7 @@ export function api_v1() : express.Router {
             user._r_authentication = new Set([...user._r_authentication, pk]);
           }
           pk._public_key = public_key;
-          let inv_save = await ccc.farPromise(db.safeSave, [user, pk]);
+          let inv_save = await ccc.farPromise(db.safeSave, [user]);
           if (!inv_save.hasDiagnostics())
             res.status(200).send(MSTEEncoded(null));
           else

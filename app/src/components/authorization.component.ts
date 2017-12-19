@@ -319,10 +319,11 @@ export class AuthorizationComponent extends VOLoadComponent<R_Authorization.Aspe
       },
       R_Application: {
         '_r_authenticable.': ["_disabled", "_urn", "_label"],
+        '_r_sub_right._r_application.': ["_r_sub_use_profile",  "_r_sub_device_profile"],
       },
       R_Right: {
         '_r_sub_right.': ["_label", "_r_action", "_r_application",  "_r_software_context",  "_r_use_profile",  "_r_device_profile"],
-      }
+      },
     };
   }
 }

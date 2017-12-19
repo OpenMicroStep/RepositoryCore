@@ -460,7 +460,12 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
           async finalize() {
             let res = await datasource.controlCenter().safe(ccc => ccc.farPromise(datasource.rawLoad, {
               objects: modified,
-              scope: ["_login", "_r_authentication"],
+              scope: {
+                _: {
+                  '.': ["_login", "_r_authentication"],
+                  '_r_authentication.': ["_mlogin"],
+                },
+              }
             }));
             if (res.hasDiagnostics()) {
               for (let d of res.diagnostics())

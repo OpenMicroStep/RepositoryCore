@@ -30,11 +30,9 @@ type ClassRights = {
   create: Set<string>, create_key: string,
   update: Set<string>, update_key: string,
   delete: Set<string>, delete_key: string,
-  attributes: {
-    [s: string]: AttributeRights
-  }
+  attributes: Map<string, AttributeRights>,
 };
-const rights_by_classname: { [s: string]: ClassRights } = {};
+
 const sub_object_classes = new Map<string, { classname: string, attribute: string }[]>();
 
 function admin_of(ccc: ControlCenterContext, of: string, suffix: string) {
@@ -56,15 +54,34 @@ function admin_of_devicetree(ccc: ControlCenterContext) { return admin_of(ccc, "
 function is_super_admin(cc: ControlCenter) {
   return cc.safe(ccc => (ccc.findChecked('session') as Session.Aspects.server).data().is_admin === true);
 }
-const rights_queries: {
-  [s: string]: (ccc: ControlCenterContext, objects: VersionedObject[]) => true | false | DataSourceInternal.ObjectSetDefinition,
-} = {
+
+type Who =
+  "public" | "self" | "super_admin" |
+  "person_admin" | "service_admin" |
+  "app_admin"    | "apptree_admin" |
+  "device_admin" | "devicetree_admin";
+type WhoRightsQueries = {
+  [s in Who]: (ccc: ControlCenterContext, objects: VersionedObject[]) => true | false | DataSourceInternal.ObjectSetDefinition
+};
+const rights_queries: WhoRightsQueries = {
   "public": () => true,
-  "member": () => true,
-  "auth_admin": (ccc, objects) => {
+  "self": (ccc, objects) => {
+    let session = ccc.findChecked('session') as Session.Aspects.server;
+    let person_id = session.data().person.id;
     return {
-      $in: "=S:_r_application",
-      "S=": admin_of_apptree(ccc),
+      $instanceOf: R_Person,
+      _id: person_id,
+    };
+  },
+  "super_admin": (ccc, objects) => {
+    let session = ccc.findChecked('session') as Session.Aspects.server;
+    return !!session.data().is_admin;
+  },
+  "service_admin": (ccc, objects) => {
+    return {
+      $in: "=S",
+      _id: { $in: objects.map(m => m.id()) },
+      "S=": admin_of_services(ccc),
     };
   },
   "person_admin": (ccc, objects) => {
@@ -81,6 +98,13 @@ const rights_queries: {
       "S=": admin_of_apptree(ccc),
     };
   },
+  "apptree_admin": (ccc, objects) => {
+    return {
+      $in: "=S",
+      _id: { $in: objects.map(m => m.id()) },
+      "S=": admin_of_devicetree(ccc),
+    };
+  },
   "device_admin": (ccc, objects) => {
     return {
       $in: "=S:_r_device",
@@ -88,11 +112,13 @@ const rights_queries: {
       "S=": admin_of_devicetree(ccc),
     };
   },
-  "admin": (ccc, objects) => {
-    let session = ccc.findChecked('session') as Session.Aspects.server;
-    return !!session.data().is_admin;
+  "devicetree_admin": (ccc, objects) => {
+    return {
+      $in: "=S",
+      _id: { $in: objects.map(m => m.id()) },
+      "S=": admin_of_devicetree(ccc),
+    };
   },
-
 };
 
 const valid_entity_operations = new Set(['read', 'create', 'update', 'delete']);
@@ -114,9 +140,12 @@ export function buildMaps(ouiDb: OuiDB) {
       mapAttributesR[obi.system_name] = n;
     }
   }
+
+  /*
   for (let [n, obi] of will_build)
     if (cfg.aspect(n))
       rights_by_classname[n] = buildRights(obi);
+  */
 
   function buildRights(obi: ObiDefinition) {
     const r_internal_right = systemObiByName(ouiDb, "r_internal right");
@@ -222,6 +251,261 @@ export const selection = new AspectSelection([
   interfaces.R_LDAPConfiguration.Aspects.obi   ,
 ]);
 export const cfg = new AspectConfiguration(selection);
+
+function build_rights(cfg: AspectConfiguration, def: {
+  classes?: string[],
+  attributes: string[],
+  rights: ("read" | "create" | "update" | "delete")[],
+  who: Who[]
+}[]) : Map<string, ClassRights> {
+  let ret = new Map<string, ClassRights>();
+  for (let { classes, attributes, rights, who } of def) {
+    let aspects = classes ? classes.map(cls => cfg.aspectChecked(cls)) : cfg.aspects();
+    for (let aspect of aspects) {
+      let class_rights = ret.get(aspect.classname);
+      if (!class_rights) {
+        ret.set(aspect.classname, class_rights = {
+          read  : new Set(), read_key  : "",
+          create: new Set(), create_key: "",
+          update: new Set(), update_key: "",
+          delete: new Set(), delete_key: "",
+          attributes: new Map(),
+        });
+      }
+      for (let attribute_name of attributes) {
+        let attribute = aspect.attributes.get(attribute_name);
+        if (attribute) {
+          let attribute_rights = class_rights.attributes.get(attribute_name);
+          if (!attribute_rights) {
+            class_rights.attributes.set(attribute_name, attribute_rights = {
+              read: new Set<string>(),
+              create: new Set<string>(),
+              update: new Set<string>(),
+              delete: new Set<string>(),
+            });
+          }
+          for (let right of rights) {
+            for (let w of who) {
+              attribute_rights[right].add(w);
+              class_rights[right].add(w);
+            }
+          }
+        }
+      }
+    }
+  }
+  for (let class_rights of ret.values()) {
+    let urn_rights = class_rights.attributes.get("_urn");
+    if (urn_rights) {
+      urn_rights.update = new Set();
+      urn_rights.delete = new Set();
+    }
+    class_rights.read_key   = [...class_rights.read].join(',');
+    class_rights.create_key = [...class_rights.create].join(',');
+    class_rights.update_key = [...class_rights.update].join(',');
+    class_rights.delete_key = [...class_rights.delete].join(',');
+  }
+  return ret;
+}
+
+const rights_by_classname = build_rights(cfg, [
+  {
+    classes: [
+      "R_Person", "R_Service",
+      "R_Application", "R_AppTree", "R_Software_Context",
+      "R_Device", "R_DeviceTree",
+      "R_Authorization"
+    ],
+    attributes: [
+      "=::entity::",
+    ],
+    rights: ["read"],
+    who: ["public"],
+  },
+  {
+    attributes: [
+      "_system_name",
+      "_order",
+      "_disabled",
+      "_urn",
+      "_login",
+      "_parameter",
+      "_first_name",
+      "_middle_name",
+      "_last_name",
+      "_mail",
+      "_label",
+      "_string",
+      "_r_services",
+      "_r_authenticable",
+      "_r_administrator",
+      "_r_member",
+      "_r_application",
+      "_r_device",
+      "_r_parent_service",
+      "_r_child_services",
+      "_r_parent_apptree",
+      "_r_child_apptrees",
+      "_r_parent_devicetree",
+      "_r_child_devicetrees",
+      "_r_software_context",
+      "_r_sub_use_profile",
+      "_r_sub_device_profile",
+      "_r_use_profile",
+      "_r_device_profile",
+      "_r_license_number",
+      "_r_parent_context",
+      "_r_child_contexts",
+      "_r_license_needed",
+      "_r_serial_number",
+      "_r_out_of_order",
+      "_r_action",
+      "_r_sub_right",
+    ],
+    rights: ["read"],
+    who: ["public"],
+  },
+  {
+    attributes: [
+      "_ldap_url",
+      "_ldap_dn",
+      "_ldap_group",
+      "_ldap_password",
+      "_ldap_user_base",
+      "_ldap_user_filter",
+      "_ldap_attribute_map",
+      "_ldap_attribute_name",
+      "_ldap_to_attribute_name",
+    ],
+    rights: ["read"],
+    who: ["super_admin"],
+  },
+  {
+    attributes: [
+      "_r_authentication",
+      "_mlogin",
+      "_public_key",
+      "_hashed_password",
+      "_must_change_password",
+      "_ciphered_private_key",
+      "_ldap_dn",
+    ],
+    rights: ["read"],
+    who: ["self", "person_admin", "super_admin"],
+  },
+  {
+    classes: ["R_Person", "R_AuthenticationPK", "R_AuthenticationPWD", "R_AuthenticationLDAP", "Parameter"],
+    attributes: [
+      "=::entity::",
+      "_urn",
+      "_disabled",
+      "_login",
+      "_first_name",
+      "_middle_name",
+      "_last_name",
+      "_mail",
+      "_parameter",
+      "_label",
+      "_string",
+      "_login",
+      "_r_authentication",
+      "_mlogin",
+      "_public_key",
+      "_hashed_password",
+      "_must_change_password",
+      "_ciphered_private_key",
+      "_ldap_dn",
+    ],
+    rights: ["create", "update", "delete"],
+    who: ["person_admin", "super_admin"],
+  },
+  {
+    classes: ["R_Service"],
+    attributes: [
+      "=::entity::",
+      "_urn",
+      "_disabled",
+      "_label",
+      "_r_parent_service",
+      "_r_child_services",
+      "_r_administrator",
+      "_r_member",
+    ],
+    rights: ["create", "update", "delete"],
+    who: ["service_admin", "super_admin"],
+  },
+  {
+    classes: ["R_Application", "Parameter", "R_Use_Profile", "R_Device_Profile"],
+    attributes: [
+      "=::entity::",
+      "_urn",
+      "_disabled",
+      "_label",
+      "_parameter",
+      "_string",
+      "_login",
+      "_r_authentication",
+      "_mlogin",
+      "_public_key",
+      "_hashed_password",
+      "_must_change_password",
+      "_ciphered_private_key",
+      "_r_sub_license",
+      "_r_software_context",
+      "_r_sub_use_profile",
+      "_r_sub_device_profile",
+      "_r_device",
+    ],
+    rights: ["create", "update", "delete"],
+    who: ["app_admin", "super_admin"],
+  },
+  {
+    classes: ["R_AppTree"],
+    attributes: [
+      "=::entity::",
+      "_urn",
+      "_disabled",
+      "_label",
+      "_r_parent_apptree",
+      "_r_child_apptrees",
+      "_r_administrator",
+      "_r_application",
+    ],
+    rights: ["create", "update", "delete"],
+    who: ["apptree_admin", "super_admin"],
+  },
+  {
+    classes: ["R_Device", "Parameter"],
+    attributes: [
+      "=::entity::",
+      "_urn",
+      "_disabled",
+      "_label",
+      "_parameter",
+      "_string",
+      "_r_serial_number",
+      "_r_out_of_order",
+    ],
+    rights: ["create", "update", "delete"],
+    who: ["device_admin", "super_admin"],
+  },
+  {
+    classes: ["R_DeviceTree"],
+    attributes: [
+      "=::entity::",
+      "_urn",
+      "_disabled",
+      "_label",
+      "_r_parent_devicetree",
+      "_r_child_devicetrees",
+      "_r_administrator",
+      "_r_device",
+    ],
+    rights: ["create", "update", "delete"],
+    who: ["devicetree_admin", "super_admin"],
+  },
+]);
+
 export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
   function load_access_lists(ccc: ControlCenterContext, reporter: Reporter, dataSource: DataSource.Categories.raw, access_lists: Map<string, VersionedObject[]>) : Promise<Map<VersionedObject, string[]>> {
     let p: Promise<void>[] = [];
@@ -275,14 +559,14 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     };
   }
 
-  function safe_post_load(reporter: Reporter, dataSource: DataSource.Categories.raw) : SafePostLoadContext {
+  function safe_post_load(reporter: Reporter, dataSource: DataSource.Categories.raw) : SafePostLoadContext & SafePreSaveContext {
     let all_objects = new Set<VersionedObject>();
     let access_lists = new Map<string, VersionedObject[]>();
     return {
-      for_each(vo, path) {
+      for_each(vo: VersionedObject, path) {
         let manager = vo.manager();
         if (!manager.isSubObject()) {
-          let access_name = rights_by_classname[manager.classname()].read_key;
+          let access_name = rights_by_classname.get(manager.classname())!.read_key;
           if (!access_name)
             reporter.diagnostic({ is: "error", msg: `no access_name for (${manager.classname()})` });
           else {
@@ -298,12 +582,13 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
         let r = await load_access_lists(ccc, reporter, dataSource, access_lists);
         for (let vo of all_objects) {
           let manager = vo.manager();
-          let access = r.get(manager.rootObject());
+          let root_object = manager.rootObject();
+          let access = r.get(root_object);
           if (!access)
             reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
           else {
-            let r = rights_by_classname[manager.classname()];
-            for (let attribute of manager.aspect().attributes_by_index) {
+            let r = rights_by_classname.get(manager.classname())!;
+            for (let attribute of manager.attributes()) {
               if (manager.hasAttributeValueFast(attribute))
                 check_access(r, attribute, manager, access, vo);
             }
@@ -313,13 +598,13 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     };
 
     function check_access(r: ClassRights, attribute: Aspect.InstalledAttribute, manager: VersionedObjectManager<VersionedObject>, access: string[], vo: VersionedObject) {
-      let ra = r.attributes[attribute.name];
+      let ra = r.attributes.get(attribute.name);
       if (!ra) {
         if (attribute && attribute.relation)
-          ra = rights_by_classname[attribute.relation.class.classname].attributes[attribute.relation.attribute.name];
+          ra = rights_by_classname.get(attribute.relation.class.classname)!.attributes.get(attribute.relation.attribute.name);
       }
-      if (!ra || !access.some(a => ra.read.has(a)))
-        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${attribute}' on '${vo.id()}'` });
+      if (!ra || !access.some(a => ra!.read.has(a)))
+        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${attribute.name}' on '${vo.id()}'` });
     }
   }
 
@@ -332,7 +617,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       for_each(vo, set) {
         let manager = vo.manager();
         if (!manager.isSubObject()) {
-          let r = rights_by_classname[manager.classname()];
+          let r = rights_by_classname.get(manager.classname())!;
           let access_name: string;
           if (manager.isPendingDeletion())
             access_name = r.delete_key;
@@ -382,11 +667,10 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
     },
     finalize() { return Promise.resolve(); }
   };
-  for (let classname in rights_by_classname) {
-    let aspect = cfg.aspectChecked(classname);
+  for (let aspect of cfg.aspects()) {
     let v: SafeValidator = {
-      safe_post_load: [safe_is_admin],
-      safe_pre_save: [safe_is_admin],
+      safe_post_load: [safe_post_load],
+      safe_pre_save: [safe_post_load],
       safe_post_save: [],
     };
     if (aspect.attributes.has("_urn")) {
@@ -404,7 +688,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
         }
       });
     }
-    if (classname === "R_AuthenticationPWD") {
+    if (aspect.classname === "R_AuthenticationPWD") {
       v.safe_post_load.push(() => R_AuthenticationPWD_safe_post_load_context);
       v.safe_pre_save.push((reporter, datasource) => {
         let changes: R_AuthenticationPWD[] = [];
@@ -448,7 +732,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       });
       v.safe_post_save.push(() => R_AuthenticationPWD_safe_post_load_context);
     }
-    if (classname === "R_Person" || classname === "R_Application") {
+    if (aspect.classname === "R_Person" || aspect.classname === "R_Application") {
       v.safe_pre_save.push((reporter, datasource) => {
         let modified: (R_Person | R_Application)[] = [];
         return {
@@ -481,7 +765,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
         };
       });
     }
-    safeValidators.set(classname, v);
+    safeValidators.set(aspect.classname, v);
   }
 
   return function createControlCenter() {

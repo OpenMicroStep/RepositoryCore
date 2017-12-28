@@ -163,7 +163,8 @@ Session.category('client', {
     return !!this.data().is_authenticated;
   },
   logout() {
-    this.data().is_authenticated = false;
+    clearSession(this.data());
+    return new Promise<Result<void>>((resolve, reject) =>  { this.data().destroy(() => resolve(new Result([]))); });
   },
   async loginByPassword({ context: { ccc } }, q) {
     let db = ccc.find('odb') as DataSource.Aspects.server;

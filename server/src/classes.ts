@@ -703,12 +703,17 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
               return Promise.reject(inv.diagnostics());
             for (let vo of changes) {
               let m = vo.manager();
-              let password = m.attributeValue("_hashed_password");
+              let attribute_hashed_password = m.aspect().checkedAttribute("_hashed_password");
+              let attribute_ciphered_private_key = m.aspect().checkedAttribute("_ciphered_private_key");
+              m.resolveOutdatedAttributeFast(attribute_hashed_password);
+              m.resolveOutdatedAttributeFast(attribute_ciphered_private_key);
+
+              let password = m.attributeValueFast(attribute_hashed_password);
               let hashed_password = await SecureHash.hashedPassword(password);
-              m.setAttributeValue("_hashed_password", hashed_password);
-              let has_weak_pk = m.attributeValue("_ciphered_private_key");
+              m.setAttributeValueFast(attribute_hashed_password, hashed_password);
+              let has_weak_pk = m.attributeValueFast(attribute_ciphered_private_key);
               if (has_weak_pk) {
-                let hashed_sk_password = await SecureHash.hashedPassword(m.attributeValue("_hashed_password"));
+                let hashed_sk_password = await SecureHash.hashedPassword(m.attributeValueFast(attribute_hashed_password));
                 let private_key = await new Promise<string>((resolve, reject) => {
                   exec("openssl genrsa 2048", (err, stdout) => {
                     if (err) return reject(err);
@@ -720,10 +725,10 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
                 encrypted += aes.final('base64');
                 let [algorithm, hardness, salt] = (hashed_sk_password.match(/^(\d+):(\d+)<([a-zA-Z0-9+\/=]+)>([a-zA-Z0-9+\/=]+)$/) || []) as string[];
                 let ciphered_private_key = `${algorithm}:${hardness}<${salt}>${encrypted}`;
-                m.setAttributeValue("_ciphered_private_key", ciphered_private_key);
+                m.setAttributeValueFast(attribute_ciphered_private_key, ciphered_private_key);
               }
               else {
-                m.setAttributeValue("_ciphered_private_key", undefined);
+                m.setAttributeValueFast(attribute_ciphered_private_key, undefined);
               }
             }
             return Promise.resolve();

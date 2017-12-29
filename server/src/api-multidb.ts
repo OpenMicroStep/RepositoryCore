@@ -9,6 +9,7 @@ import {ExpressTransport} from '@openmicrostep/aspects.express';
 import {ModuleMultiDb} from './config';
 import {modules, session} from './server';
 import {api_v1} from './api-v1';
+import {api_v2} from './api-v2';
 import {clearSession} from './session';
 
 async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
@@ -16,6 +17,7 @@ async function boot_multidb(app: express.Router, m: ModuleMultiDb) {
   console.info(__dirname + "/../../../repository app/");
   let api_v1_r = express.Router();
   api_v1_r.use('/v1', api_v1());
+  api_v1_r.use('/v2', api_v2());
   app.use('/:client_id/:repo_name', express.static(__dirname + "/../../../repository app/"));
   app.use('/:client_id/:repo_name', async function (req, res, next) {
     try {
@@ -111,7 +113,7 @@ export class MultiDbCache {
         console.info(`lazy load ${client_id}/${repo_name}: pg`);
         const pg = require('pg');
         pg.types.setTypeParser(20, val => parseInt(val)); // BIGINT as number not string
-        const connector = PostgresDBConnectorFactory(pg, db, { max: 4 });
+        const connector = PostgresDBConnectorFactory(pg, { ...db, trace: (sql) => console.info(sql) }, { max: 4 });
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_ID"  ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_INT" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" BIGINT NOT NULL  , PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
         await connector.unsafeRun({ sql: 'CREATE TABLE IF NOT EXISTS "TJ_VAL_STR" ("VAL_INST" BIGINT NOT NULL, "VAL_CAR" BIGINT NOT NULL, "VAL" TEXT NOT NULL, PRIMARY KEY ("VAL_INST","VAL_CAR","VAL"))', bind: []})
@@ -120,7 +122,10 @@ export class MultiDbCache {
         console.info(`lazy load ${client_id}/${repo_name}: booted`);
         return {
           data: { creator: creator, client_id: client_id, repo_name: repo_name, session: session(`/${client_id}/`) },
-          destroy: () => connector.close()
+          destroy: () => {
+            console.info(`lazy load ${client_id}/${repo_name}: unloaded`);
+            connector.close()
+          }
         };
       }));
     }

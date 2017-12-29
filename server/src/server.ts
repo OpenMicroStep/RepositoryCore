@@ -12,7 +12,7 @@ export function session(path = '/') : express.RequestHandler {
       saveUninitialized: true,
       store: new MongoStore({ url: config.session.url, mongoOptions: config.session.options }),
       secret: config.session.secret,
-      resave: true,
+      resave: false,
     });
   }
   else if (config.session.type === "memory") {
@@ -21,7 +21,7 @@ export function session(path = '/') : express.RequestHandler {
       cookie: { path: path },
       saveUninitialized: true,
       secret: config.session.secret,
-      resave: true,
+      resave: false,
     });
   }
   throw new Error(`unsupported session type ${(config.session as any).type}`);

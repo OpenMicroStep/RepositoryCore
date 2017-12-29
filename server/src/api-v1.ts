@@ -273,6 +273,41 @@ export function api_v1() : express.Router {
     });
   }
 
+  type PollDevice = {
+    kind: "device"
+    brand: string,
+    model: string,
+    serial: string,
+    smartcard?: {
+      serial: string,
+      lastName: string,
+      firstName: string,
+      expirationDate: Date,
+      uid: string,
+    }
+  };
+
+  function isDevice(p: { kind: string | undefined }) : p is PollDevice {
+    return p.kind === "device";
+  }
+
+
+  // matchingPersons
+
+  r.post('/pairing/poll', ifAuthentified, ifMSTE, (req, res) => {
+    let data = validate(V.validateObject, req, res);
+    if (!data) return;
+    let {cc, db, session} = req.multidb_configuration.creator();
+    session.setData(req.session);
+    safe_res(res, cc.safe(async ccc => {
+      let inv = await ccc.farPromise(session.pairingSessionPoll, data);
+      if (inv.hasOneValue())
+        res.status(200).send(JSON.stringify(inv.value()));
+      else
+        res.status(500).send("unable to process request");
+    }));
+  });
+
   // matchingPersons
   const validateMatchingPersons = V.objectValidator({
     "login": V.defaultsTo(V.validateString, undefined),

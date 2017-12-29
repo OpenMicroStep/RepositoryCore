@@ -6,11 +6,13 @@ import {
   Session,
   R_AuthenticationPWD, R_AuthenticationLDAP, R_AuthenticationPK, R_AuthenticationTicket,
   R_Person, R_Authorization, R_Right,
-  R_Software_Context, R_Application, R_Device
+  R_Software_Context, R_Application, R_Device, R_Device_Profile
 } from './classes';
 import {SecureHash} from './securehash';
 import {authLdap} from './ldap';
 import * as crypto from 'crypto';
+import {config} from './config';
+import {exec} from 'child_process';
 
 export interface SessionData {
   is_authenticated: boolean;
@@ -21,6 +23,29 @@ export interface SessionData {
   application?: { id: Identifier };
   rights: { [app: string]: { [software_context: string]: string } };
   v1_auth?: { type: 'pk' | 'pwd', id: Identifier, challenge: string };
+  pairing_session?: {
+    init: {
+      fingerprint: string,
+    },
+    devices: {
+      id: string,
+      label: string,
+      brand: string,
+      model: string,
+      serial: string,
+      state: string,
+      smartcard?: {
+        serial: string,
+        lastName: string,
+        firstName: string,
+        expirationDate: Date,
+        uid: string,
+      },
+      time: number,
+      action?: any,
+      past_actions: any[],
+    }[],
+  },
   destroy(cb: (err) => void);
 }
 
@@ -68,6 +93,7 @@ export function clearSession(session: SessionData) {
   session.person = undefined;
   session.device = undefined;
   session.application = undefined;
+  session.pairing_session = undefined;
   session.is_admin = false;
   session.is_authenticated = false;
 }
@@ -216,7 +242,166 @@ Session.category('client', {
     if (!save.hasDiagnostics())
       return Result.fromValue(token);
     return Result.fromItemsWithoutValue(save.items());
-  }
+  },
+  async pairingSession({ context: { ccc } }, input) : Promise<Result<any>> {
+    let pairing_session = this.data().pairing_session;
+    if (!pairing_session) {
+      pairing_session = this.data().pairing_session = {
+        init: {
+          token: "",
+          fingerprint: "",
+        },
+        device_id: 0,
+        devices: [],
+      }
+    }
+    pairing_session.init.token = this.data().req.headers.cookie; // TODO: find a nicer way to share pairing_session data;
+    pairing_session.init.fingerprint = config.pairing.fingerprint;
+    return Result.fromValue(pairing_session.init);
+  },
+  async pairingSessionPoll({ context: { ccc } }, input) : Promise<Result<any>> {
+    let db = ccc.find('odb') as DataSource.Aspects.server;
+    let pairing_session = this.data().pairing_session;
+    if (!pairing_session)
+      return Result.fromDiagnostics([{ is: "error", msg: "no pairing session"}]);
+    if (input.kind === "end") {
+      this.data().pairing_session = undefined;
+      return new Result([]);
+    }
+    else if (input.kind === "device") {
+      let found = pairing_session.devices.find(d => d.serial === input.serial && d.brand === input.brand && d.model === input.model);
+      if (!found) {
+        let inv: Result = await ccc.farPromise(db.safeQuery, {
+          results: [{
+            name: 'device',
+            where: { $instanceOf: R_Device, _r_serial_number: input.serial },
+            scope: ["_label"],
+          },
+          {
+            name: 'app',
+            where: { $instanceOf: R_Application, _id: pairing_session.app },
+            scope: ["_r_sub_device_profile"],
+          },
+          {
+            name: 'device_profile',
+            where: { $instanceOf: R_Device_Profile, _id: pairing_session.device_profile },
+            scope: ["_r_device"],
+          }]
+        });
+        let { device: [device], app: [app], device_profile: [device_profile] } = inv.value() as { device: R_Device[], app: R_Application[], device_profile: R_Device_Profile[] };
+        if (!device) {
+          device = R_Device.create(ccc);
+          device._label = `${input.brand} ${input.model} - ${input.serial}`;
+          device._r_serial_number = input.serial;
+          if (app && device_profile) {
+            device_profile._r_device = new Set([...device_profile._r_device, device]);
+          }
+          inv = await ccc.farPromise(db.safeSave, app ? [app, device] : [device]);
+        }
+        if (inv.hasDiagnostics())
+          return Result.fromResultWithoutValue(inv);
+
+        pairing_session.devices.push(found = {
+          id: `${++pairing_session.device_id}`,
+          label: device._label,
+          brand: input.brand,
+          model: input.model,
+          serial: input.serial,
+          state: input.state,
+          smartcard: undefined,
+          time: 0,
+          action: undefined,
+          past_actions: [],
+        });
+      }
+      found.smartcard = input.smartcard;
+      found.state = input.state;
+      if (found.state === "done" && found.action) {
+        if (found.action.kind.indexOf("end") !== -1)
+          pairing_session.devices = pairing_session.devices.filter(d => d !== found);
+        found.past_actions.push(found.action);
+        found.action = undefined;
+      }
+      if (found.state === "init")
+        found.action = undefined;
+      found.time = Date.now();
+      return Result.fromValue({ id: found.id, action: found.action });
+    }
+    else if (input.kind === "ui") {
+      pairing_session.app = input.app && input.app.id();
+      pairing_session.device_profile = input.app && input.device_profile && input.device_profile.id();
+      for (let device_action of input.device_actions) {
+        let found = pairing_session.devices.find(d => d.serial === device_action.serial && d.brand === device_action.brand && d.model === device_action.model);
+        if (!found)
+          return Result.fromDiagnostics([{ is: "error", msg: "action device not found" }]);
+        found.action = device_action.action;
+      }
+      return Result.fromValue({ devices: pairing_session.devices });
+    }
+    else if (input.kind === "sign" && config.pairing.pki_dir) {
+      let results: any[] = [];
+      let pki_dir = config.pairing.pki_dir;
+      for (let instruction of input.instructions) {
+        if (instruction.action === "enroll") {
+          try {
+            let pkcs7_sign = await sign(pki_dir, instruction.csr1);
+            let pkcs7_auth = await sign(pki_dir, instruction.csr2);
+            results.push({ pkcs7_sign, pkcs7_auth });
+          }
+          catch (error) {
+            results.push({ error });
+          }
+        }
+        else {
+          results.push({ });
+        }
+      }
+      return Result.fromValue({ results });
+    }
+    return Result.fromDiagnostics([{ is: "error", msg: "unsupported poll kind" }]);
+  },
 } as Session.ImplCategories.client<Session.Aspects.server>);
 
-
+function sign(pki_dir: string, csr: string) {
+  return new Promise<string>((resolve, reject) => {
+    csr = csr.trim();
+    if (!/^-----BEGIN CERTIFICATE REQUEST-----[a-zA-Z0-9+/\n=]+-----END CERTIFICATE REQUEST-----$/.test(csr))
+      reject(`bad csr format`);
+    let process = exec(`echo "${csr}" | openssl ca -batch -config openssl-ca.cnf -policy signing_policy -extensions signing_req -in /dev/stdin | openssl crl2pkcs7 -nocrl -certfile cacert.pem -certfile /dev/stdin`,
+      { cwd: pki_dir, encoding: "utf8" });
+    let data = "";
+    process.stdout.on('data', (d: string) => {
+      data += d;
+    });
+    process.stderr.on('data', (d: string) => {
+      console.info("openssl ca csr stderr", d);
+    });
+    process.stdin.on('error', (err) => {
+      console.info("openssl ca csr stdin error", err);
+    });
+    process.stdout.on('error', (err) => {
+      console.info("openssl ca csr stdout error", err);
+    });
+    process.stderr.on('error', (err) => {
+      console.info("openssl ca csr stderr error", err);
+    });
+    process.on('error', (err) => {
+      reject(`${err.message}`);
+    });
+    process.on('close', (code) => {
+      if (code === 0) {
+        //let crt = data.match(/-----BEGIN CERTIFICATE-----[a-zA-Z0-9+/\n=]+-----END CERTIFICATE-----/);
+        let crt = data.match(/-----BEGIN PKCS7-----[a-zA-Z0-9+/\n=]+-----END PKCS7-----/);
+        if (crt)
+          resolve(crt[0]);
+        else {
+          console.error("unable to parse crt", data);
+          reject(`unable to parse crt`);
+        }
+      }
+      else
+        reject(`${code} != 0`);
+    });
+    process.stdin.write(csr);
+  });
+}

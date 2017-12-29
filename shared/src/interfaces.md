@@ -7,6 +7,8 @@
 #### loginByPassword(q: { login: string, password: string }): boolean
 #### logout(): void
 #### oneTimePasswordForDevice(device: R_Device): string
+#### pairingSession(): dictionary
+#### pairingSessionPoll(action: dictionary): dictionary
 ### aspect server
 #### categories: server client
 ### aspect client

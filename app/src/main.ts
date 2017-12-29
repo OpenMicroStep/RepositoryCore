@@ -3,7 +3,7 @@ import { XHRTransport } from '@openmicrostep/aspects.xhr';
 import {Session} from '../../shared/src/classes';
 import * as interfaces from '../../shared/src/classes';
 export * from '../../shared/src/classes';
-
+import './qrcode';
 const xhr = new XHRTransport();
 const cfg = new AspectConfiguration({
   selection: new AspectSelection([
@@ -76,6 +76,7 @@ import { ManagePersonsComponent }  from './layout/manage-persons.component';
 import { ManageDevicesComponent }  from './layout/manage-devices.component';
 import { ManageApplicationsComponent }  from './layout/manage-applications.component';
 import { ManageAuthorizationsComponent }  from './layout/manage-authorizations.component';
+import { ManagePairingComponent }  from './layout/manage-pairing.component';
 import { ManageSettingsComponent }  from './layout/manage-settings.component';
 
 import { AdminTreeComponent, AdminTreeItemComponent }  from './tree.component';
@@ -87,7 +88,8 @@ import { SearchListComponent }  from './search.component';
   ])],
   declarations: [ AppComponent,
     SearchListComponent, AdminTreeComponent, AdminTreeItemComponent,
-    ManagePersonsComponent, ManageDevicesComponent, ManageApplicationsComponent, ManageAuthorizationsComponent, ManageSettingsComponent,
+    ManagePersonsComponent, ManageDevicesComponent, ManageApplicationsComponent,
+    ManageAuthorizationsComponent, ManagePairingComponent, ManageSettingsComponent,
 
     PersonComponent, PersonListItemComponent,
     ApplicationComponent, ApplicationListItemComponent,

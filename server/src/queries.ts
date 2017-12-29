@@ -56,6 +56,21 @@ queries.set("persons", (reporter, query, cc) => ({
   where: ifText(visible_persons(cc), query),
   scope: ['_first_name', '_last_name', '_disabled']
 }));
+queries.set("pairing-persons", (reporter, query, cc) => ({
+  name: "items",
+  where: ifText(visible_persons(cc), query),
+  scope: {
+    R_Person: {
+      '.': ['_urn', '_first_name', '_last_name', '_disabled', '_r_authentication', '_parameter'],
+    },
+    R_AuthenticationPK: {
+      '_r_authentication.': ['_public_key'],
+    },
+    Parameter: {
+      '_parameter.': ['_label', '_string'],
+    }
+  },
+}));
 queries.set("services", (reporter, query, cc) => ({
   name: "items",
   where: ifText(visible_services(cc), query),

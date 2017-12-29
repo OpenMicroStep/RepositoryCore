@@ -26,6 +26,10 @@ export type Module = ModuleMultiDb | ModuleSingleDb;
 export type Config = {
   modules: (ModuleMultiDb | ModuleSingleDb)[],
   session: (SessionMongo | SessionMemory),
+  pairing: {
+    fingerprint: string,
+    pki_dir?: string,
+  }
   port: number,
 }
 export const config: Config = {
@@ -45,6 +49,10 @@ export const config: Config = {
     collection: "sessions",
     ttl: 1 * 24 * 60 * 60, // 1 Day
     options: { poolSize: 4 },
+  },
+  pairing: {
+    fingerprint: "9F:9C:B3:65:6A:83:EB:22:63:76:7A:6B:7B:AA:E7:E8:E9:82:44:5E".replace(/:/g, ''),
+    pki_dir: "/pki",
   },
   port: 8080,
 }

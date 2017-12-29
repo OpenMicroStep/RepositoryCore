@@ -21,6 +21,7 @@ import { Invocation, ControlCenterContext } from '@openmicrostep/aspects';
           <li role="presentation" (click)="_tab = 'devices'"        [class.active]="_tab == 'devices'"       ><a href="#" role="tab">Appareils</a></li>
           <li role="presentation" (click)="_tab = 'applications'"   [class.active]="_tab == 'applications'"  ><a href="#" role="tab">Applications</a></li>
           <li role="presentation" (click)="_tab = 'authorizations'" [class.active]="_tab == 'authorizations'"><a href="#" role="tab">Autorisations</a></li>
+          <li role="presentation" (click)="_tab = 'pairing'"        [class.active]="_tab == 'pairing'"       ><a href="#" role="tab">Appairage</a></li>
           <li role="presentation" (click)="_tab = 'settings'"       [class.active]="_tab == 'settings'"      ><a href="#" role="tab">Administration</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
@@ -40,6 +41,9 @@ import { Invocation, ControlCenterContext } from '@openmicrostep/aspects';
       </div>
       <div *ngIf="_tab == 'authorizations'">
         <manage-authorizations></manage-authorizations>
+      </div>
+      <div *ngIf="_tab == 'pairing'">
+        <manage-pairing></manage-pairing>
       </div>
       <div *ngIf="_tab == 'settings'">
         <manage-settings></manage-settings>

@@ -31,8 +31,8 @@ export type Device = {
 };
 
 export type Action =
-    { kind: "pair" } |
-    { kind: "pair+end" } |
+    { kind: "pair", app: R_Application, device_profile: R_Device_Profile } |
+    { kind: "pair+end", app: R_Application, device_profile: R_Device_Profile } |
     { kind: "enroll",
       pki: "ANTAI" | "LOCAL",
       enroll?: { uid: string, urn: string, firstname: string, lastname: string },
@@ -60,11 +60,11 @@ export type DeviceAction = {
           <div class="form-horizontal">
             <div class="form-group">
               <label class="col-sm-3 control-label">SSID</label>
-              <div class="col-sm-9"><input type="text" class="form-control pairing-data" name="ssid"></div>
+              <div class="col-sm-9"><input type="text" [(ngModel)]="wifi_ssid" class="form-control pairing-data" name="wifi_ssid"></div>
             </div>
             <div class="form-group">
               <label class="col-sm-3 control-label">Password</label>
-              <div class="col-sm-9"><input type="password" class="form-control pairing-data" name="password"></div>
+              <div class="col-sm-9"><input type="password" [(ngModel)]="wifi_pwd" class="form-control pairing-data" name="wifi_password"></div>
             </div>
           </div>
         </div>
@@ -99,7 +99,7 @@ export type DeviceAction = {
         </div>
       </div>
     </div>
-    <div class="col-md-6">
+    <div *ngIf="!_final_pairing" class="col-md-6">
       <div class="panel panel-default">
         <div class="panel-heading"><span>QRCode à scanner</span></div>
         <div class="panel-body">
@@ -116,19 +116,19 @@ export type DeviceAction = {
           <span>Appareils en cours de configuration</span>
         </div>
         <ul class="panel-body list-group">
-          <li class="list-group-item">
-            Application & profil d'appareil pour les nouveaux appareils:
-            <input-select [(value)]="selected_app" [items]="_applications">
-              <ng-template let-item="$implicit">
-                <application-li [object]="item"></application-li>
-              </ng-template>
-            </input-select>
-            <input-select [(value)]="selected_device_profile" [items]="availableDeviceProfiles()">
-              <ng-template let-item="$implicit">
-                {{item._label}}
-              </ng-template>
-            </input-select>
-          </li>
+        <li class="list-group-item">
+          Application & profil d'appareil pour l'appairage:
+          <input-select [(value)]="selected_app" [items]="_applications">
+            <ng-template let-item="$implicit">
+              <application-li [object]="item"></application-li>
+            </ng-template>
+          </input-select>
+          <input-select [(value)]="selected_device_profile" [items]="availableDeviceProfiles()">
+            <ng-template let-item="$implicit">
+              {{item._label}}
+            </ng-template>
+          </input-select>
+        </li>
           <li *ngFor="let device of this.devices" class="list-group-item dropzone" (drop)="drop($event, device)" (dragover)="dragover($event, device)" (dragleave)="dragleave($event)">
             <div>
               {{ device.label }}
@@ -169,8 +169,8 @@ export type DeviceAction = {
               {{ action_label(device.action) }}
             </div>
           </li>
-          <li class="list-group-item">
-            <button class="btn btn-success btn-lg btn-block" type="submit" [disabled]="this._final_pairing" (click)="this.commit()">Terminer la session d'appairage</button>
+          <li *ngIf="selected_app && selected_device_profile" class="list-group-item">
+            <button class="btn btn-success btn-lg btn-block" type="submit" [disabled]="this._final_pairing" (click)="this.commit()">Appairer les appareils pour {{selected_app._label}} - {{selected_device_profile._label}} et terminer la session d'appairage</button>
           </li>
         </ul>
       </div>
@@ -195,6 +195,10 @@ export type DeviceAction = {
 })
 export class ManagePairingComponent extends AspectComponent {
   @ViewChild('qrcode') input: ElementRef;
+  qr_code_data = {
+    url: "",
+    wifi: { ssid: "", pwd: ""}
+  };
   device_actions: DeviceAction[] = [];
   devices: Device[] = [];
   interval: any
@@ -205,11 +209,12 @@ export class ManagePairingComponent extends AspectComponent {
     super(ctx.cc);
     let ccc = this._controlCenter.ccc(this);
     ccc.farPromise(this.ctx.session.pairingSession, undefined).then((result) => {
-      this.setCode(JSON.stringify({
+      this.qr_code_data = {
         url: document.location.origin + document.location.pathname,
-        wifi: undefined, // TODO
+        wifi: { ssid: "", pwd: ""},
         ...result.value(),
-      }));
+      };
+      this.setCode();
       this.interval = setTimeout(() => this.poll(), 10);
     });
     ccc.farPromise(this.ctx.db.query, { id: "application-tree" }).then(res => {
@@ -227,6 +232,12 @@ export class ManagePairingComponent extends AspectComponent {
     clearTimeout(this.interval);
     this.interval = undefined;
   }
+
+  get wifi_ssid() { return this.qr_code_data.wifi.ssid; }
+  set wifi_ssid(ssid) { this.qr_code_data.wifi.ssid = ssid; this.setCode(); }
+
+  get wifi_pwd() { return this.qr_code_data.wifi.pwd; }
+  set wifi_pwd(pwd) { this.qr_code_data.wifi.pwd = pwd; this.setCode(); }
 
   _applications: R_Application[] = [];
   _selected_app: R_Application | undefined = undefined;
@@ -248,7 +259,7 @@ export class ManagePairingComponent extends AspectComponent {
     let ccc = this._controlCenter.ccc(this);
     let device_actions = this.device_actions;
     this.device_actions = [];
-    let res = await ccc.farPromise(this.ctx.session.pairingSessionPoll, { kind: "ui", device_actions: device_actions, app: this.selected_app, device_profile: this.selected_device_profile });
+    let res = await ccc.farPromise(this.ctx.session.pairingSessionPoll, { kind: "ui", device_actions: device_actions });
     if (!res.hasDiagnostics()) {
       let { devices } = res.value() as { devices: Device[] };
       this.devices = devices;
@@ -268,7 +279,9 @@ export class ManagePairingComponent extends AspectComponent {
       this._final_pairing = true;
       for (let d of this.devices) {
         d.action = {
-          kind: "pair+end"
+          kind: "pair+end",
+          app: this.selected_app!,
+          device_profile: this.selected_device_profile!,
         };
         this.device_actions.push({
           brand: d.brand,
@@ -282,7 +295,8 @@ export class ManagePairingComponent extends AspectComponent {
 
   _lastcode = "";
   _qrcode: QRCode | undefined = undefined;
-  setCode(text: string) {
+  setCode() {
+    let text = JSON.stringify(this.qr_code_data);
     if (text !== this._lastcode) {
       if (!this._qrcode)
         this._qrcode = new QRCode(this.input.nativeElement, {

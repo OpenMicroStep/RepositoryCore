@@ -29,6 +29,7 @@ export interface SessionData {
     },
     devices: {
       id: string,
+      real_id: Identifier,
       label: string,
       brand: string,
       model: string,
@@ -276,33 +277,21 @@ Session.category('client', {
             name: 'device',
             where: { $instanceOf: R_Device, _r_serial_number: input.serial },
             scope: ["_label"],
-          },
-          {
-            name: 'app',
-            where: { $instanceOf: R_Application, _id: pairing_session.app },
-            scope: ["_r_sub_device_profile"],
-          },
-          {
-            name: 'device_profile',
-            where: { $instanceOf: R_Device_Profile, _id: pairing_session.device_profile },
-            scope: ["_r_device"],
           }]
         });
-        let { device: [device], app: [app], device_profile: [device_profile] } = inv.value() as { device: R_Device[], app: R_Application[], device_profile: R_Device_Profile[] };
+        let { device: [device] } = inv.value() as { device: R_Device[] };
         if (!device) {
           device = R_Device.create(ccc);
           device._label = `${input.brand} ${input.model} - ${input.serial}`;
           device._r_serial_number = input.serial;
-          if (app && device_profile) {
-            device_profile._r_device = new Set([...device_profile._r_device, device]);
-          }
-          inv = await ccc.farPromise(db.safeSave, app ? [app, device] : [device]);
+          inv = await ccc.farPromise(db.safeSave, [device]);
         }
         if (inv.hasDiagnostics())
           return Result.fromResultWithoutValue(inv);
 
         pairing_session.devices.push(found = {
           id: `${++pairing_session.device_id}`,
+          real_id: device.id(),
           label: device._label,
           brand: input.brand,
           model: input.model,
@@ -328,13 +317,30 @@ Session.category('client', {
       return Result.fromValue({ id: found.id, action: found.action });
     }
     else if (input.kind === "ui") {
-      pairing_session.app = input.app && input.app.id();
-      pairing_session.device_profile = input.app && input.device_profile && input.device_profile.id();
       for (let device_action of input.device_actions) {
         let found = pairing_session.devices.find(d => d.serial === device_action.serial && d.brand === device_action.brand && d.model === device_action.model);
         if (!found)
           return Result.fromDiagnostics([{ is: "error", msg: "action device not found" }]);
         found.action = device_action.action;
+        if (found.action.kind.indexOf("pair") !== -1) {
+          let app: R_Application = found.action.app;
+          let device_profile: R_Device_Profile = found.action.device_profile;
+          let device = ccc.findOrCreate<R_Device>(found.real_id, "R_Device");
+          let inv: Result = await ccc.farPromise(db.safeLoad, {
+            objects: [app, device_profile, device],
+            scope: {
+              R_Application: { '.': ["_r_sub_device_profile", "_urn"] },
+              R_Device_Profile: { '.': ["_r_device"] },
+            },
+          });
+          if (!inv.hasDiagnostics()) {
+            device_profile._r_device = new Set([...device_profile._r_device, device]);
+            inv = await ccc.farPromise(db.safeSave, [app]);
+          }
+          if (inv.hasDiagnostics())
+            return Result.fromResultWithoutValue(inv);
+          found.action = { kind: found.action.kind, app: app._urn };
+        }
       }
       return Result.fromValue({ devices: pairing_session.devices });
     }

@@ -82,15 +82,15 @@ export type DeviceAction = {
           <div *ngIf="this._enrol_kind === 'ANTAI'" class="form-horizontal">
             <div class="form-group">
               <label class="col-sm-3 control-label">Code unité</label>
-              <div class="col-sm-9"><input type="text" class="form-control pairing-enroll" name="codeunite"></div>
+              <div class="col-sm-9"><input type="text" class="form-control pairing-enroll" [(ngModel)]="_codeunite" name="codeunite"></div>
             </div>
             <div class="form-group">
               <label class="col-sm-3 control-label">Login</label>
-              <div class="col-sm-9"><input type="text" class="form-control pairing-enroll" name="login"></div>
+              <div class="col-sm-9"><input type="text" class="form-control pairing-enroll" [(ngModel)]="_login" name="login"></div>
             </div>
             <div class="form-group">
               <label class="col-sm-3 control-label">Password</label>
-              <div class="col-sm-9"><input type="password" class="form-control pairing-enroll" name="password"></div>
+              <div class="col-sm-9"><input type="password" class="form-control pairing-enroll" [(ngModel)]="_password" name="password"></div>
             </div>
           </div>
           <div *ngIf="this._enrol_kind === 'LOCAL'" class="form-horizontal">
@@ -430,15 +430,23 @@ export class ManagePairingComponent extends AspectComponent {
     }
   }
 
+  _codeunite = "";
+  _login = "";
+  _password = "";
   drop($event: DragEvent, d: Device) {
     $event.preventDefault();
     let p = this._dragged;
     if (d && p) {
+      let inject = this._enrol_kind === "ANTAI" ? {
+        codeunite: this._codeunite,
+        login: this._login,
+        password: this._password,
+      } : {};
       d.action = {
         kind: "enroll",
         pki: this._enrol_kind,
-        enroll: { uid: this.p_matricule(p)!, urn: p._urn!, firstname: p._first_name!, lastname: p._last_name! },
-        revoke: d.smartcard && d.smartcard.uid ? { uid: d.smartcard.uid, urn: p._urn! } : undefined,
+        enroll: { uid: this.p_matricule(p)!, urn: p._urn!, firstname: p._first_name!, lastname: p._last_name!, ...inject },
+        revoke: d.smartcard && d.smartcard.uid ? { uid: d.smartcard.uid, urn: p._urn!, ...inject } : undefined,
       };
       this.device_actions.push({
         brand: d.brand,

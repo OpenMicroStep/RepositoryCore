@@ -47,9 +47,10 @@ function VOList(vo: VersionedObject[]) {
           r["r_matricule"] = [...(v as any)].filter(p => p._label === "matricule").map(p => p._string);
         }
         else if (v1k === "r_authentication") {
+          let has_pk = !![...(v as any)].find(a => a instanceof Classes.R_AuthenticationPK);
           let exportables: Classes.R_AuthenticationPWD[] = [...(v as any)].filter(a => a instanceof Classes.R_AuthenticationPWD && a._ciphered_private_key);
           r["login"] = exportables.map(a => a._mlogin);
-          r["ciphered private key"] = exportables.map(a => a._ciphered_private_key);
+          r["ciphered private key"] = has_pk ? [] : exportables.map(a => a._ciphered_private_key);
         }
         else if (!(v instanceof Set))
           r[v1k] = v === undefined ? [] : [mapValue(v)];

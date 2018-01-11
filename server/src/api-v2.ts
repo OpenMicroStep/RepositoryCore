@@ -6,7 +6,7 @@ import * as Classes from './classes';
 import {SecureHash, SecurePK} from './securehash';
 import {SessionData, authsByLogin, authenticableFromAuth, writeSession} from './session';
 const bodyParser = require('body-parser');
-const json_parser = bodyParser.json({ type: () => true });
+const json_parser = bodyParser.json({ type: "application/json" });
 
 export function api_v2() : express.Router {
   let r = express.Router();

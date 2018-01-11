@@ -6,7 +6,7 @@ import * as Classes from './classes';
 import {SecureHash, SecurePK} from './securehash';
 import {SessionData, authsByLogin, authenticableFromAuth, writeSession} from './session';
 const bodyParser = require('body-parser');
-const raw_parser = bodyParser.text({ type: () => true });
+const raw_parser = bodyParser.text({ type: "application/json" });
 declare module "express-serve-static-core" {
   interface Request {
     session: SessionData;

@@ -1,5 +1,4 @@
 import {VersionedObject, ControlCenter, Result} from '@openmicrostep/aspects';
-import {Reporter, AttributePath, AttributeTypes as V, Diagnostic} from '@openmicrostep/msbuildsystem.shared';
 import {MSTE} from '@openmicrostep/mstools';
 import * as express from 'express';
 import * as Classes from './classes';

@@ -1,5 +1,4 @@
-import {VersionedObject, ControlCenter, Result} from '@openmicrostep/aspects';
-import {Reporter, AttributePath, AttributeTypes as V, Diagnostic} from '@openmicrostep/msbuildsystem.shared';
+import {VersionedObject, ControlCenter, Result, Validate as V, PathReporter, Reporter, Diagnostic} from '@openmicrostep/aspects';
 import {MSTE} from '@openmicrostep/mstools';
 import * as express from 'express';
 import * as Classes from './classes';
@@ -13,10 +12,10 @@ declare module "express-serve-static-core" {
   }
 }
 
-const validateInteger = { validate: function validateInteger(reporter: Reporter, path: AttributePath, value: any) {
+const validateInteger = { validate: function validateInteger(at: PathReporter, value: any) {
   if (typeof value === "number" && Number.isInteger(value))
     return value;
-  path.diagnostic(reporter, { is: "warning", msg: `attribute must be an integer, got ${typeof value}`});
+  at.diagnostic({ is: "error", msg: `attribute must be an integer, got ${typeof value}`});
   return undefined;
 }, traverse: () => 'integer' };
 
@@ -83,10 +82,10 @@ function ifMSTE(req: express.Request, res: express.Response, next: express.NextF
   });
 }
 function validate<T>(validator: V.Validator0<T>, req: express.Request, res: express.Response) : T | undefined {
-  let reporter = new Reporter();
-  let ret = validator.validate(reporter, new AttributePath('req.body'), req.body);
+  let at = new PathReporter(new Reporter(), 'req.body');
+  let ret = validator.validate(at, req.body);
   if (!ret)
-    res.status(400).send(MSTEEncoded(reporter.diagnostics));
+    res.status(400).send(MSTEEncoded(at.reporter.diagnostics));
   return ret;
 }
 
@@ -532,7 +531,7 @@ export function api_v1() : express.Router {
       let _car = Classes.mapAttributesR[car];
       if (_car) {
         let a = aspect.attributes.get(_car)!;
-        if (a.contains_vo && typeof v === "string") { // _urn
+        if (a.containsVersionedObject() && typeof v === "string") { // _urn
           let y = `v${++n}`;
           where[`${y}=`] = { $elementOf: { _urn: v } };
           where[`=x.${_car}`] = { $contains: `=${y}` };

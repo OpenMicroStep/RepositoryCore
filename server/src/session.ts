@@ -43,6 +43,7 @@ export interface SessionData {
         uid: string,
       },
       time: number,
+      pending_actions: any[],
       action?: any,
       past_actions: any[],
     }[],
@@ -299,6 +300,7 @@ Session.category('client', {
           state: input.state,
           smartcard: undefined,
           time: 0,
+          pending_actions: [],
           action: undefined,
           past_actions: [],
         });
@@ -313,6 +315,8 @@ Session.category('client', {
       }
       if (found.state === "init")
         found.action = undefined;
+      if (found.action === undefined && found.pending_actions.length > 0)
+        found.action = found.pending_actions.shift();
       found.time = Date.now();
       return Result.fromValue({ id: found.id, action: found.action });
     }
@@ -321,10 +325,10 @@ Session.category('client', {
         let found = pairing_session.devices.find(d => d.serial === device_action.serial && d.brand === device_action.brand && d.model === device_action.model);
         if (!found)
           return Result.fromDiagnostics([{ is: "error", msg: "action device not found" }]);
-        found.action = device_action.action;
-        if (found.action.kind.indexOf("pair") !== -1) {
-          let app: R_Application = found.action.app;
-          let device_profile: R_Device_Profile = found.action.device_profile;
+        let action = device_action.action;
+        if (action.kind.indexOf("pair") !== -1) {
+          let app: R_Application = action.app;
+          let device_profile: R_Device_Profile = action.device_profile;
           let device = ccc.findOrCreate<R_Device>(found.real_id, "R_Device");
           let inv: Result = await ccc.farPromise(db.safeLoad, {
             objects: [app, device_profile, device],
@@ -339,10 +343,12 @@ Session.category('client', {
           }
           if (inv.hasDiagnostics())
             return Result.fromResultWithoutValue(inv);
-          found.action = { kind: found.action.kind, app: app._urn };
+          action = { kind: action.kind, app: app._urn };
         }
+        found.pending_actions.push(action);
       }
-      return Result.fromValue({ devices: pairing_session.devices });
+      let now = Date.now();
+      return Result.fromValue({ devices: pairing_session.devices.map(d => Object.assign({}, d, { timeout: now - d.time })) });
     }
     else if (input.kind === "sign" && config.pairing.pki_dir) {
       let results: any[] = [];

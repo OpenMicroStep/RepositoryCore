@@ -10,6 +10,7 @@ import { QRCode } from '../qrcode';
 
 export type SmartCard = {
   kind: "nfc" | "sd",
+  pki: "ANTAI" | "LOCAL",
   serial: string,
   lastName?: string,
   firstName?: string,
@@ -24,8 +25,11 @@ export type Device = {
   model: string,
   serial: string,
   state: string,
+  pin?: string,
   smartcard?: SmartCard,
-  time: number,
+  timeout: number,
+  will_actions: Action[],
+  pending_actions: Action[],
   action: Action | undefined,
   past_actions: Action[],
 };
@@ -33,8 +37,10 @@ export type Device = {
 export type Action =
     { kind: "pair", app: R_Application, device_profile: R_Device_Profile } |
     { kind: "pair+end", app: R_Application, device_profile: R_Device_Profile } |
+    { kind: "set-pin", old: string, new: string } |
     { kind: "enroll",
       pki: "ANTAI" | "LOCAL",
+      pin?: string,
       enroll?: { uid: string, urn: string, firstname: string, lastname: string },
       revoke?: { uid: string, urn: string }
     } |
@@ -117,7 +123,7 @@ export type DeviceAction = {
         </div>
         <ul class="panel-body list-group">
         <li class="list-group-item">
-          Application & profil d'appareil pour l'appairage:
+          Appairer pour:
           <input-select [(value)]="selected_app" [items]="_applications">
             <ng-template let-item="$implicit">
               <application-li [object]="item"></application-li>
@@ -141,36 +147,61 @@ export type DeviceAction = {
             </div>
             <div *ngIf="!device.action">
               <span class="label" [ngClass]="d_state_class(device)">{{ d_state_label(device) }}</span>
-              <ng-template [ngIf]="_droptarget !== device">
-                <span *ngIf="!device.smartcard">
-                  Pas de SmartCard
-                </span>
-                <span *ngIf="device.smartcard && !device.smartcard.uid">
-                  SmartCard ({{ smartcard_kind_label(device.smartcard) }}) vierge
-                </span>
-                <span *ngIf="device.smartcard && device.smartcard.uid">
-                  SmartCard ({{ smartcard_kind_label(device.smartcard) }}) enrolé: {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} (valide jusqu'à {{ device.smartcard.expirationDate | date }})
-                </span>
-              </ng-template>
-              <ng-template [ngIf]="_droptarget === device">
-                <span *ngIf="device.smartcard && !device.smartcard.uid">
-                  Enrôler ({{_enrol_kind }}) {{ _dragged._last_name }} {{ _dragged._first_name }} sur une SmartCard ({{ smartcard_kind_label(device.smartcard) }}) vierge
-                </span>
-                <span *ngIf="device.smartcard.uid && device.smartcard.matricule === p_matricule(_dragged)">
-                  Re-Enrôler ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
-                </span>
-                <span *ngIf="device.smartcard.uid && device.smartcard.matricule !== p_matricule(_dragged)">
-                  Révoker ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} puis enrôler {{ _dragged._last_name }} {{ _dragged._first_name }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
-                </span>
-              </ng-template>
+              <span *ngIf="!device.smartcard">
+                Pas de SmartCard
+              </span>
+              <span *ngIf="device.smartcard && !device.smartcard.uid">
+                SmartCard ({{ smartcard_kind_label(device.smartcard) }}) vierge
+              </span>
+              <span *ngIf="device.smartcard && device.smartcard.uid">
+                SmartCard ({{ smartcard_kind_label(device.smartcard) }}) enrolé ({{ device.smartcard.pki }}): {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} (valide jusqu'à {{ device.smartcard.expirationDate | date }})
+              </span>
+            </div>
+            <div *ngFor="let action of device.pending_actions">
+              <span class="label label-primary">En attente</span>
+              {{ action_label(action) }}
             </div>
             <div *ngIf="device.action">
               <span class="label" [ngClass]="d_state_class(device)">{{ d_state_label(device) }}</span>
               {{ action_label(device.action) }}
             </div>
+            <div *ngFor="let action of device.will_actions" class="row">
+              <div class="col-md-6">
+                <span class="label label-info">Préparation</span>
+                {{ action_label(action) }}
+              </div>
+              <div class="col-md-6 form-inline text-right">
+                <ng-template [ngIf]="action.kind === 'enroll'">
+                  <input class="form-control" type="password" autocomplete="off" placeholder="PIN" [(ngModel)]="action.pin" maxlength="4" size="4"/>
+                </ng-template>
+                <ng-template [ngIf]="action.kind === 'set-pin'">
+                  <input class="form-control" type="password" autocomplete="off" placeholder="Ancien PIN" [(ngModel)]="action.old" maxlength="4" size="4"/>
+                  <input class="form-control" type="password" autocomplete="off" placeholder="Nouveau PIN" [(ngModel)]="action.new" maxlength="4" size="4"/>
+                </ng-template>
+                <button class="btn btn-success" [disabled]="this._final_pairing" (click)="this.validate_action(device, action, true)">
+                  <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                </button>
+                <button class="btn btn-danger" [disabled]="this._final_pairing" (click)="this.validate_action(device, action, false)">
+                  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+            <ng-template [ngIf]="_droptarget === device">
+              <span *ngIf="device.smartcard && !device.smartcard.uid">
+                Enrôler ({{_enrol_kind }}) {{ _dragged._last_name }} {{ _dragged._first_name }} sur une SmartCard ({{ smartcard_kind_label(device.smartcard) }}) vierge
+              </span>
+              <span *ngIf="device.smartcard.uid && device.smartcard.matricule === p_matricule(_dragged)">
+                Re-Enrôler ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
+              </span>
+              <span *ngIf="device.smartcard.uid && device.smartcard.matricule !== p_matricule(_dragged)">
+                Révoker ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} puis enrôler {{ _dragged._last_name }} {{ _dragged._first_name }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
+              </span>
+            </ng-template>
           </li>
           <li *ngIf="selected_app && selected_device_profile" class="list-group-item">
-            <button class="btn btn-success btn-lg btn-block" type="submit" [disabled]="this._final_pairing" (click)="this.commit()">Appairer les appareils pour {{selected_app._label}} - {{selected_device_profile._label}} et terminer la session d'appairage</button>
+            <button class="btn btn-success btn-lg btn-block" type="submit" [disabled]="this._final_pairing" (click)="this.commit()">
+              Terminer la session d'appairage
+            </button>
           </li>
         </ul>
       </div>
@@ -262,7 +293,35 @@ export class ManagePairingComponent extends AspectComponent {
     let res = await ccc.farPromise(this.ctx.session.pairingSessionPoll, { kind: "ui", device_actions: device_actions });
     if (!res.hasDiagnostics()) {
       let { devices } = res.value() as { devices: Device[] };
-      this.devices = devices;
+      let remaining = new Map();
+      for (let device of this.devices) {
+        remaining.set(JSON.stringify([device.serial, device.brand, device.model]), device);
+      }
+      for (let device of devices) {
+        let key = JSON.stringify([device.serial, device.brand, device.model]);
+        let found = remaining.get(key);
+        if (found) {
+          remaining.delete(key);
+          found.action = undefined;
+          Object.assign(found, device);
+        }
+        else {
+          device.will_actions = [];
+          this.devices.push(device);
+          if (device.past_actions.length === 0 && device.pending_actions.length === 0 && !device.action) {
+            this.validate_action(device, {
+              kind: "pair",
+              app: this.selected_app!,
+              device_profile: this.selected_device_profile!,
+            }, true);
+          }
+        }
+      }
+      for (let device of remaining.values()) {
+        let idx = this.devices.indexOf(device);
+        if (idx !== -1)
+          this.devices.splice(idx, 1);
+      }
     }
     if (this.interval !== undefined) {
       if (this._final_pairing && this.devices.filter(d => !this.d_timedout(d)).length === 0) {
@@ -278,16 +337,17 @@ export class ManagePairingComponent extends AspectComponent {
     if (!this._final_pairing) {
       this._final_pairing = true;
       for (let d of this.devices) {
-        d.action = {
+        let action: Action = {
           kind: "pair+end",
           app: this.selected_app!,
           device_profile: this.selected_device_profile!,
         };
+        d.pending_actions.push(action);
         this.device_actions.push({
           brand: d.brand,
           model: d.model,
           serial: d.serial,
-          action: d.action,
+          action: action,
         });
       }
     }
@@ -330,13 +390,11 @@ export class ManagePairingComponent extends AspectComponent {
   }
 
   d_timedout(d: Device): boolean {
-    let now = Date.now();
-    return (d.time < now - (d.action ? 240 * 1000 : 30 * 1000));
+    return (d.timeout > (d.action ? 240 * 1000 : 30 * 1000));
   }
 
   d_state(d: Device): string {
-    let now = Date.now();
-    if (d.time < now - (d.action ? 240 * 1000 : 30 * 1000))
+    if (d.timeout > (d.action ? 240 * 1000 : 30 * 1000))
       return "timedout"
     return d.state;
   }
@@ -395,6 +453,8 @@ export class ManagePairingComponent extends AspectComponent {
       if (a.enroll && a.revoke)
         return `Révocation (${a.pki}) de ${ a.revoke.uid } puis enrôlement de ${ a.enroll.lastname } ${ a.enroll.firstname }`;
     }
+    if (a.kind === "set-pin")
+      return `Changement de code PIN`;
     if (a.kind === "pair")
       return `Appairage`;
     if (a.kind === "pair+end")
@@ -407,7 +467,6 @@ export class ManagePairingComponent extends AspectComponent {
   _dragged: R_Person | undefined = undefined;
   _droptarget: Device | undefined = undefined;
   drag($event: DragEvent, p: R_Person) {
-    console.info("drag", $event);
     this._dragged = p;
     const handler = () => {
       this._dragged = undefined;
@@ -423,8 +482,7 @@ export class ManagePairingComponent extends AspectComponent {
   }
 
   dragover($event: DragEvent, d: Device) {
-    console.info("dragover");
-    if (d.smartcard && !d.action) {
+    if (d.smartcard) {
       $event.preventDefault();
       this._droptarget = d;
     }
@@ -442,17 +500,27 @@ export class ManagePairingComponent extends AspectComponent {
         login: this._login,
         password: this._password,
       } : {};
-      d.action = {
+      d.will_actions.push({
         kind: "enroll",
+        pin: undefined,
         pki: this._enrol_kind,
         enroll: { uid: this.p_matricule(p)!, urn: p._urn!, firstname: p._first_name!, lastname: p._last_name!, ...inject },
         revoke: d.smartcard && d.smartcard.uid ? { uid: d.smartcard.uid, urn: p._urn!, ...inject } : undefined,
-      };
+      });
+    }
+  }
+
+  validate_action(d: Device, a: Action, execute: boolean) {
+    let idx = d.will_actions.indexOf(a);
+    if (idx !== -1)
+      d.will_actions.splice(idx, 1);
+    if (execute) {
+      d.pending_actions.push(a);
       this.device_actions.push({
-        brand: d.brand,
-        model: d.model,
         serial: d.serial,
-        action: d.action,
+        model: d.model,
+        brand: d.brand,
+        action: a,
       });
     }
   }

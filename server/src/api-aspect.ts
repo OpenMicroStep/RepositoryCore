@@ -32,7 +32,7 @@ async function boot_singledb(app: express.Router, m: ModuleMultiDb) {
     }
     return Promise.reject('not authenticated');
   });
-  cfg.installPublicTransport(transport, DataSource, ["server"]);
+  cfg.installPublicTransport(transport, DataSource, ["Public"]);
   cfg.installPublicTransport(transport, Session, ["client"]);
 }
 modules['singledb'] = boot_singledb;

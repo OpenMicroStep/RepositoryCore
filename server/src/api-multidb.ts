@@ -162,7 +162,7 @@ export function api_multidb() : express.Router {
     }
     return Promise.reject('not authenticated');
   });
-  cfg.installPublicTransport(transport, DataSource, ["server"]);
+  cfg.installPublicTransport(transport, DataSource, ["Public"]);
   cfg.installPublicTransport(transport, Session, ["client"]);
   return router;
 }

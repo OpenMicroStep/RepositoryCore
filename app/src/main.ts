@@ -31,7 +31,8 @@ const cfg = new AspectConfiguration({
     interfaces.R_LDAPGroup.Aspects.obi           ,
     interfaces.R_LDAPConfiguration.Aspects.obi   ,
   ]),
-  defaultFarTransport: xhr
+  defaultFarTransport: xhr,
+  validators: interfaces.validators,
 });
 const controlCenter = new ControlCenter(cfg);
 const ccc = controlCenter.registerComponent({});

@@ -1,4 +1,4 @@
-FROM node:6
+FROM node:8
 WORKDIR /srv/
 COPY dist/openms.aspects.node/node_modules dist/openms.aspects.angular/node_modules /srv/
 

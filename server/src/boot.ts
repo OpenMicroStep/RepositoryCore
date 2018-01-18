@@ -1,11 +1,12 @@
-import {DataSourceInternal} from '@openmicrostep/aspects';
+import {DataSourceInternal, Reporter} from '@openmicrostep/aspects';
 import {DBConnector} from '@openmicrostep/aspects.sql';
 import {OuiDB, StdDefinition} from '@openmicrostep/aspects.obi';
-import {Parser, Reporter} from '@openmicrostep/msbuildsystem.shared';
+import {Parser} from '@openmicrostep/msbuildsystem.shared';
 import {controlCenterCreator, buildMaps} from './classes';
 import {repositoryV2Definition} from './repository-v2-def';
 import * as Classes from './classes';
 import ConstraintType = DataSourceInternal.ConstraintType;
+
 export async function boot(connector: DBConnector) {
   const ouiDb = new OuiDB(connector);
   let maker = connector.maker;
@@ -118,11 +119,11 @@ export async function boot(connector: DBConnector) {
       ])));
       await tr.delete(maker.delete("TJ_VAL_INT", maker.and([
         maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.LessThan, 19000),
-        maker.op_bind(maker.and([
+        maker.op(maker.and([
           maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.Equal, 9020),
           maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.Equal, car_int),
         ]), ConstraintType.Equal, false),
-        maker.op_bind(maker.and([
+        maker.op(maker.and([
           maker.op(maker.column("TJ_VAL_INT", "VAL_INST"), ConstraintType.Equal, 9000),
           maker.op(maker.column("TJ_VAL_INT", "VAL_CAR" ), ConstraintType.Equal, car_next_oid),
         ]), ConstraintType.Equal, false)

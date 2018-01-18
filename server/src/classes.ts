@@ -3,9 +3,9 @@ import {
   VersionedObject, VersionedObjectConstructor, VersionedObjectManager,
   DataSource, Aspect, DataSourceInternal, AspectConfiguration, AspectSelection,
   SafePostLoadContext, SafePreSaveContext, SafeValidator, DataSourceTransaction,
+  Reporter,
 } from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, ObiDefinition} from '@openmicrostep/aspects.obi';
-import {Reporter} from '@openmicrostep/msbuildsystem.shared';
 import {R_AuthenticationPWD, Session, R_Person, R_Application} from '../../shared/src/classes';
 import * as interfaces from '../../shared/src/classes';
 import {SecureHash} from './securehash';
@@ -250,7 +250,10 @@ export const selection = new AspectSelection([
   interfaces.R_LDAPGroup.Aspects.obi           ,
   interfaces.R_LDAPConfiguration.Aspects.obi   ,
 ]);
-export const cfg = new AspectConfiguration(selection);
+export const cfg = new AspectConfiguration({
+  selection: selection,
+  validators: interfaces.validators,
+});
 
 function build_rights(cfg: AspectConfiguration, def: {
   classes?: string[],
@@ -674,12 +677,16 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       safe_post_save: [],
     };
     if (aspect.attributes.has("_urn")) {
+      let attribute_urn = aspect.checkedAttribute("_urn");
       v.safe_pre_save.push((reporter, datasource) => {
         return {
           for_each(vo) {
             let manager = vo.manager();
-            if (manager.isNew() && !manager.attributeValue("_urn")) {
-              manager.setAttributeValue("_urn", uuidv4())
+            if (manager.isNew() && !manager.attributeValueFast(attribute_urn)) {
+              manager.setAttributeValueFast(attribute_urn, uuidv4())
+            }
+            else if (manager.isSaved() && manager.isAttributeModifiedFast(attribute_urn)) {
+              reporter.diagnostic({ is: "error", msg: `cannot change _urn once set` });
             }
           },
           async finalize() {
@@ -784,14 +791,14 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
       aspectValue_to_obiValue: (value, attribute: Aspect.InstalledAttribute) => {
         if (attribute.name === "_creation_date")
           return Math.floor(value.getTime() / 1000);
-        if (attribute.type.type === "primitive" && attribute.type.name === "boolean")
+        if (attribute.type.asPrimitive() === "boolean")
           return value ? 1 : 0;
         return value;
       },
       obiValue_to_aspectValue: (value, attribute: Aspect.InstalledAttribute) => {
         if (attribute.name === "_creation_date")
           return new Date(value * 1000);
-        if (attribute.type.type === "primitive" && attribute.type.name === "boolean")
+        if (attribute.type.asPrimitive() === "boolean")
           return value ? true : false;
         return value;
       },
@@ -833,7 +840,7 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
   let multi = systemObiByName(db, "multi");
 
   let patterns = obi.attributes.get(car_pattern)! as Set<ObiDefinition>;
-  let attributes: Aspect.Attribute[] = [];
+  let attributes: Aspect.Definition.Attribute[] = [];
   patterns.forEach((pattern: ObiDefinition) => {
     let car = getOne(pattern, car_car) as ObiDefinition;
     if (car.system_name === "version")
@@ -842,7 +849,7 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
     let type = getOne(car, car_type) as ObiDefinition;
     let mandatory = getOne(pattern, car_mandatory, 1) as number;
     let cardinality = getOne(pattern, car_cardinality, multi) as ObiDefinition;
-    let atype: Aspect.Type;
+    let atype: Aspect.Definition.Type;
     if (type.system_name === "SID" || type.system_name === "ID") {
       let domain_entities = car.attributes.get(car_domain_entity);
       let class_names = domain_entities && [...domain_entities].map((v: ObiDefinition) => v.system_name!);
@@ -851,10 +858,12 @@ function systemObiImpl(db: OuiDB, name: string): VersionedObjectConstructor {
       else if (class_names.length === 1)
         atype = { is: "type", type: "class", name: class_names[0] };
       else
-        atype = { is: "type", type: "or", types: class_names.map<Aspect.Type>(n => ({ is: "type", type: "class", name: n })) }; // TODO: check multiple domain entities
+        atype = { is: "type", type: "or", types: class_names.map<Aspect.Definition.Type>(n => ({ is: "type", type: "class", name: n })) }; // TODO: check multiple domain entities
     }
+    else if (type.system_name === "STR")
+      atype =  { is: "type", type: "primitive", name: "string" as Aspect.Definition.PrimaryType };
     else
-      atype = db.config.mapTypes[type.system_name!];
+      atype =  { is: "type", type: "primitive", name: "integer" as Aspect.Definition.PrimaryType };
     if (cardinality === multi)
       atype = { is: "type", type: "set", itemType: atype, min: 0, max: '*' };
     attributes.push({
@@ -905,7 +914,7 @@ export function printClassesMd(ouiDb: OuiDB) {
   }
   console.info(map);
 }
-function typeToMdType(type: Aspect.Type) {
+function typeToMdType(type: Aspect.Definition.Type) {
   let t = "any";
   switch (type.type) {
     case 'primitive': t = type.name; break;

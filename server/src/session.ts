@@ -307,10 +307,11 @@ Session.category('client', {
       }
       found.smartcard = input.smartcard;
       found.state = input.state;
-      if (found.state === "done" && found.action) {
+      found.paired_app_urn = input.paired_app_urn;
+      if ((found.state === "done" || found.state === "error") && found.action) {
         if (found.action.kind.indexOf("end") !== -1)
           pairing_session.devices = pairing_session.devices.filter(d => d !== found);
-        found.past_actions.push(found.action);
+        found.past_actions.push(Object.assign(found.action, { state: found.state }));
         found.action = undefined;
       }
       if (found.state === "init")

@@ -24,20 +24,21 @@ export type Device = {
   brand: string,
   model: string,
   serial: string,
+  paired_app_urn: string,
   state: string,
-  pin?: string,
   smartcard?: SmartCard,
   timeout: number,
   will_actions: Action[],
   pending_actions: Action[],
   action: Action | undefined,
-  past_actions: Action[],
+  past_actions: (Action & { state: "done" | "error" })[],
 };
 
 export type Action =
     { kind: "pair", app: R_Application, device_profile: R_Device_Profile } |
     { kind: "pair+end", app: R_Application, device_profile: R_Device_Profile } |
-    { kind: "set-pin", old: string, new: string } |
+    { kind: "set-pin", old?: string, new?: string } |
+    { kind: "unblock", puk?: string, new?: string } |
     { kind: "enroll",
       pki: "ANTAI" | "LOCAL",
       pin?: string,
@@ -114,6 +115,11 @@ export type DeviceAction = {
         </div>
       </div>
     </div>
+    <div *ngIf="_final_pairing" class="col-md-6">
+      <button class="btn btn-primary" [disabled]="!!interval" (click)="this.restart()">
+        Démarrer une nouvelle session d'appairage
+      </button>
+    </div>
   </div>
   <div class="row">
     <div class="col-md-6">
@@ -122,19 +128,19 @@ export type DeviceAction = {
           <span>Appareils en cours de configuration</span>
         </div>
         <ul class="panel-body list-group">
-        <li class="list-group-item">
-          Appairer pour:
-          <input-select [(value)]="selected_app" [items]="_applications">
-            <ng-template let-item="$implicit">
-              <application-li [object]="item"></application-li>
-            </ng-template>
-          </input-select>
-          <input-select [(value)]="selected_device_profile" [items]="availableDeviceProfiles()">
-            <ng-template let-item="$implicit">
-              {{item._label}}
-            </ng-template>
-          </input-select>
-        </li>
+          <li class="list-group-item">
+            Appairer pour:
+            <input-select [(value)]="selected_app" [items]="_applications">
+              <ng-template let-item="$implicit">
+                <application-li [object]="item"></application-li>
+              </ng-template>
+            </input-select>
+            <input-select [(value)]="selected_device_profile" [items]="availableDeviceProfiles()">
+              <ng-template let-item="$implicit">
+                {{item._label}}
+              </ng-template>
+            </input-select>
+          </li>
           <li *ngFor="let device of this.devices" class="list-group-item dropzone" (drop)="drop($event, device)" (dragover)="dragover($event, device)" (dragleave)="dragleave($event)">
             <div>
               {{ device.label }}
@@ -142,7 +148,7 @@ export type DeviceAction = {
               <span class="pull-right badge">#{{ device.id }}</span>
             </div>
             <div *ngFor="let action of device.past_actions">
-              <span class="label label-success">Terminé</span>
+              <span class="label" [ngClass]="a_state_class(action)">{{ a_state_label(action) }}</span>
               {{ action_label(action) }}
             </div>
             <div *ngIf="!device.action">
@@ -178,6 +184,10 @@ export type DeviceAction = {
                   <input class="form-control" type="password" autocomplete="off" placeholder="Ancien PIN" [(ngModel)]="action.old" maxlength="4" size="4"/>
                   <input class="form-control" type="password" autocomplete="off" placeholder="Nouveau PIN" [(ngModel)]="action.new" maxlength="4" size="4"/>
                 </ng-template>
+                <ng-template [ngIf]="action.kind === 'unblock'">
+                  <input class="form-control" type="password" autocomplete="off" placeholder="Code PUK" [(ngModel)]="action.puk" maxlength="8" size="8"/>
+                  <input class="form-control" type="password" autocomplete="off" placeholder="Nouveau PIN" [(ngModel)]="action.new" maxlength="4" size="4"/>
+                </ng-template>
                 <button class="btn btn-success" [disabled]="this._final_pairing" (click)="this.validate_action(device, action, true)">
                   <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 </button>
@@ -187,15 +197,27 @@ export type DeviceAction = {
               </div>
             </div>
             <ng-template [ngIf]="_droptarget === device">
-              <span *ngIf="device.smartcard && !device.smartcard.uid">
-                Enrôler ({{_enrol_kind }}) {{ _dragged._last_name }} {{ _dragged._first_name }} sur une SmartCard ({{ smartcard_kind_label(device.smartcard) }}) vierge
-              </span>
-              <span *ngIf="device.smartcard.uid && device.smartcard.matricule === p_matricule(_dragged)">
-                Re-Enrôler ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
-              </span>
-              <span *ngIf="device.smartcard.uid && device.smartcard.matricule !== p_matricule(_dragged)">
-                Révoker ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} puis enrôler {{ _dragged._last_name }} {{ _dragged._first_name }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
-              </span>
+              <ng-template [ngIf]="_draggedIsSetPin(_dragged)">
+                <span>
+                  Changer le code pin
+                </span>
+              </ng-template>
+              <ng-template [ngIf]="_draggedIsUnblock(_dragged)">
+                <span>
+                  Débloquer la carte
+                </span>
+              </ng-template>
+              <ng-template [ngIf]="_draggedIsPerson(_dragged)">
+                <span *ngIf="!device.smartcard.uid">
+                  Enrôler ({{_enrol_kind }}) {{ _dragged._last_name }} {{ _dragged._first_name }} sur une SmartCard ({{ smartcard_kind_label(device.smartcard) }}) vierge
+                </span>
+                <span *ngIf="device.smartcard.uid && device.smartcard.matricule === p_matricule(_dragged)">
+                  Re-Enrôler ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
+                </span>
+                <span *ngIf="device.smartcard.uid && device.smartcard.matricule !== p_matricule(_dragged)">
+                  Révoker ({{_enrol_kind }}) {{ device.smartcard.lastName }} {{ device.smartcard.firstName }} puis enrôler {{ _dragged._last_name }} {{ _dragged._first_name }} sur SmartCard ({{ smartcard_kind_label(device.smartcard) }})
+                </span>
+              </ng-template>
             </ng-template>
           </li>
           <li *ngIf="selected_app && selected_device_profile" class="list-group-item">
@@ -209,15 +231,25 @@ export type DeviceAction = {
     <div class="col-md-6">
       <div class="panel panel-default">
         <div class="panel-heading"><span>Utilisateurs</span></div>
-        <div class="panel-body input-group">
-          <span class="input-group-addon" id="sizing-addon1"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></span>
-          <input type="text" class="form-control" placeholder="Rechercher" aria-describedby="sizing-addon1" [(ngModel)]="search">
+        <div class="panel-body">
+          <div class="input-group">
+            <span class="input-group-addon" id="sizing-addon1"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></span>
+            <input type="text" class="form-control" placeholder="Rechercher" aria-describedby="sizing-addon1" [(ngModel)]="search">
+          </div>
+          <div class="row" style="margin-top:  10px;margin-bottom:  10px;">
+            <div class="col-xs-6" draggable="true" (dragstart)="drag($event, { kind: 'set-pin' })">
+              <span class="glyphicon glyphicon-move"></span> Changer le code pin
+            </div>
+            <div class="col-xs-6" draggable="true" (dragstart)="drag($event, { kind: 'unblock' })">
+              <span class="glyphicon glyphicon-move"></span> Débloquer la carte
+            </div>
+          </div>
+          <ul class="list-group">
+            <li *ngFor="let p of this._items" class="list-group-item" draggable="true" (dragstart)="drag($event, p)">
+              <div><span class="glyphicon glyphicon-move"></span> {{ p._last_name }} {{ p._first_name }} <span class="label label-default">{{ p_matricule(p) }}</span></div>
+            </li>
+          </ul>
         </div>
-        <ul class="panel-body list-group">
-          <li *ngFor="let p of this._items" class="list-group-item" draggable="true" (dragstart)="drag($event, p)">
-            <div><span class="glyphicon glyphicon-move"></span> {{ p._last_name }} {{ p._first_name }} <span class="label label-default">{{ p_matricule(p) }}</span></div>
-          </li>
-        </ul>
       </div>
     </div>
   </div>
@@ -238,21 +270,7 @@ export class ManagePairingComponent extends AspectComponent {
 
   constructor(public ctx: AppContext) {
     super(ctx.cc);
-    let ccc = this._controlCenter.ccc(this);
-    ccc.farPromise(this.ctx.session.pairingSession, undefined).then((result) => {
-      this.qr_code_data = {
-        url: document.location.origin + document.location.pathname,
-        wifi: { ssid: "", pwd: ""},
-        ...result.value(),
-      };
-      this.setCode();
-      this.interval = setTimeout(() => this.poll(), 10);
-    });
-    ccc.farPromise(this.ctx.db.query, { id: "application-tree" }).then(res => {
-      this._applications = res.value().applications as R_Application[]
-      this.selected_app = this._applications.find(a => a._urn === "lsmobile");
-    });
-    this.search = "";
+    this.restart();
   }
 
   ngOnDestroy() {
@@ -303,12 +321,13 @@ export class ManagePairingComponent extends AspectComponent {
         if (found) {
           remaining.delete(key);
           found.action = undefined;
-          Object.assign(found, device);
+          found.smartcard = undefined;
+          device = Object.assign(found, device);
         }
         else {
           device.will_actions = [];
           this.devices.push(device);
-          if (device.past_actions.length === 0 && device.pending_actions.length === 0 && !device.action) {
+          if (!device.paired_app_urn) {
             this.validate_action(device, {
               kind: "pair",
               app: this.selected_app!,
@@ -316,6 +335,8 @@ export class ManagePairingComponent extends AspectComponent {
             }, true);
           }
         }
+        if (this._droptarget === device && !device.smartcard)
+          this._droptarget = undefined;
       }
       for (let device of remaining.values()) {
         let idx = this.devices.indexOf(device);
@@ -329,8 +350,30 @@ export class ManagePairingComponent extends AspectComponent {
         await ccc.farPromise(this.ctx.session.pairingSessionPoll, { kind: "end" });
         this.devices = [];
       }
-      this.interval = setTimeout(() => this.poll(), 2000);
+      else {
+        this.interval = setTimeout(() => this.poll(), 2000);
+      }
     }
+  }
+
+  restart() {
+    this._qrcode = undefined;
+    this._final_pairing = false;
+    let ccc = this._controlCenter.ccc(this);
+    ccc.farPromise(this.ctx.session.pairingSession, undefined).then((result) => {
+      this.qr_code_data = {
+        url: document.location.origin + document.location.pathname,
+        wifi: { ssid: "", pwd: ""},
+        ...result.value(),
+      };
+      this.setCode();
+      this.interval = setTimeout(() => this.poll(), 10);
+    });
+    ccc.farPromise(this.ctx.db.query, { id: "application-tree" }).then(res => {
+      this._applications = res.value().applications as R_Application[]
+      this.selected_app = this._applications.find(a => a._urn === "lsmobile");
+    });
+    this.search = "";
   }
 
   commit() {
@@ -357,7 +400,7 @@ export class ManagePairingComponent extends AspectComponent {
   _qrcode: QRCode | undefined = undefined;
   setCode() {
     let text = JSON.stringify(this.qr_code_data);
-    if (text !== this._lastcode) {
+    if (text !== this._lastcode || !this._qrcode) {
       if (!this._qrcode)
         this._qrcode = new QRCode(this.input.nativeElement, {
           width: 256,
@@ -405,6 +448,22 @@ export class ManagePairingComponent extends AspectComponent {
     if (sc.kind === "sd")
       return "microSD";
     return "?"
+  }
+
+  a_state_label(a: { state: "done" | "error" }) {
+    switch (a.state) {
+      case "error": return "Erreur";
+      case "done": return "Terminé";
+    }
+    return "?";
+  }
+
+  a_state_class(a: { state: "done" | "error" }) {
+    switch (a.state) {
+      case "error": return "label-danger";
+      case "done": return "label-success";
+    }
+    return "?";
   }
 
   d_state_label(d: Device) {
@@ -455,6 +514,8 @@ export class ManagePairingComponent extends AspectComponent {
     }
     if (a.kind === "set-pin")
       return `Changement de code PIN`;
+    if (a.kind === "unblock")
+      return `Débloquer la carte`;
     if (a.kind === "pair")
       return `Appairage`;
     if (a.kind === "pair+end")
@@ -464,9 +525,18 @@ export class ManagePairingComponent extends AspectComponent {
     return "";
   }
 
-  _dragged: R_Person | undefined = undefined;
+  _dragged: { kind: "set-pin" } | { kind: "unblock" } | R_Person | undefined = undefined;
   _droptarget: Device | undefined = undefined;
-  drag($event: DragEvent, p: R_Person) {
+  _draggedIsSetPin(d: { kind: "set-pin" } | { kind: "unblock" } | R_Person): d is { kind: "set-pin" } {
+    return (d as any).kind === "set-pin";
+  }
+  _draggedIsUnblock(d: { kind: "set-pin" } | { kind: "unblock" } | R_Person): d is { kind: "unblock" } {
+    return (d as any).kind === "unblock";
+  }
+  _draggedIsPerson(d: { kind: "set-pin" } | { kind: "unblock" } | R_Person): d is R_Person {
+    return d instanceof R_Person;
+  }
+  drag($event: DragEvent, p: { kind: "set-pin" } | R_Person) {
     this._dragged = p;
     const handler = () => {
       this._dragged = undefined;
@@ -495,18 +565,28 @@ export class ManagePairingComponent extends AspectComponent {
     $event.preventDefault();
     let p = this._dragged;
     if (d && p) {
-      let inject = this._enrol_kind === "ANTAI" ? {
-        codeunite: this._codeunite,
-        login: this._login,
-        password: this._password,
-      } : {};
-      d.will_actions.push({
-        kind: "enroll",
-        pin: undefined,
-        pki: this._enrol_kind,
-        enroll: { uid: this.p_matricule(p)!, urn: p._urn!, firstname: p._first_name!, lastname: p._last_name!, ...inject },
-        revoke: d.smartcard && d.smartcard.uid ? { uid: d.smartcard.uid, urn: p._urn!, ...inject } : undefined,
-      });
+      let action: Action;
+      if (this._draggedIsPerson(p)) {
+        let inject = this._enrol_kind === "ANTAI" ? {
+          codeunite: this._codeunite,
+          login: this._login,
+          password: this._password,
+        } : {};
+        action = {
+          kind: "enroll",
+          pin: undefined,
+          pki: this._enrol_kind,
+          enroll: { uid: this.p_matricule(p)!, urn: p._urn!, firstname: p._first_name!, lastname: p._last_name!, ...inject },
+          revoke: d.smartcard && d.smartcard.uid ? { uid: d.smartcard.uid, urn: p._urn!, ...inject } : undefined,
+        }
+      }
+      else if (this._draggedIsSetPin(p)) {
+        action = { kind: "set-pin", old: undefined, new: undefined }
+      }
+      else {
+        action = { kind: "unblock", puk: undefined, new: undefined }
+      }
+      d.will_actions.push(action);
     }
   }
 

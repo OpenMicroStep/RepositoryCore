@@ -419,7 +419,7 @@ const rights_by_classname = build_rights(cfg, [
       "_ciphered_private_key",
       "_ldap_dn",
     ],
-    rights: ["create", "update", "delete"],
+    rights: ["read", "create", "update", "delete"],
     who: ["person_admin", "super_admin"],
   },
   {
@@ -434,7 +434,7 @@ const rights_by_classname = build_rights(cfg, [
       "_r_administrator",
       "_r_member",
     ],
-    rights: ["create", "update", "delete"],
+    rights: ["read", "create", "update", "delete"],
     who: ["service_admin", "super_admin"],
   },
   {
@@ -459,7 +459,7 @@ const rights_by_classname = build_rights(cfg, [
       "_r_sub_device_profile",
       "_r_device",
     ],
-    rights: ["create", "update", "delete"],
+    rights: ["read", "create", "update", "delete"],
     who: ["app_admin", "super_admin"],
   },
   {
@@ -474,7 +474,7 @@ const rights_by_classname = build_rights(cfg, [
       "_r_administrator",
       "_r_application",
     ],
-    rights: ["create", "update", "delete"],
+    rights: ["read", "create", "update", "delete"],
     who: ["apptree_admin", "super_admin"],
   },
   {
@@ -489,7 +489,7 @@ const rights_by_classname = build_rights(cfg, [
       "_r_serial_number",
       "_r_out_of_order",
     ],
-    rights: ["create", "update", "delete"],
+    rights: ["read", "create", "update", "delete"],
     who: ["device_admin", "super_admin"],
   },
   {
@@ -504,7 +504,7 @@ const rights_by_classname = build_rights(cfg, [
       "_r_administrator",
       "_r_device",
     ],
-    rights: ["create", "update", "delete"],
+    rights: ["read", "create", "update", "delete"],
     who: ["devicetree_admin", "super_admin"],
   },
 ]);

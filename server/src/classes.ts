@@ -6,7 +6,7 @@ import {
   Reporter,
 } from '@openmicrostep/aspects';
 import {ObiDataSource, OuiDB, ObiDefinition} from '@openmicrostep/aspects.obi';
-import {R_AuthenticationPWD, Session, R_Person, R_Application} from '../../shared/src/classes';
+import {R_AuthenticationPWD, Session, R_Person, R_Application, R_Device} from '../../shared/src/classes';
 import * as interfaces from '../../shared/src/classes';
 import {SecureHash} from './securehash';
 import {exec} from 'child_process';
@@ -38,7 +38,7 @@ const sub_object_classes = new Map<string, { classname: string, attribute: strin
 function admin_of(ccc: ControlCenterContext, of: string, suffix: string) {
   let session = ccc.findChecked('session') as Session.Aspects.server;
   return { $unionForAlln: "=U(n)",
-    "U(0)=": { $instanceOf: of, _r_administrator: { $contains: session.data().person_id } },
+    "U(0)=": { $instanceOf: of, _r_administrator: { $contains: session.data().person.id } },
     "U(n + 1)=": `=U(n):_r_child_${suffix}s`,
   };
 }
@@ -397,6 +397,18 @@ const rights_by_classname = build_rights(cfg, [
     who: ["self", "person_admin", "super_admin"],
   },
   {
+    classes: ["R_Person", "R_AuthenticationPWD"],
+    attributes: [
+      "=::entity::",
+      "_r_authentication",
+      "_hashed_password",
+      "_must_change_password",
+      "_ciphered_private_key",
+    ],
+    rights: ["update"],
+    who: ["self"],
+  },
+  {
     classes: ["R_Person", "R_AuthenticationPK", "R_AuthenticationPWD", "R_AuthenticationLDAP", "Parameter"],
     attributes: [
       "=::entity::",
@@ -588,7 +600,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
           let root_object = manager.rootObject();
           let access = r.get(root_object);
           if (!access)
-            reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
+            reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} (${vo.manager().classname()}) object` });
           else {
             let r = rights_by_classname.get(manager.classname())!;
             for (let attribute of manager.attributes()) {
@@ -607,7 +619,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
           ra = rights_by_classname.get(attribute.relation.class.classname)!.attributes.get(attribute.relation.attribute.name);
       }
       if (!ra || !access.some(a => ra!.read.has(a)))
-        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${attribute.name}' on '${vo.id()}'` });
+        reporter.diagnostic({ is: "error", msg: `you don't have read access to '${attribute.name}' on '${vo.id()}' (${vo.manager().classname()})` });
     }
   }
 
@@ -645,15 +657,15 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
           let manager = vo.manager();
           let access = r.get(manager.rootObject());
           if (!access)
-            reporter.diagnostic({ is: "error", msg: `you don't have read access to ${vo.id()} object` });
+            reporter.diagnostic({ is: "error", msg: `you don't have update access to ${vo.id()} (${vo.manager().classname()}) object` });
           else {
-            let r = rights_by_classname[manager.classname()];
+            let r = rights_by_classname.get(manager.classname())!;
             // TODO: handle create & delete rights
-            for (let attribute of manager.aspect().attributes_by_index) {
-              if (manager.hasAttributeValueFast(attribute)) {
-                let ra = r.attributes[attribute.name];
+            for (let attribute of manager.attributes()) {
+              if (manager.isAttributeModifiedFast(attribute)) {
+                let ra = r.attributes.get(attribute.name)!;
                 if (!access.some(a => ra.update.has(a)))
-                  reporter.diagnostic({ is: "error", msg: `you don't have update access to '${attribute.name}' on '${vo.id()}'` });
+                  reporter.diagnostic({ is: "error", msg: `you don't have update access to '${attribute.name}' on '${vo.id()}' (${vo.manager().classname()})` });
               }
             }
           }
@@ -673,7 +685,7 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
   for (let aspect of cfg.aspects()) {
     let v: SafeValidator = {
       safe_post_load: [safe_post_load],
-      safe_pre_save: [safe_post_load],
+      safe_pre_save: [safe_pre_save],
       safe_post_save: [],
     };
     if (aspect.attributes.has("_urn")) {

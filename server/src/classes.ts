@@ -707,6 +707,32 @@ export function controlCenterCreator(ouiDb: OuiDB) : CreateContext {
         }
       });
     }
+    if (aspect.classname === "R_Device") {
+      v.safe_pre_save.push((reporter, datasource) => {
+        let will_delete: R_Device[] = [];
+        return {
+          for_each(vo: R_Device) {
+            if (vo.manager().isPendingDeletion())
+              will_delete.push(vo);
+          },
+          async finalize() : Promise<void> { return datasource.controlCenter().safe(async ccc => {
+            let inv = await ccc.farPromise(datasource.rawQuery, {
+              name: "tokens",
+              where: {
+                $is: "R_AuthenticationTicket",
+                _r_device: { $in: will_delete }
+              }
+            });
+            if (inv.hasOneValue()) {
+              let tokens = inv.value()["tokens"];
+              for (let token of tokens)
+                token.manager().setPendingDeletion(true);
+              await ccc.farPromise(datasource.rawSave, tokens);
+            }
+          }); }
+        }
+      });
+    }
     if (aspect.classname === "R_AuthenticationPWD") {
       v.safe_post_load.push(() => R_AuthenticationPWD_safe_post_load_context);
       v.safe_pre_save.push((reporter, datasource) => {

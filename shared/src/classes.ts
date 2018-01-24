@@ -14,7 +14,7 @@ export const validators = {
       at.diagnostic({ is: "error", msg: "must exists" });
   },
   "mail": (at: PathReporter, value: string | undefined) => {
-    if (!value || !EMAIL_REGEX.test(value))
+    if (value && !EMAIL_REGEX.test(value))
       at.diagnostic({ is: "error", msg: "must be an email" });
   },
   "pem_encoded_pubkey": (at: PathReporter, value: string | undefined) => {

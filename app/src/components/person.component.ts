@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
 import { AppContext, R_Person, R_AuthenticationPK, R_AuthenticationPWD, R_AuthenticationLDAP, Parameter } from '../main';
-import { Notification, VersionedObject, VersionedObjectManager } from '@openmicrostep/aspects';
+import { Notification, VersionedObject, VersionedObjectManager, ControlCenterContext, Result } from '@openmicrostep/aspects';
 import { AspectComponent } from '../aspect/aspect.component';
 import { VOInputSetComponent }  from '../aspect/vo.input.set.component';
 import { VOLoadComponent, VOComponent } from '../aspect/vo.component';
@@ -90,6 +90,15 @@ export class PersonComponent extends VOLoadComponent<R_Person.Aspects.obi> {
       R_AuthenticationLDAP: { '_r_authentication.': AuthenticationLDAPComponent.scope },
       Parameter: { '_parameter.': ParameterComponent.scope },
     };
+  }
+
+  handleSave(ccc: ControlCenterContext, r: Result<R_Person[]>) {
+    super.handleSave(ccc, r);
+    if (this.object && !r.hasDiagnostics()) {
+      for (let auth of this.object._r_authentication) {
+        auth.manager().clearAllModifiedAttributes();
+      }
+    }
   }
 }
 

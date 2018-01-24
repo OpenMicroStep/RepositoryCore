@@ -33,17 +33,20 @@ const cfg = new AspectConfiguration({
   ]),
   defaultFarTransport: xhr,
   validators: interfaces.validators,
+  initDefaultContext: (ccc) => {
+    const dataSource = DataSource.Aspects.client.create(ccc);
+    const session = Session.Aspects.client.create(ccc);
+    return { defaultDataSource: dataSource, db: dataSource, session: session }
+  }
 });
 const controlCenter = new ControlCenter(cfg);
 const ccc = controlCenter.registerComponent({});
-const dataSource = DataSource.Aspects.client.create(ccc);
-const session = Session.Aspects.client.create(ccc);
 
 export type AppContext = { cc: ControlCenter, db: DataSource.Aspects.client, session: Session.Aspects.client };
 export const AppContext: { new(): AppContext } = function AppContext() {
     throw new Error(`shouldn't be called, just here to allow dep injection`);
 } as any;
-export const appContext: AppContext = { cc: controlCenter, db: dataSource, session: session };
+export const appContext: AppContext = { cc: controlCenter, ...controlCenter.defaultContext() as any};
 
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { CommonModule } from '@angular/common';
@@ -110,7 +113,7 @@ import { SearchListComponent }  from './search.component';
   bootstrap: [ AppComponent ],
   providers: [
     { provide: ControlCenter, useValue: controlCenter },
-    { provide: DataSource   , useValue: dataSource    },
+    { provide: DataSource   , useValue: appContext.db    },
     { provide: AppContext   , useValue: appContext    },
   ]
 })
@@ -118,5 +121,5 @@ export class AppModule { }
 
 platformBrowserDynamic().bootstrapModule(AppModule);
 
-dataSource.manager().setSavedIdVersion('odb', VersionedObjectManager.UndefinedVersion);
-session.manager().setSavedIdVersion('session', VersionedObjectManager.UndefinedVersion);
+appContext.db.manager().setSavedIdVersion('odb', VersionedObjectManager.UndefinedVersion);
+appContext.session.manager().setSavedIdVersion('session', VersionedObjectManager.UndefinedVersion);

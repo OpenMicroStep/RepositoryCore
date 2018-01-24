@@ -2,7 +2,7 @@ import { Component, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/
 import {
   Notification, Result, Invocation, Event,
   VersionedObject, VersionedObjectManager, traverseAllScope,
-  DataSource, DataSourceInternal, Diagnostic, ImmutableList,
+  DataSource, DataSourceInternal, Diagnostic, ImmutableList, ControlCenterContext,
 } from '@openmicrostep/aspects';
 import { AspectComponent } from './aspect.component';
 import { VOInputSetComponent }  from './vo.input.set.component';
@@ -88,20 +88,22 @@ export abstract class VOLoadComponent<T extends VersionedObject> extends AspectC
   save() {
     this._controlCenter.safe(async ccc => {
       let objects = this.objectsToSave();
-      let r = await ccc.farPromise(this._datasource.save, objects);
-      this.diagnostics = r.diagnostics();
-      if (r.hasDiagnostics()) {
-        for (let d of r.diagnostics())
-          console.info(d);
-      }
-      if (this._object!.manager().isDeleted())
-        this.object = undefined;
-      ccc.controlCenter().notificationCenter().postNotification({
-        name: VOLoadComponent.saved,
-        object: this._datasource,
-        info: r,
-      })
+      this.handleSave(ccc, await ccc.farPromise(this._datasource.save, objects) as any);
     });
+  }
+  handleSave(ccc: ControlCenterContext, r: Result<T[]>) {
+    this.diagnostics = r.diagnostics();
+    if (r.hasDiagnostics()) {
+      for (let d of r.diagnostics())
+        console.info(d);
+    }
+    if (this._object!.manager().isDeleted())
+      this.object = undefined;
+    ccc.controlCenter().notificationCenter().postNotification({
+      name: VOLoadComponent.saved,
+      object: this._datasource,
+      info: r,
+    })
   }
 
   delete() {

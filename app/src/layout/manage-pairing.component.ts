@@ -537,6 +537,7 @@ export class ManagePairingComponent extends AspectComponent {
     return d instanceof R_Person;
   }
   drag($event: DragEvent, p: { kind: "set-pin" } | R_Person) {
+    $event.dataTransfer.setData("text/plain", "pairing drag");
     this._dragged = p;
     const handler = () => {
       this._dragged = undefined;

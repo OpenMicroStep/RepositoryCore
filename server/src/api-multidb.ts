@@ -161,7 +161,7 @@ export function api_multidb() : express.Router {
       return Promise.reject('not found');
     }
     return Promise.reject('not authenticated');
-  });
+  }, { body_limit: 10000000 /* 10Mb */ });
   cfg.installPublicTransport(transport, DataSource, ["Public"]);
   cfg.installPublicTransport(transport, Session, ["client"]);
   return router;

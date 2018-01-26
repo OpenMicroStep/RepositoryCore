@@ -570,9 +570,10 @@ export function api_v1() : express.Router {
       let _car = Classes.mapAttributesR[car];
       if (_car) {
         let a = aspect.attributes.get(_car)!;
-        if (a.containsVersionedObject() && typeof v === "string") { // _urn
+        let sub_aspect = a.containedVersionedObjectIfAlone();
+        if (sub_aspect && typeof v === "string") { // _urn
           let y = `v${++n}`;
-          where[`${y}=`] = { $elementOf: { _urn: v } };
+          where[`${y}=`] = { $elementOf: { $instanceOf: sub_aspect.classname, _urn: v } };
           where[`=x.${_car}`] = { $contains: `=${y}` };
         }
         else {

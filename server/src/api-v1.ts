@@ -7,8 +7,8 @@ import {SessionData, authsByLogin, authenticableFromAuth, writeSession} from './
 const bodyParser = require('body-parser');
 // remove the no content-type header exception to reduce even further the risk of CRSF
 const raw_parser = bodyParser.text({ type: (req) => {
-  console.info("content-type", req.headers["content-type"]);
-  return !req.headers["content-type"] || req.headers["content-type"] === "application/json"
+  let is_municipol = req.headers["content-type"] === "application/x-www-form-urlencoded" && !req.headers["user-agent"];
+  return is_municipol || req.headers["content-type"] === "application/json"
 } });
 declare module "express-serve-static-core" {
   interface Request {

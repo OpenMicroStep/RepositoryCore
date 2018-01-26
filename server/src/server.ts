@@ -3,28 +3,32 @@ import * as express from 'express';
 import {config} from './config';
 
 export const modules: { [s: string]: (app: express.Router, module_cfg: any) => Promise<void> } = {};
-export function session(path = '/') : express.RequestHandler {
+export function session_configuration(path = '/'): { store: any, secret: string } {
+  const session = require('express-session');
   if (config.session.type === "mongo") {
-    const session = require('express-session');
     const MongoStore = require('connect-mongo')(session);
-    return session({
-      cookie: { path: path },
-      saveUninitialized: true,
+    return {
       store: new MongoStore({ url: config.session.url, mongoOptions: config.session.options }),
       secret: config.session.secret,
-      resave: false,
-    });
+    };
   }
   else if (config.session.type === "memory") {
-    const session = require('express-session');
-    return session({
-      cookie: { path: path },
-      saveUninitialized: true,
+    return {
+      store: new session.MemoryStore(),
       secret: config.session.secret,
-      resave: false,
-    });
+    };
   }
   throw new Error(`unsupported session type ${(config.session as any).type}`);
+}
+
+export function session(path = '/') : express.RequestHandler {
+  const session = require('express-session');
+  return session({
+    ...session_configuration(path),
+    cookie: { path: path },
+    saveUninitialized: true,
+    resave: false,
+  });
 }
 import './api-multidb';
 import './api-aspect';

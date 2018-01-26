@@ -5,7 +5,11 @@ import * as Classes from './classes';
 import {SecureHash, SecurePK} from './securehash';
 import {SessionData, authsByLogin, authenticableFromAuth, writeSession} from './session';
 const bodyParser = require('body-parser');
-const raw_parser = bodyParser.text({ type: "application/json" });
+// remove the no content-type header exception to reduce even further the risk of CRSF
+const raw_parser = bodyParser.text({ type: (req) => {
+  console.info("content-type", req.headers["content-type"]);
+  return !req.headers["content-type"] || req.headers["content-type"] === "application/json"
+} });
 declare module "express-serve-static-core" {
   interface Request {
     session: SessionData;
